@@ -34,7 +34,7 @@ require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
  */
 class walkthrough_test extends \qbehaviour_walkthrough_test_base {
 
-    public function test_deferred_feedback_unanswered() {
+    public function test_deferred_feedback_unanswered(): void {
 
         // Create a matching question.
         $m = \test_question_maker::make_question('match');
@@ -91,7 +91,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
                 $this->get_contains_select_expectation('sub3', $choices, null, false));
     }
 
-    public function test_deferred_feedback_partial_answer() {
+    public function test_deferred_feedback_partial_answer(): void {
 
         // Create a matching question.
         $m = \test_question_maker::make_question('match');
@@ -148,7 +148,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
                 $this->get_contains_select_expectation('sub3', $choices, null, false));
     }
 
-    public function test_interactive_correct_no_submit() {
+    public function test_interactive_correct_no_submit(): void {
 
         // Create a matching question.
         $m = \test_question_maker::make_question('match');
@@ -200,9 +200,28 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
                 $this->get_contains_select_expectation('sub1', $choices, $orderforchoice[2], false),
                 $this->get_contains_select_expectation('sub2', $choices, $orderforchoice[2], false),
                 $this->get_contains_select_expectation('sub3', $choices, $orderforchoice[1], false));
+
+        // Regrade with a new version of the question.
+        /** @var \qtype_match_question $oldm */
+        $oldm = \test_question_maker::make_question('match');
+        $oldm->stems = [11 => 'Dog', 12 => 'Frog', 13 => 'Toad', 14 => 'Cat'];
+        $oldm->stemformat = [11 => FORMAT_HTML, 12 => FORMAT_HTML, 13 => FORMAT_HTML, 14 => FORMAT_HTML];
+        $oldm->choices = [11 => 'Mammal', 12 => 'Amphibian', 13 => 'Insect'];
+        $oldm->right = [11 => 11, 12 => 12, 13 => 12, 14 => 11];
+        $this->quba->regrade_question($this->slot, true, null, $oldm);
+
+        // Verify.
+        $this->check_current_mark(4);
+        $this->render();
+        $this->assertStringContainsString('Cat', $this->currentoutput);
+        $this->assertStringContainsString('Insect', $this->currentoutput);
+        $this->assertStringNotContainsString(
+                get_string('deletedsubquestion', 'qtype_match'), $this->currentoutput);
+        $this->assertStringNotContainsString(
+                get_string('deletedchoice', 'qtype_match'), $this->currentoutput);
     }
 
-    public function test_interactive_partial_no_submit() {
+    public function test_interactive_partial_no_submit(): void {
 
         // Create a matching question.
         $m = \test_question_maker::make_question('match');
@@ -256,7 +275,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
                 $this->get_contains_select_expectation('sub3', $choices, null, false));
     }
 
-    public function test_interactive_with_invalid() {
+    public function test_interactive_with_invalid(): void {
 
         // Create a matching question.
         $m = \test_question_maker::make_question('match');
@@ -326,7 +345,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
                 $this->get_contains_select_expectation('sub3', $choices, $orderforchoice[1], false));
     }
 
-    public function test_match_with_tricky_html_choices() {
+    public function test_match_with_tricky_html_choices(): void {
 
         // Create a matching question.
         $m = \test_question_maker::make_question('match');
@@ -377,10 +396,10 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->displayoptions->history = 1;
         $this->check_current_output(
                 new \question_pattern_expectation('/' .
-                        preg_quote(htmlspecialchars($rightresponsesummary), '/') . '/'));
+                        preg_quote(htmlspecialchars($rightresponsesummary, ENT_COMPAT), '/') . '/'));
     }
 
-    public function test_match_clear_wrong() {
+    public function test_match_clear_wrong(): void {
 
         // Create a matching question.
         $m = \test_question_maker::make_question('match');

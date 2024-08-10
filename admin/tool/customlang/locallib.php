@@ -36,7 +36,7 @@ class tool_customlang_utils {
      * Rough number of strings that are being processed during a full checkout.
      * This is used to estimate the progress of the checkout.
      */
-    const ROUGH_NUMBER_OF_STRINGS = 16500;
+    const ROUGH_NUMBER_OF_STRINGS = 33000;
 
     /** @var array cache of {@link self::list_components()} results */
     private static $components = null;
@@ -89,11 +89,26 @@ class tool_customlang_utils {
      * @param progress_bar $progressbar optionally, the given progress bar can be updated
      */
     public static function checkout($lang, progress_bar $progressbar = null) {
-        global $DB;
+        global $DB, $CFG;
+
+        require_once("{$CFG->libdir}/adminlib.php");
+
+        // For behat executions we are going to load only a few components in the
+        // language customisation structures. Using the whole "en" langpack is
+        // too much slow (leads to Selenium 30s timeouts, especially on slow
+        // environments) and we don't really need the whole thing for tests. So,
+        // apart from escaping from the timeouts, we are also saving some good minutes
+        // in tests. See MDL-70014 and linked issues for more info.
+        $behatneeded = ['core', 'core_langconfig', 'tool_customlang'];
 
         // make sure that all components are registered
         $current = $DB->get_records('tool_customlang_components', null, 'name', 'name,version,id');
         foreach (self::list_components() as $component) {
+            // Filter out unwanted components when running behat.
+            if (defined('BEHAT_SITE_RUNNING') && !in_array($component, $behatneeded)) {
+                continue;
+            }
+
             if (empty($current[$component])) {
                 $record = new stdclass();
                 $record->name = $component;
@@ -103,7 +118,7 @@ class tool_customlang_utils {
                     $record->version = $version;
                 }
                 $DB->insert_record('tool_customlang_components', $record);
-            } elseif ($version = get_component_version($component)) {
+            } else if ($version = get_component_version($component)) {
                 if (is_null($current[$component]->version) or ($version > $current[$component]->version)) {
                     $DB->set_field('tool_customlang_components', 'version', $version, array('id' => $current[$component]->id));
                 }
@@ -454,7 +469,7 @@ class tool_customlang_menu implements renderable {
  */
 class tool_customlang_translator implements renderable {
 
-    /** @const int number of rows per page */
+    /** @var int number of rows per page */
     const PERPAGE = 100;
 
     /** @var int total number of the rows int the table */
@@ -491,7 +506,6 @@ class tool_customlang_translator implements renderable {
 
         list($insql, $inparams) = $DB->get_in_or_equal($filter->component, SQL_PARAMS_NAMED);
 
-        $csql = "SELECT COUNT(*)";
         $fsql = "SELECT s.*, c.name AS component";
         $sql  = "  FROM {tool_customlang_components} c
                    JOIN {tool_customlang} s ON s.componentid = c.id
@@ -530,9 +544,16 @@ class tool_customlang_translator implements renderable {
             $params['link'] = '%\_link';
         }
 
-        $osql = " ORDER BY c.name, s.stringid";
+        $osql = "component, stringid";
 
-        $this->numofrows = $DB->count_records_sql($csql.$sql, $params);
-        $this->strings = $DB->get_records_sql($fsql.$sql.$osql, $params, ($this->currentpage) * self::PERPAGE, self::PERPAGE);
+        $this->strings = $DB->get_counted_records_sql(
+            sql: $fsql.$sql,
+            fullcountcolumn: 'fullcount',
+            sort: $osql,
+            params: $params,
+            limitfrom: ($this->currentpage) * self::PERPAGE,
+            limitnum: self::PERPAGE,
+        );
+        $this->numofrows = reset($this->strings)->fullcount ?? 0;
     }
 }

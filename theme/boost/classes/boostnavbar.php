@@ -67,17 +67,22 @@ class boostnavbar implements \renderable {
                 $this->remove('permissions');
             }
         }
-
         if ($this->page->context->contextlevel == CONTEXT_COURSE) {
+            $removesections = course_get_format($this->page->course)->can_sections_be_removed_from_navigation();
             // Remove any duplicate navbar nodes.
             $this->remove_duplicate_items();
             // Remove 'My courses' and 'Courses' if we are in the course context.
             $this->remove('mycourses');
             $this->remove('courses');
-            // Remove the course category breadcrumb node.
-            $this->remove($this->page->course->category, \breadcrumb_navigation_node::TYPE_CATEGORY);
+            // Remove the course category breadcrumb nodes.
+            foreach ($this->items as $key => $item) {
+                // Remove if it is a course category breadcrumb node.
+                $this->remove($item->key, \breadcrumb_navigation_node::TYPE_CATEGORY);
+            }
             // Remove the course breadcrumb node.
-            $this->remove($this->page->course->id, \breadcrumb_navigation_node::TYPE_COURSE);
+            if (!str_starts_with($this->page->pagetype, 'course-view-section-')) {
+                $this->remove($this->page->course->id, \breadcrumb_navigation_node::TYPE_COURSE);
+            }
             // Remove the navbar nodes that already exist in the secondary navigation menu.
             $this->remove_items_that_exist_in_navigation($PAGE->secondarynav);
 
@@ -94,6 +99,9 @@ class boostnavbar implements \renderable {
                 case 'course-reset':
                     // Remove the 'Import' navbar node in the Backup, Restore, Copy course and Reset pages.
                     $this->remove('import');
+                case 'course-user':
+                    $this->remove('mygrades');
+                    $this->remove('grades');
             }
         }
 
@@ -101,13 +109,20 @@ class boostnavbar implements \renderable {
         if ($this->page->context->contextlevel == CONTEXT_MODULE) {
             $this->remove('mycourses');
             $this->remove('courses');
-            // Remove the course category breadcrumb node.
-            $this->remove($this->page->course->category, \breadcrumb_navigation_node::TYPE_CATEGORY);
-            $courseformat = course_get_format($this->page->course)->get_course();
-            // Section items can be only removed if a course layout (coursedisplay) is not explicitly set in the
-            // given course format or the set course layout is not 'One section per page'.
-            $removesections = !isset($courseformat->coursedisplay) ||
-                $courseformat->coursedisplay != COURSE_DISPLAY_MULTIPAGE;
+            // Remove the course category breadcrumb nodes.
+            foreach ($this->items as $key => $item) {
+                // Remove if it is a course category breadcrumb node.
+                $this->remove($item->key, \breadcrumb_navigation_node::TYPE_CATEGORY);
+            }
+            $courseformat = course_get_format($this->page->course);
+            $removesections = $courseformat->can_sections_be_removed_from_navigation();
+            if ($removesections) {
+                // If the course sections are removed, we need to add the anchor of current section to the Course.
+                $coursenode = $this->get_item($this->page->course->id);
+                if (!is_null($coursenode) && $this->page->cm->sectionnum !== null) {
+                    $coursenode->action = course_get_format($this->page->course)->get_view_url($this->page->cm->sectionnum);
+                }
+            }
         }
 
         if ($this->page->context->contextlevel == CONTEXT_SYSTEM) {

@@ -32,6 +32,26 @@ class data_field_radiobutton extends data_field_base {
      */
     protected static $priority = self::HIGH_PRIORITY;
 
+    public function supports_preview(): bool {
+        return true;
+    }
+
+    public function get_data_content_preview(int $recordid): stdClass {
+        $options = explode("\n", $this->field->param1);
+        $options = array_map('trim', $options);
+        $selected = $options[$recordid % count($options)];
+        return (object)[
+            'id' => 0,
+            'fieldid' => $this->field->id,
+            'recordid' => $recordid,
+            'content' => $selected,
+            'content1' => null,
+            'content2' => null,
+            'content3' => null,
+            'content4' => null,
+        ];
+    }
+
     function display_add_field($recordid = 0, $formdata = null) {
         global $CFG, $DB, $OUTPUT;
 
@@ -43,13 +63,14 @@ class data_field_radiobutton extends data_field_base {
                 $content = '';
             }
         } else if ($recordid) {
-            $content = trim($DB->get_field('data_content', 'content', array('fieldid'=>$this->field->id, 'recordid'=>$recordid)));
+            $contentfield = $DB->get_field('data_content', 'content', ['fieldid' => $this->field->id, 'recordid' => $recordid]);
+            $content = trim($contentfield ?? '');
         } else {
             $content = '';
         }
 
         $str = '<div title="' . s($this->field->description) . '">';
-        $str .= '<fieldset><legend><span class="accesshide">' . $this->field->name;
+        $str .= '<fieldset><legend><span class="accesshide">' . s($this->field->name);
 
         if ($this->field->required) {
             $str .= '&nbsp;' . get_string('requiredelement', 'form') . '</span></legend>';
@@ -153,4 +174,3 @@ class data_field_radiobutton extends data_field_base {
         return $configs;
     }
 }
-

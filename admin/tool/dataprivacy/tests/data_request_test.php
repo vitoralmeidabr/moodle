@@ -14,19 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Tests for the data_request persistent.
- *
- * @package    tool_dataprivacy
- * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace tool_dataprivacy;
+
+use data_privacy_testcase;
 
 defined('MOODLE_INTERNAL') || die();
 require_once('data_privacy_testcase.php');
 
-use tool_dataprivacy\api;
-
 /**
  * Tests for the data_request persistent.
  *
@@ -34,14 +28,14 @@ use tool_dataprivacy\api;
  * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
+class data_request_test extends data_privacy_testcase {
 
     /**
      * Data provider for testing is_resettable, and is_active.
      *
      * @return  array
      */
-    public function status_state_provider() : array {
+    public function status_state_provider(): array {
         return [
             [
                 'state' => api::DATAREQUEST_STATUS_PENDING,
@@ -99,7 +93,7 @@ class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
      * @param       bool    $resettable
      * @param       bool    $active
      */
-    public function test_pseudo_states_export(int $status, bool $resettable, bool $active) {
+    public function test_pseudo_states_export(int $status, bool $resettable, bool $active): void {
         $uut = new \tool_dataprivacy\data_request();
         $uut->set('status', $status);
         $uut->set('type', api::DATAREQUEST_TYPE_EXPORT);
@@ -116,7 +110,7 @@ class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
      * @param       bool    $resettable
      * @param       bool    $active
      */
-    public function test_pseudo_states_delete(int $status, bool $resettable, bool $active) {
+    public function test_pseudo_states_delete(int $status, bool $resettable, bool $active): void {
         $uut = new \tool_dataprivacy\data_request();
         $uut->set('status', $status);
         $uut->set('type', api::DATAREQUEST_TYPE_DELETE);
@@ -131,7 +125,7 @@ class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
      * @dataProvider        status_state_provider
      * @param       int     $status
      */
-    public function test_can_reset_others($status) {
+    public function test_can_reset_others($status): void {
         $uut = new \tool_dataprivacy\data_request();
         $uut->set('status', $status);
         $uut->set('type', api::DATAREQUEST_TYPE_OTHERS);
@@ -144,7 +138,7 @@ class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
      *
      * @return      array
      */
-    public function non_resettable_provider() : array {
+    public function non_resettable_provider(): array {
         $states = [];
         foreach ($this->status_state_provider() as $thisstatus) {
             if (!$thisstatus['resettable']) {
@@ -161,7 +155,7 @@ class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
      * @dataProvider        non_resettable_provider
      * @param       int     $status
      */
-    public function test_non_resubmit_request($status) {
+    public function test_non_resubmit_request($status): void {
         $uut = new \tool_dataprivacy\data_request();
         $uut->set('status', $status);
 
@@ -174,7 +168,7 @@ class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
     /**
      * Ensure that a rejected request can be reset.
      */
-    public function test_resubmit_request() {
+    public function test_resubmit_request(): void {
         $this->resetAfterTest();
 
         $uut = new \tool_dataprivacy\data_request();
@@ -198,7 +192,7 @@ class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
     /**
      * Ensure that an active request can be reset.
      */
-    public function test_resubmit_active_request() {
+    public function test_resubmit_active_request(): void {
         $this->resetAfterTest();
 
         $uut = new \tool_dataprivacy\data_request();
@@ -227,7 +221,7 @@ class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
      * @param   int     $status
      * @return  data_request
      */
-    public function create_request_for_user_with_status(int $userid, int $type, int $status) : data_request {
+    public function create_request_for_user_with_status(int $userid, int $type, int $status): data_request {
         $request = new data_request(0, (object) [
                 'userid' => $userid,
                 'type' => $type,

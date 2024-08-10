@@ -49,7 +49,7 @@ ob_end_clean();
 // Get the questions (item-names).
 $feedbackstructure = new mod_feedback_structure($feedback, $cm, $course->id);
 if (!$items = $feedbackstructure->get_items(true)) {
-    print_error('no_items_available_yet', 'feedback', $cm->url);
+    throw new \moodle_exception('no_items_available_yet', 'feedback', $cm->url);
 }
 
 $mygroupid = groups_get_activity_group($cm);
@@ -73,7 +73,7 @@ $xlsformats->head1 = $workbook->add_format(['bold' => 1, 'size' => 12]);
 $xlsformats->head2 = $workbook->add_format(['align' => 'left', 'bold' => 1, 'bottum' => 2]);
 $xlsformats->default = $workbook->add_format(['align' => 'left', 'v_align' => 'top']);
 $xlsformats->value_bold = $workbook->add_format(['align' => 'left', 'bold' => 1, 'v_align' => 'top']);
-$xlsformats->procent = $workbook->add_format(['align' => 'left', 'bold' => 1, 'v_align' => 'top', 'num_format' => '#,##0.00%']);
+$xlsformats->procent = $workbook->add_format(['align' => 'left', 'bold' => 1, 'v_align' => 'top', 'num_format' => '#,##0.00']);
 
 // Writing the table header.
 $rowoffset1 = 0;

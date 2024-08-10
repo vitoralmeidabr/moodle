@@ -14,21 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Expired data requests tests.
- *
- * @package    tool_dataprivacy
- * @copyright  2018 Michael Hawkins
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace tool_dataprivacy;
 
-use tool_dataprivacy\api;
-use tool_dataprivacy\category;
-use tool_dataprivacy\data_request;
-use tool_dataprivacy\purpose;
+use data_privacy_testcase;
 
 defined('MOODLE_INTERNAL') || die();
-global $CFG;
 
 require_once('data_privacy_testcase.php');
 
@@ -36,22 +26,24 @@ require_once('data_privacy_testcase.php');
  * Expired data requests tests.
  *
  * @package    tool_dataprivacy
+ * @covers     \tool_dataprivacy\data_request
  * @copyright  2018 Michael Hawkins
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class tool_dataprivacy_expired_data_requests_testcase extends data_privacy_testcase {
+final class expired_data_requests_test extends data_privacy_testcase {
 
     /**
      * Test tearDown.
      */
     public function tearDown(): void {
         \core_privacy\local\request\writer::reset();
+        parent::tearDown();
     }
 
     /**
      * Test finding and deleting expired data requests
      */
-    public function test_data_request_expiry() {
+    public function test_data_request_expiry(): void {
         global $DB;
         $this->resetAfterTest();
         \core_privacy\local\request\writer::setup_real_writer_instance();
@@ -59,7 +51,7 @@ class tool_dataprivacy_expired_data_requests_testcase extends data_privacy_testc
         // Set up test users.
         $this->setAdminUser();
         $studentuser = $this->getDataGenerator()->create_user();
-        $studentusercontext = context_user::instance($studentuser->id);
+        $studentusercontext = \context_user::instance($studentuser->id);
 
         $dpouser = $this->getDataGenerator()->create_user();
         $this->assign_site_dpo($dpouser);
@@ -118,11 +110,57 @@ class tool_dataprivacy_expired_data_requests_testcase extends data_privacy_testc
     }
 
     /**
+     * Test that data requests are not expired when expiration is disabled (set to zero)
+     */
+    public function test_data_request_expiry_never(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        \core_privacy\local\request\writer::setup_real_writer_instance();
+
+        // Disable request expiry.
+        set_config('privacyrequestexpiry', 0, 'tool_dataprivacy');
+
+        // Create and approve data request.
+        $user = $this->getDataGenerator()->create_user();
+        $usercontext = \context_user::instance($user->id);
+
+        $this->setUser($user->id);
+        $datarequest = api::create_data_request($user->id, api::DATAREQUEST_TYPE_EXPORT);
+        $requestid = $datarequest->get('id');
+
+        $this->setAdminUser();
+        api::approve_data_request($requestid);
+
+        ob_start();
+        $this->runAdhocTasks('\tool_dataprivacy\task\process_data_request_task');
+        ob_end_clean();
+
+        // Run expiry deletion - should not affect test export.
+        $expiredrequests = data_request::get_expired_requests();
+        $this->assertEmpty($expiredrequests);
+        data_request::expire($expiredrequests);
+
+        // Confirm approved and exported.
+        $request = new data_request($requestid);
+        $this->assertEquals(api::DATAREQUEST_STATUS_DOWNLOAD_READY, $request->get('status'));
+        $fileconditions = [
+            'userid' => $user->id,
+            'component' => 'tool_dataprivacy',
+            'filearea' => 'export',
+            'itemid' => $requestid,
+            'contextid' => $usercontext->id,
+        ];
+        $this->assertEquals(2, $DB->count_records('files', $fileconditions));
+    }
+
+    /**
      * Test for \tool_dataprivacy\data_request::is_expired()
      * Tests for the expected request status to protect from false positive/negative,
      * then tests is_expired() is returning the expected response.
      */
-    public function test_is_expired() {
+    public function test_is_expired(): void {
         $this->resetAfterTest();
         \core_privacy\local\request\writer::setup_real_writer_instance();
 

@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,23 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Course request related unit tests
- *
- * @package    core
- * @category   phpunit
- * @copyright  2012 Frédéric Massart
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core_course;
+
+use course_request;
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot.'/course/lib.php');
 
-class core_course_courserequest_testcase extends advanced_testcase {
+/**
+ * Course request related unit tests
+ *
+ * @package    core_course
+ * @category   test
+ * @copyright  2012 Frédéric Massart
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class courserequest_test extends \advanced_testcase {
 
-    public function test_create_request() {
+    public function test_create_request(): void {
         global $DB, $USER;
         $this->resetAfterTest(true);
 
@@ -46,7 +48,7 @@ class core_course_courserequest_testcase extends advanced_testcase {
         $cat3 = $this->getDataGenerator()->create_category();
 
         // Basic course request.
-        $data = new stdClass();
+        $data = new \stdClass();
         $data->fullname = 'Həllo World!';
         $data->shortname = 'Hi th€re!';
         $data->summary_editor['text'] = 'Lorem Ipsum ©';
@@ -76,7 +78,7 @@ class core_course_courserequest_testcase extends advanced_testcase {
         $this->assertEquals($cat1->id, $cr->category);
     }
 
-    public function test_approve_request() {
+    public function test_approve_request(): void {
         global $DB;
         $this->resetAfterTest(true);
         $this->preventResetByRollback();
@@ -94,11 +96,11 @@ class core_course_courserequest_testcase extends advanced_testcase {
         $requester = $this->getDataGenerator()->create_user();
         $roleid = create_role('Course requestor role', 'courserequestor', '');
         assign_capability('moodle/course:request', CAP_ALLOW, $roleid,
-            context_system::instance()->id);
-        role_assign($roleid, $requester->id, context_system::instance()->id);
+            \context_system::instance()->id);
+        role_assign($roleid, $requester->id, \context_system::instance()->id);
         accesslib_clear_all_caches_for_unit_testing();
 
-        $data = new stdClass();
+        $data = new \stdClass();
         $data->fullname = 'Həllo World!';
         $data->shortname = 'Hi th€re!';
         $data->summary_editor['text'] = 'Lorem Ipsum ©';
@@ -111,7 +113,7 @@ class core_course_courserequest_testcase extends advanced_testcase {
         $this->setAdminUser();
         $sink = $this->redirectMessages();
         $id = $cr->approve();
-        $this->assertCount(1, $sink->get_messages());
+        $this->assertCount(1, $sink->get_messages_by_component_and_type('core', 'courserequestapproved'));
         $sink->close();
         $course = $DB->get_record('course', array('id' => $id));
         $this->assertEquals($data->fullname, $course->fullname);
@@ -131,13 +133,13 @@ class core_course_courserequest_testcase extends advanced_testcase {
         $this->setAdminUser();
         $sink = $this->redirectMessages();
         $id = $cr->approve();
-        $this->assertCount(1, $sink->get_messages());
+        $this->assertCount(1, $sink->get_messages_by_component_and_type('core', 'courserequestapproved'));
         $sink->close();
         $course = $DB->get_record('course', array('id' => $id));
         $this->assertEquals($data->category, $course->category);
     }
 
-    public function test_reject_request() {
+    public function test_reject_request(): void {
         global $DB;
         $this->resetAfterTest(true);
         $this->preventResetByRollback();
@@ -151,11 +153,11 @@ class core_course_courserequest_testcase extends advanced_testcase {
         $requester = $this->getDataGenerator()->create_user();
         $roleid = create_role('Course requestor role', 'courserequestor', '');
         assign_capability('moodle/course:request', CAP_ALLOW, $roleid,
-            context_system::instance()->id);
-        role_assign($roleid, $requester->id, context_system::instance()->id);
+            \context_system::instance()->id);
+        role_assign($roleid, $requester->id, \context_system::instance()->id);
         accesslib_clear_all_caches_for_unit_testing();
 
-        $data = new stdClass();
+        $data = new \stdClass();
         $data->fullname = 'Həllo World!';
         $data->shortname = 'Hi th€re!';
         $data->summary_editor['text'] = 'Lorem Ipsum ©';

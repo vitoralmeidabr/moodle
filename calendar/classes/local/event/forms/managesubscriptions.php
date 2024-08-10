@@ -44,7 +44,7 @@ class managesubscriptions extends \moodleform {
         $mform = $this->_form;
         $eventtypes = calendar_get_allowed_event_types();
         if (in_array(true, $eventtypes, true) === false) {
-            print_error('nopermissiontoupdatecalendar');
+            throw new \moodle_exception('nopermissiontoupdatecalendar');
         }
 
         // Name.
@@ -106,7 +106,7 @@ class managesubscriptions extends \moodleform {
         $courseid = (!empty($data[$coursekey])) ? $data[$coursekey] : null;
         $eventtypes = calendar_get_allowed_event_types($courseid);
 
-        if (empty($eventtype) || !isset($eventtypes[$eventtype])) {
+        if (empty($eventtype) || !isset($eventtypes[$eventtype]) || $eventtypes[$eventtype] == false) {
             $errors['eventtype'] = get_string('invalideventtype', 'calendar');
         }
 
@@ -138,6 +138,13 @@ class managesubscriptions extends \moodleform {
         } else {
             // Shouldn't happen.
             $errors['url'] = get_string('errorrequiredurlorfile', 'calendar');
+        }
+
+        // Validate course/category event types (ensure appropriate field is also filled in).
+        if ($eventtype === 'course' && empty($data['courseid'])) {
+            $errors['courseid'] = get_string('selectacourse');
+        } else if ($eventtype === 'category' && empty($data['categoryid'])) {
+            $errors['categoryid'] = get_string('required');
         }
 
         return $errors;

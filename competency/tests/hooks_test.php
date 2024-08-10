@@ -14,19 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Hook tests.
- *
- * @package    core_competency
- * @copyright  2016 Frédéric Massart - FMCorz.net
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-use core_competency\course_competency;
-use core_competency\course_module_competency;
-use core_competency\user_competency_course;
+namespace core_competency;
 
 /**
  * Hook tests.
@@ -35,9 +23,9 @@ use core_competency\user_competency_course;
  * @copyright  2016 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_competency_hooks_testcase extends advanced_testcase {
+class hooks_test extends \advanced_testcase {
 
-    public function test_hook_course_deleted() {
+    public function test_hook_course_deleted(): void {
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
         $ccg = $dg->get_plugin_generator('core_competency');
@@ -84,7 +72,7 @@ class core_competency_hooks_testcase extends advanced_testcase {
         $this->assertEquals(2, user_competency_course::count_records(['courseid' => $c2->id, 'userid' => $u1->id]));
     }
 
-    public function test_hook_course_module_deleted() {
+    public function test_hook_course_module_deleted(): void {
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
         $ccg = $dg->get_plugin_generator('core_competency');
@@ -132,7 +120,7 @@ class core_competency_hooks_testcase extends advanced_testcase {
         $this->assertEquals(2, user_competency_course::count_records(['courseid' => $c2->id, 'userid' => $u1->id]));
     }
 
-    public function test_hook_course_reset_competency_ratings() {
+    public function test_hook_course_reset_competency_ratings(): void {
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
         $ccg = $dg->get_plugin_generator('core_competency');
@@ -179,7 +167,7 @@ class core_competency_hooks_testcase extends advanced_testcase {
         $this->assertEquals(2, user_competency_course::count_records(['courseid' => $c2->id, 'userid' => $u1->id]));
     }
 
-    public function test_hook_cohort_deleted() {
+    public function test_hook_cohort_deleted(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
@@ -192,9 +180,9 @@ class core_competency_hooks_testcase extends advanced_testcase {
         $t2 = $corecompgen->create_template();
 
         // Create the template cohorts.
-        core_competency\api::create_template_cohort($t1->get('id'), $c1->id);
-        core_competency\api::create_template_cohort($t1->get('id'), $c2->id);
-        core_competency\api::create_template_cohort($t2->get('id'), $c1->id);
+        api::create_template_cohort($t1->get('id'), $c1->id);
+        api::create_template_cohort($t1->get('id'), $c2->id);
+        api::create_template_cohort($t2->get('id'), $c1->id);
 
         // Check that the association was made.
         $this->assertEquals(2, \core_competency\template_cohort::count_records(array('templateid' => $t1->get('id'))));
@@ -208,7 +196,7 @@ class core_competency_hooks_testcase extends advanced_testcase {
         $this->assertEquals(0, \core_competency\template_cohort::count_records(array('templateid' => $t2->get('id'))));
     }
 
-    public function test_hook_user_deleted() {
+    public function test_hook_user_deleted(): void {
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
         $ccg = $dg->get_plugin_generator('core_competency');

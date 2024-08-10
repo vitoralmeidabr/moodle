@@ -14,18 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Upgrade utility class  tests.
- *
- * @package    core
- * @copyright  2016 Cameron Ball <cameron@cameron1729.xyz>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-// Hack to let tests run on Travis CI.
-defined('CURL_SSLVERSION_TLSv1_2') || define('CURL_SSLVERSION_TLSv1_2', 6);
+namespace core;
 
 /**
  * Upgrade utility class tests.
@@ -34,7 +23,7 @@ defined('CURL_SSLVERSION_TLSv1_2') || define('CURL_SSLVERSION_TLSv1_2', 6);
  * @copyright 2016 Cameron Ball <cameron@cameron1729.xyz>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class upgrade_util_testcase extends advanced_testcase {
+class upgrade_util_test extends \advanced_testcase {
 
     /**
      * The value of PHP_ZTS when thread safety is enabled.
@@ -54,7 +43,7 @@ class upgrade_util_testcase extends advanced_testcase {
      * @param int   $zts      0 or 1 as defined by PHP_ZTS
      * @param bool  $expected expected result
      */
-    public function test_validate_php_curl_tls($curlinfo, $zts, $expected) {
+    public function test_validate_php_curl_tls($curlinfo, $zts, $expected): void {
         $this->assertSame($expected, \core\upgrade\util::validate_php_curl_tls($curlinfo, $zts));
     }
 
@@ -116,7 +105,7 @@ class upgrade_util_testcase extends advanced_testcase {
      * @param string|null $uname uname string (or null if not relevant)
      * @param bool $expected expected result
      */
-    public function test_can_use_tls12($sslversion, $uname, $expected) {
+    public function test_can_use_tls12($sslversion, $uname, $expected): void {
         // Populate curlinfo with whats installed on this php install.
         $curlinfo = curl_version();
 

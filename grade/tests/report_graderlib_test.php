@@ -14,14 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for grade/report/user/lib.php.
- *
- * @package  core_grades
- * @category phpunit
- * @copyright 2012 Andrew Davis
- * @license  http://www.gnu.org/copyleft/gpl.html GNU Public License
- */
+namespace core_grades;
+
+use grade_plugin_return;
+use grade_report_grader;
+use mod_quiz\quiz_settings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,15 +28,21 @@ require_once($CFG->dirroot.'/grade/report/grader/lib.php');
 
 /**
  * Tests grade_report_grader (the grader report)
+ *
+ * @package  core_grades
+ * @covers   \grade_report_grader
+ * @category test
+ * @copyright 2012 Andrew Davis
+ * @license  http://www.gnu.org/copyleft/gpl.html GNU Public License
  */
-class core_grade_report_graderlib_testcase extends advanced_testcase {
+class report_graderlib_test extends \advanced_testcase {
 
     /**
      * Tests grade_report_grader::process_data()
      *
      * process_data() processes submitted grade and feedback data
      */
-    public function test_process_data() {
+    public function test_process_data(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -57,12 +60,12 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
         $forummax = 80;
         $forum1 = $this->getDataGenerator()->create_module('forum', array('assessed' => 1, 'scale' => $forummax, 'course' => $course->id));
         // Switch the stdClass instance for a grade item instance.
-        $forum1 = grade_item::fetch(array('itemtype' => 'mod', 'itemmodule' => 'forum', 'iteminstance' => $forum1->id, 'courseid' => $course->id));
+        $forum1 = \grade_item::fetch(array('itemtype' => 'mod', 'itemmodule' => 'forum', 'iteminstance' => $forum1->id, 'courseid' => $course->id));
 
         $report = $this->create_report($course);
         $testgrade = 60.00;
 
-        $data = new stdClass();
+        $data = new \stdClass();
         $data->id = $course->id;
         $data->report = 'grader';
         $data->timepageload = time();
@@ -74,7 +77,7 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
         $warnings = $report->process_data($data);
         $this->assertEquals(count($warnings), 0);
 
-        $studentgrade = grade_grade::fetch(array('itemid' => $forum1->id, '' => $student->id));
+        $studentgrade = \grade_grade::fetch(array('itemid' => $forum1->id, '' => $student->id));
         $this->assertEquals($studentgrade->finalgrade, $testgrade);
 
         // Grade above max. Should be pulled down to max.
@@ -84,7 +87,7 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
         $warnings = $report->process_data($data);
         $this->assertEquals(count($warnings), 1);
 
-        $studentgrade = grade_grade::fetch(array('itemid' => $forum1->id, '' => $student->id));
+        $studentgrade = \grade_grade::fetch(array('itemid' => $forum1->id, '' => $student->id));
         $this->assertEquals($studentgrade->finalgrade, $forummax);
 
         // Grade below min. Should be pulled up to min.
@@ -94,7 +97,7 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
         $warnings = $report->process_data($data);
         $this->assertEquals(count($warnings), 1);
 
-        $studentgrade = grade_grade::fetch(array('itemid' => $forum1->id, '' => $student->id));
+        $studentgrade = \grade_grade::fetch(array('itemid' => $forum1->id, '' => $student->id));
         $this->assertEquals($studentgrade->finalgrade, 0);
 
         // Test unlimited grades so we can give a student a grade about max.
@@ -105,11 +108,11 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
         $warnings = $report->process_data($data);
         $this->assertEquals(count($warnings), 0);
 
-        $studentgrade = grade_grade::fetch(array('itemid' => $forum1->id, '' => $student->id));
+        $studentgrade = \grade_grade::fetch(array('itemid' => $forum1->id, '' => $student->id));
         $this->assertEquals($studentgrade->finalgrade, $toobig);
     }
 
-    public function test_collapsed_preferences() {
+    public function test_collapsed_preferences(): void {
         $this->resetAfterTest(true);
 
         $emptypreferences = array('aggregatesonly' => array(), 'gradesonly' => array());
@@ -236,7 +239,7 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
      * @covers \grade_report_grader::get_collapsed_preferences
      * @covers \grade_report_grader::filter_collapsed_categories
      */
-    public function test_old_collapsed_preferences() {
+    public function test_old_collapsed_preferences(): void {
         $this->resetAfterTest(true);
 
         $user1 = $this->getDataGenerator()->create_user();
@@ -456,7 +459,7 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
      * Previously, with an ungraded quiz (which results in a grade item with type GRADETYPE_NONE)
      * there was a bug in get_right_rows in some situations.
      */
-    public function test_get_right_rows() {
+    public function test_get_right_rows(): void {
         global $USER, $DB;
         $this->resetAfterTest(true);
 
@@ -476,8 +479,7 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
 
         // Set the grade for the second one to 0 (note, you have to do this after creating it,
         // otherwise it doesn't create an ungraded grade item).
-        $ungradedquiz->instance = $ungradedquiz->id;
-        quiz_set_grade(0, $ungradedquiz);
+        quiz_settings::create($ungradedquiz->id)->get_grade_calculator()->update_quiz_maximum_grade(0);
 
         // Set current user.
         $this->setUser($manager);
@@ -504,7 +506,7 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
 
         // Supposing the user cannot view hidden grades, this shouldn't make any difference (due
         // to a bug, it previously did).
-        $context = context_course::instance($course->id);
+        $context = \context_course::instance($course->id);
         $managerroleid = $DB->get_field('role', 'id', array('shortname' => 'manager'));
         assign_capability('moodle/grade:viewhidden', CAP_PROHIBIT, $managerroleid, $context->id, true);
         $this->assertFalse(has_capability('moodle/grade:viewhidden', $context));
@@ -517,19 +519,60 @@ class core_grade_report_graderlib_testcase extends advanced_testcase {
         $this->assertCount(3, $result);
     }
 
+    /**
+     * Test loading report users when per page preferences are set
+     */
+    public function test_load_users_paging_preference(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+
+        // The report users will default to sorting by their lastname.
+        $user1 = $this->getDataGenerator()->create_and_enrol($course, 'student', ['lastname' => 'Apple']);
+        $user2 = $this->getDataGenerator()->create_and_enrol($course, 'student', ['lastname' => 'Banana']);
+        $user3 = $this->getDataGenerator()->create_and_enrol($course, 'student', ['lastname' => 'Carrot']);
+
+        // Set to empty string.
+        $report = $this->create_report($course);
+        $report->set_pref('studentsperpage', '');
+        $users = $report->load_users();
+        $this->assertEquals([$user1->id, $user2->id, $user3->id], array_column($users, 'id'));
+
+        // Set to valid value.
+        $report = $this->create_report($course);
+        $report->set_pref('studentsperpage', 2);
+        $users = $report->load_users();
+        $this->assertEquals([$user1->id, $user2->id], array_column($users, 'id'));
+    }
+
+    /**
+     * Test getting students per page report preference
+     */
+    public function test_get_students_per_page(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+
+        $report = $this->create_report($course);
+        $report->set_pref('studentsperpage', 10);
+
+        $perpage = $report->get_students_per_page();
+        $this->assertSame(10, $perpage);
+    }
+
     private function create_grade_category($course) {
         static $cnt = 0;
         $cnt++;
-        $grade_category = new grade_category(array('courseid' => $course->id, 'fullname' => 'Cat '.$cnt), false);
-        $grade_category->apply_default_settings();
-        $grade_category->apply_forced_settings();
-        $grade_category->insert();
-        return $grade_category;
+        $gradecat = new \grade_category(array('courseid' => $course->id, 'fullname' => 'Cat '.$cnt), false);
+        $gradecat->apply_default_settings();
+        $gradecat->apply_forced_settings();
+        $gradecat->insert();
+        return $gradecat;
     }
 
     private function create_report($course) {
 
-        $coursecontext = context_course::instance($course->id);
+        $coursecontext = \context_course::instance($course->id);
         $gpr = new grade_plugin_return(array('type' => 'report', 'plugin'=>'grader', 'courseid' => $course->id));
         $report = new grade_report_grader($course->id, $gpr, $coursecontext);
 

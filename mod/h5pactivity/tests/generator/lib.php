@@ -55,6 +55,8 @@ class mod_h5pactivity_generator extends testing_module_generator {
         // Fill in optional values if not specified.
         if (!isset($record->packagefilepath)) {
             $record->packagefilepath = $CFG->dirroot.'/h5p/tests/fixtures/h5ptest.zip';
+        } else if (strpos($record->packagefilepath, $CFG->dirroot) !== 0) {
+            $record->packagefilepath = "{$CFG->dirroot}/{$record->packagefilepath}";
         }
         if (!isset($record->grade)) {
             $record->grade = 100;
@@ -74,7 +76,11 @@ class mod_h5pactivity_generator extends testing_module_generator {
         if (!isset($record->reviewmode)) {
             $record->reviewmode = manager::REVIEWCOMPLETION;
         }
-
+        $globaluser = $USER;
+        if (!empty($record->username)) {
+            $user = core_user::get_user_by_username($record->username);
+            $this->set_user($user);
+        }
         // The 'packagefile' value corresponds to the draft file area ID. If not specified, create from packagefilepath.
         if (empty($record->packagefile)) {
             if (!isloggedin() || isguestuser()) {
@@ -83,21 +89,28 @@ class mod_h5pactivity_generator extends testing_module_generator {
             if (!file_exists($record->packagefilepath)) {
                 throw new coding_exception("File {$record->packagefilepath} does not exist");
             }
+
             $usercontext = context_user::instance($USER->id);
 
             // Pick a random context id for specified user.
             $record->packagefile = file_get_unused_draft_itemid();
 
             // Add actual file there.
-            $filerecord = ['component' => 'user', 'filearea' => 'draft',
-                    'contextid' => $usercontext->id, 'itemid' => $record->packagefile,
-                    'filename' => basename($record->packagefilepath), 'filepath' => '/'];
+            $filerecord = [
+                'component' => 'user',
+                'filearea' => 'draft',
+                'contextid' => $usercontext->id,
+                'itemid' => $record->packagefile,
+                'filename' => basename($record->packagefilepath),
+                'filepath' => '/',
+                'userid' => $USER->id,
+            ];
             $fs = get_file_storage();
             $fs->create_file_from_pathname($filerecord, $record->packagefilepath);
         }
-
-        // Do work to actually add the instance.
-        return parent::create_instance($record, (array)$options);
+        $instance = parent::create_instance($record, (array)$options);
+        $this->set_user($globaluser);
+        return $instance;
     }
 
     /**
@@ -189,6 +202,7 @@ class mod_h5pactivity_generator extends testing_module_generator {
      * @param array $data the attempts data array
      */
     public function create_attempt(array $data): void {
+        global $DB;
 
         if (!isset($data['h5pactivityid'])) {
             throw new coding_exception('Must specify h5pactivityid when creating a H5P attempt.');
@@ -216,6 +230,12 @@ class mod_h5pactivity_generator extends testing_module_generator {
         }
 
         $this->insert_statement($data, $this->$method($data));
+
+        // If the activity has tracking enabled, try to recalculate grades.
+        $activity = $DB->get_record('h5pactivity', ['id' => $data['h5pactivityid']]);
+        if ($activity->enabletracking) {
+            h5pactivity_update_grades($activity, $data['userid']);
+        }
     }
 
     /**

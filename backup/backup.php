@@ -81,7 +81,7 @@ require_login($course, false, $cm);
 switch ($type) {
     case backup::TYPE_1COURSE :
         require_capability('moodle/backup:backupcourse', $coursecontext);
-        $heading = get_string('backupcourse', 'backup', $course->shortname);
+        $heading = $course->fullname;
         $PAGE->set_secondary_active_tab('coursereuse');
         break;
     case backup::TYPE_1SECTION :
@@ -102,7 +102,7 @@ switch ($type) {
         $heading = get_string('backupactivity', 'backup', $cm->name);
         break;
     default :
-        print_error('unknownbackuptype');
+        throw new \moodle_exception('unknownbackuptype');
 }
 
 $PAGE->set_title($heading);
@@ -112,6 +112,8 @@ $PAGE->activityheader->disable();
 if (empty($cancel)) {
     // Do not print the header if user cancelled the process, as we are going to redirect the user.
     echo $OUTPUT->header();
+    \backup_helper::print_coursereuse_selector('backup');
+    echo html_writer::tag('div', get_string('backupinfo'), ['class' => 'pb-3']);
 }
 
 // Only let user perform a backup if we aren't in async mode, or if we are
@@ -201,7 +203,6 @@ if (!async_helper::is_async_pending($id, 'course', 'backup')) {
 
             // Create adhoc task for backup.
             $asynctask = new \core\task\asynchronous_backup_task();
-            $asynctask->set_blocking(false);
             $asynctask->set_custom_data(array('backupid' => $backupid));
             $asynctask->set_userid($USER->id);
             \core\task\manager::queue_adhoc_task($asynctask);

@@ -14,16 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Metadata registry tests.
- *
- * @package    tool_dataprivacy
- * @copyright  2018 Adrian Greeve <adriangreeve.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-global $CFG;
+namespace tool_dataprivacy;
 
 /**
  * Metadata registry tests.
@@ -32,7 +23,7 @@ global $CFG;
  * @copyright  2018 Adrian Greeve <adriangreeve.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class tool_dataprivacy_metadata_registry_testcase extends advanced_testcase {
+class metadata_registry_test extends \advanced_testcase {
 
     /**
      * Fetch the meta data and return it in a form that we can easily unit test.
@@ -56,7 +47,7 @@ class tool_dataprivacy_metadata_registry_testcase extends advanced_testcase {
     /**
      * Test that we can fetch metadata about users for the whole system and that it matches the system count.
      */
-    public function test_get_registry_metadata_count() {
+    public function test_get_registry_metadata_count(): void {
         $data = $this->get_meta_data();
 
         $plugintypes = \core_component::get_plugin_types();
@@ -80,7 +71,7 @@ class tool_dataprivacy_metadata_registry_testcase extends advanced_testcase {
     /**
      * Check that the expected null provider information is returned.
      */
-    public function test_get_registry_metadata_null_provider_details() {
+    public function test_get_registry_metadata_null_provider_details(): void {
         $data = $this->get_meta_data();
 
         // Check details of core privacy (a null privder) are correct.
@@ -92,7 +83,7 @@ class tool_dataprivacy_metadata_registry_testcase extends advanced_testcase {
     /**
      * Check that the expected privacy provider information is returned.
      */
-    public function test_get_registry_metadata_provider_details() {
+    public function test_get_registry_metadata_provider_details(): void {
         $data = $this->get_meta_data();
 
         // Check details of core rating (a normal provider) are correct.

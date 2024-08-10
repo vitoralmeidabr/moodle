@@ -24,6 +24,7 @@
  */
 
 require_once('../config.php');
+require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -52,11 +53,10 @@ if ($returnurl != '') {
 
 // Setup the page.
 $title = get_string('copycoursetitle', 'backup', $course->shortname);
-$heading = get_string('copycourseheading', 'backup');
 $PAGE->set_url($url);
 $PAGE->set_pagelayout('admin');
 $PAGE->set_title($title);
-$PAGE->set_heading($heading);
+$PAGE->set_heading($course->fullname);
 $PAGE->set_secondary_active_tab('coursereuse');
 
 // Get data ready for mform.
@@ -71,8 +71,8 @@ if ($mform->is_cancelled()) {
 } else if ($mdata = $mform->get_data()) {
 
     // Process the form and create the copy task.
-    $backupcopy = new \core_backup\copy\copy($mdata);
-    $backupcopy->create_copy();
+    $copydata = \copy_helper::process_formdata($mdata);
+    \copy_helper::create_copy($copydata);
 
     if (!empty($mdata->submitdisplay)) {
         // Redirect to the copy progress overview.
@@ -90,7 +90,8 @@ if ($mform->is_cancelled()) {
 
     // Build the page output.
     echo $OUTPUT->header();
-    echo $OUTPUT->heading($title);
+    \backup_helper::print_coursereuse_selector('copycourse');
+
     $mform->display();
     echo $OUTPUT->footer();
 }

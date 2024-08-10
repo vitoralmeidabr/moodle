@@ -27,7 +27,6 @@ Feature: In a course administration page, navigate through report page, test for
     And I press "Save changes"
     And I am on "Course 1" course homepage
     When I navigate to "Reports" in current page administration
-    And I select "Course completion" from the "Report type" singleselect
-    Then "Report" "field" should exist
-    And the "Report" select box should contain "Course completion"
-    And the field "Report" matches value "Course completion"
+    And I click on "Course completion" "link" in the "region-main" "region"
+    Then "Report" "field" should exist in the "tertiary-navigation" "region"
+    And I should see "Course completion" in the "tertiary-navigation" "region"

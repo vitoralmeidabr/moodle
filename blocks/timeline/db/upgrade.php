@@ -37,58 +37,23 @@
  */
 
 /**
+ *
  * Upgrade the timeline block
  * @param int $oldversion
  * @param object $block
  */
 function xmldb_block_timeline_upgrade($oldversion, $block) {
-    global $CFG, $DB;
-
-    // Automatically generated Moodle v3.6.0 release upgrade line.
+    // Automatically generated Moodle v4.1.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v3.7.0 release upgrade line.
+    // Automatically generated Moodle v4.2.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v3.8.0 release upgrade line.
+    // Automatically generated Moodle v4.3.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v3.9.0 release upgrade line.
+    // Automatically generated Moodle v4.4.0 release upgrade line.
     // Put any upgrade step following this.
-
-    if ($oldversion < 2022030200) {
-        $context = context_system::instance();
-
-        // Begin looking for any and all customised /my pages.
-        $pageselect = 'name = :name and private = :private';
-        $pageparams['name'] = '__default';
-        $pageparams['private'] = 1;
-        $pages = $DB->get_recordset_select('my_pages', $pageselect, $pageparams);
-        foreach ($pages as $subpage) {
-            $blockinstance = $DB->get_record('block_instances', ['blockname' => 'timeline',
-                'pagetypepattern' => 'my-index', 'subpagepattern' => $subpage->id]);
-
-            if (!$blockinstance) {
-                // Insert the timeline into the default index page.
-                $blockinstance = new stdClass;
-                $blockinstance->blockname = 'timeline';
-                $blockinstance->parentcontextid = $context->id;
-                $blockinstance->showinsubcontexts = false;
-                $blockinstance->pagetypepattern = 'my-index';
-                $blockinstance->subpagepattern = $subpage->id;
-                $blockinstance->defaultregion = 'content';
-                $blockinstance->defaultweight = -10;
-                $blockinstance->timecreated = time();
-                $blockinstance->timemodified = time();
-                $DB->insert_record('block_instances', $blockinstance);
-            } else if ($blockinstance->defaultregion !== 'content') {
-                $blockinstance->defaultregion = 'content';
-                $DB->update_record('block_instances', $blockinstance);
-            }
-        }
-        $pages->close();
-        upgrade_block_savepoint(true, 2022030200, 'timeline', false);
-    }
 
     return true;
 }

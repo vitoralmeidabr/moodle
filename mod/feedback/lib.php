@@ -489,14 +489,14 @@ function feedback_print_recent_mod_activity($activity, $courseid, $detail, $modn
 
     echo '<table border="0" cellpadding="3" cellspacing="0" class="forum-recent">';
 
-    echo "<tr><td class=\"userpicture\" valign=\"top\">";
+    echo "<tr><td class=\"userpicture align-top\">";
     echo $OUTPUT->user_picture($activity->user, array('courseid'=>$courseid));
     echo "</td><td>";
 
     if ($detail) {
         $modname = $modnames[$activity->type];
         echo '<div class="title">';
-        echo $OUTPUT->image_icon('icon', $modname, $activity->type);
+        echo $OUTPUT->image_icon('monologo', $modname, $activity->type);
         echo "<a href=\"$CFG->wwwroot/mod/feedback/view.php?id={$activity->cmid}\">{$activity->name}</a>";
         echo '</div>';
     }
@@ -625,12 +625,12 @@ function feedback_get_post_actions() {
 function feedback_reset_userdata($data) {
     global $CFG, $DB;
 
-    $resetfeedbacks = array();
-    $dropfeedbacks = array();
-    $status = array();
+    $resetfeedbacks = [];
+    $dropfeedbacks = [];
+    $status = [];
     $componentstr = get_string('modulenameplural', 'feedback');
 
-    //get the relevant entries from $data
+    // Get the relevant entries from $data.
     foreach ($data as $key => $value) {
         switch(true) {
             case substr($key, 0, strlen(FEEDBACK_RESETFORM_RESET)) == FEEDBACK_RESETFORM_RESET:
@@ -652,21 +652,27 @@ function feedback_reset_userdata($data) {
         }
     }
 
-    //reset the selected feedbacks
+    // Reset the selected feedbacks.
     foreach ($resetfeedbacks as $id) {
-        $feedback = $DB->get_record('feedback', array('id'=>$id));
+        $feedback = $DB->get_record('feedback', ['id' => $id]);
         feedback_delete_all_completeds($feedback);
-        $status[] = array('component'=>$componentstr.':'.$feedback->name,
-                        'item'=>get_string('resetting_data', 'feedback'),
-                        'error'=>false);
+        $status[] = [
+            'component' => $componentstr.':'.$feedback->name,
+            'item' => get_string('resetting_data', 'feedback'),
+            'error' => false,
+        ];
     }
 
     // Updating dates - shift may be negative too.
     if ($data->timeshift) {
         // Any changes to the list of dates that needs to be rolled should be same during course restore and course reset.
         // See MDL-9367.
-        $shifterror = !shift_course_mod_dates('feedback', array('timeopen', 'timeclose'), $data->timeshift, $data->courseid);
-        $status[] = array('component' => $componentstr, 'item' => get_string('datechanged'), 'error' => $shifterror);
+        $shifterror = !shift_course_mod_dates('feedback', ['timeopen', 'timeclose'], $data->timeshift, $data->courseid);
+        $status[] = [
+            'component' => $componentstr,
+            'item' => get_string('date'),
+            'error' => $shifterror,
+        ];
     }
 
     return $status;
@@ -677,7 +683,7 @@ function feedback_reset_userdata($data) {
  *
  * @global object
  * @uses FEEDBACK_RESETFORM_RESET
- * @param object $mform form passed by reference
+ * @param MoodleQuickForm $mform form passed by reference
  */
 function feedback_reset_course_form_definition(&$mform) {
     global $COURSE, $DB;
@@ -688,7 +694,7 @@ function feedback_reset_course_form_definition(&$mform) {
         return;
     }
 
-    $mform->addElement('static', 'hint', get_string('resetting_data', 'feedback'));
+    $mform->addElement('static', 'hint', get_string('resetting_delete', 'feedback'));
     foreach ($feedbacks as $feedback) {
         $mform->addElement('checkbox', FEEDBACK_RESETFORM_RESET.$feedback->id, $feedback->name);
     }
@@ -731,7 +737,7 @@ function feedback_reset_course_form($course) {
     global $DB, $OUTPUT;
 
     echo get_string('resetting_feedbacks', 'feedback'); echo ':<br />';
-    if (!$feedbacks = $DB->get_records('feedback', array('course'=>$course->id), 'name')) {
+    if (!$feedbacks = $DB->get_records('feedback', ['course' => $course->id], 'name')) {
         return;
     }
 
@@ -918,23 +924,6 @@ function feedback_delete_course_module($id) {
  */
 function feedback_get_context() {
     throw new coding_exception('feedback_get_context() can not be used anymore.');
-}
-
-/**
- *  returns true if the current role is faked by switching role feature
- *
- * @global object
- * @return boolean
- */
-function feedback_check_is_switchrole() {
-    global $USER;
-    if (isset($USER->switchrole) AND
-            is_array($USER->switchrole) AND
-            count($USER->switchrole) > 0) {
-
-        return true;
-    }
-    return false;
 }
 
 /**
@@ -1181,7 +1170,7 @@ function feedback_get_receivemail_users($cmid, $groups = false) {
  * @param int $courseid
  * @param string $name the name of template shown in the templatelist
  * @param int $ispublic 0:privat 1:public
- * @return int the new templateid
+ * @return stdClass the new template
  */
 function feedback_create_template($courseid, $name, $ispublic = 0) {
     global $DB;
@@ -1455,16 +1444,28 @@ function feedback_get_template_list($course, $onlyownorpublic = '') {
  *
  * @param string $typ
  * @return feedback_item_base the instance of itemclass
+ * @throws moodle_exception For invalid type
  */
 function feedback_get_item_class($typ) {
     global $CFG;
 
+    require_once($CFG->dirroot.'/mod/feedback/item/feedback_item_class.php');
+
     //get the class of item-typ
-    $itemclass = 'feedback_item_'.$typ;
+    $typeclean = clean_param($typ, PARAM_ALPHA);
+
+    $itemclass = "feedback_item_{$typeclean}";
+    $itemclasspath = "{$CFG->dirroot}/mod/feedback/item/{$typeclean}/lib.php";
+
     //get the instance of item-class
-    if (!class_exists($itemclass)) {
-        require_once($CFG->dirroot.'/mod/feedback/item/'.$typ.'/lib.php');
+    if (!class_exists($itemclass) && file_exists($itemclasspath)) {
+        require_once($itemclasspath);
     }
+
+    if (!class_exists($itemclass)) {
+        throw new moodle_exception('typemissing', 'feedback');
+    }
+
     return new $itemclass();
 }
 
@@ -1878,10 +1879,10 @@ function feedback_set_tmp_values($feedbackcompleted) {
  *
  * @global object
  * @param object $feedbackcompletedtmp the temporary completed
- * @param object $feedbackcompleted the target completed
+ * @param stdClass|null $feedbackcompleted the target completed
  * @return int the id of the completed
  */
-function feedback_save_tmp_values($feedbackcompletedtmp, $feedbackcompleted) {
+function feedback_save_tmp_values($feedbackcompletedtmp, ?stdClass $feedbackcompleted = null) {
     global $DB;
 
     $tmpcplid = $feedbackcompletedtmp->id;
@@ -1966,7 +1967,7 @@ function feedback_delete_completedtmp() {
  *
  * @global object
  * @param int $feedbackid
- * @return mixed false if there already is a pagebreak on last position or the id of the pagebreak-item
+ * @return int|false false if there already is a pagebreak on last position or the id of the pagebreak-item
  */
 function feedback_create_pagebreak($feedbackid) {
     global $DB;
@@ -2785,7 +2786,7 @@ function feedback_send_email_html($info, $course, $cm) {
 function feedback_encode_target_url($url) {
     if (strpos($url, '?')) {
         list($part1, $part2) = explode('?', $url, 2); //maximal 2 parts
-        return $part1 . '?' . htmlentities($part2);
+        return $part1 . '?' . htmlentities($part2, ENT_COMPAT);
     } else {
         return $url;
     }
@@ -2800,20 +2801,13 @@ function feedback_encode_target_url($url) {
 function feedback_extend_settings_navigation(settings_navigation $settings, navigation_node $feedbacknode) {
     $hassecondary = $settings->get_page()->has_secondary_navigation();
     if (!$context = context_module::instance($settings->get_page()->cm->id, IGNORE_MISSING)) {
-        print_error('badcontext');
+        throw new \moodle_exception('badcontext');
     }
 
     if (has_capability('mod/feedback:edititems', $context)) {
-        $questionnode = $feedbacknode->add(get_string('questions', 'feedback'), null,
+        $feedbacknode->add(get_string('questions', 'feedback'),
+            new moodle_url('/mod/feedback/edit.php', ['id' => $settings->get_page()->cm->id]),
             navigation_node::TYPE_CUSTOM, null, 'questionnode');
-        $questionnode->add(get_string('edit_items', 'feedback'),
-            new moodle_url('/mod/feedback/edit.php', ['id' => $settings->get_page()->cm->id]));
-
-        $questionnode->add(get_string('export_questions', 'feedback'),
-            new moodle_url('/mod/feedback/export.php', ['id' => $settings->get_page()->cm->id, 'action' => 'exportfile']));
-
-        $questionnode->add(get_string('import_questions', 'feedback'),
-            new moodle_url('/mod/feedback/import.php', ['id' => $settings->get_page()->cm->id]));
 
         $feedbacknode->add(get_string('templates', 'feedback'),
             new moodle_url('/mod/feedback/manage_templates.php', ['id' => $settings->get_page()->cm->id, 'mode' => 'manage']),

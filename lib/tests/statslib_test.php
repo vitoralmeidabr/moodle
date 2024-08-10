@@ -14,27 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Tests for ../statslib.php
- *
- * @package    core_stats
- * @category   phpunit
- * @copyright  2012 Tyler Bannister
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core;
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->libdir . '/adminlib.php');
 require_once($CFG->libdir . '/statslib.php');
-require_once($CFG->libdir . '/cronlib.php');
 require_once(__DIR__ . '/fixtures/stats_events.php');
 
 /**
  * Test functions that affect daily stats.
+ *
+ * @package    core
+ * @category   test
+ * @copyright  2012 Tyler Bannister
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_statslib_testcase extends advanced_testcase {
+class statslib_test extends \advanced_testcase {
     /** The day to use for testing **/
     const DAY = 1272672000;
 
@@ -58,14 +55,14 @@ class core_statslib_testcase extends advanced_testcase {
 
         // Settings to force statistic to run during testing.
         $this->setTimezone(self::TIMEZONE);
-        core_date::set_default_server_timezone();
+        \core_date::set_default_server_timezone();
         $CFG->statsfirstrun           = 'all';
         $CFG->statslastdaily          = 0;
 
         // Figure out the broken day start so I can figure out when to the start time should be.
         $time   = time();
         // This nonsense needs to be rewritten.
-        $date = new DateTime('now', core_date::get_server_timezone_object());
+        $date = new \DateTime('now', \core_date::get_server_timezone_object());
         $offset = $date->getOffset();
         $stime  = $time + $offset;
         $stime  = intval($stime / (60*60*24)) * 60*60*24;
@@ -279,7 +276,7 @@ class core_statslib_testcase extends advanced_testcase {
     /**
      * Test progress output when debug is on.
      */
-    public function test_statslib_progress_debug() {
+    public function test_statslib_progress_debug(): void {
         set_debugging(DEBUG_ALL);
         $this->expectOutputString('1:0 ');
         stats_progress('init');
@@ -290,7 +287,7 @@ class core_statslib_testcase extends advanced_testcase {
     /**
      * Test progress output when debug is off.
      */
-    public function test_statslib_progress_no_debug() {
+    public function test_statslib_progress_no_debug(): void {
         set_debugging(DEBUG_NONE);
         $this->expectOutputString('.');
         stats_progress('init');
@@ -301,13 +298,13 @@ class core_statslib_testcase extends advanced_testcase {
     /**
      * Test the function that gets the start date from the config.
      */
-    public function test_statslib_get_start_from() {
+    public function test_statslib_get_start_from(): void {
         global $CFG, $DB;
 
         $dataset = $this->load_xml_data_file(__DIR__."/fixtures/statslib-test01.xml");
         $DB->delete_records('log');
 
-        $date = new DateTime('now', core_date::get_server_timezone_object());
+        $date = new \DateTime('now', \core_date::get_server_timezone_object());
         $day = self::DAY - $date->getOffset();
 
         $CFG->statsfirstrun = 'all';
@@ -347,22 +344,22 @@ class core_statslib_testcase extends advanced_testcase {
         $this->assertEquals($firstoldtime, stats_get_start_from('daily'));
 
         $time = time() - 5;
-        \core_tests\event\create_executed::create(array('context' => context_system::instance()))->trigger();
+        \core_tests\event\create_executed::create(array('context' => \context_system::instance()))->trigger();
         $DB->set_field('logstore_standard_log', 'timecreated', $time++, [
                 'eventname' => '\\core_tests\\event\\create_executed',
             ]);
 
-        \core_tests\event\read_executed::create(array('context' => context_system::instance()))->trigger();
+        \core_tests\event\read_executed::create(array('context' => \context_system::instance()))->trigger();
         $DB->set_field('logstore_standard_log', 'timecreated', $time++, [
                 'eventname' => '\\core_tests\\event\\read_executed',
             ]);
 
-        \core_tests\event\update_executed::create(array('context' => context_system::instance()))->trigger();
+        \core_tests\event\update_executed::create(array('context' => \context_system::instance()))->trigger();
         $DB->set_field('logstore_standard_log', 'timecreated', $time++, [
                 'eventname' => '\\core_tests\\event\\update_executed',
             ]);
 
-        \core_tests\event\delete_executed::create(array('context' => context_system::instance()))->trigger();
+        \core_tests\event\delete_executed::create(array('context' => \context_system::instance()))->trigger();
         $DB->set_field('logstore_standard_log', 'timecreated', $time++, [
                 'eventname' => '\\core_tests\\event\\delete_executed',
             ]);
@@ -390,7 +387,7 @@ class core_statslib_testcase extends advanced_testcase {
      * NOTE: I don't think this is the way this function should work.
      *       This test documents the current functionality.
      */
-    public function test_statslib_get_base_daily() {
+    public function test_statslib_get_base_daily(): void {
         global $CFG;
 
         for ($x = 0; $x < 13; $x += 1) {
@@ -408,7 +405,7 @@ class core_statslib_testcase extends advanced_testcase {
     /**
      * Test the function that gets the start of the next day.
      */
-    public function test_statslib_get_next_day_start() {
+    public function test_statslib_get_next_day_start(): void {
         $this->setTimezone(0);
         $this->assertEquals(1272758400, stats_get_next_day_start(1272686410));
 
@@ -438,7 +435,7 @@ class core_statslib_testcase extends advanced_testcase {
      * @param string $timestart Date and time for which the first day of the week will be obtained
      * @param string $expected Expected date of the first day of the week
      */
-    public function test_statslib_get_base_weekly($startwday, $timezone, $timestart, $expected) {
+    public function test_statslib_get_base_weekly($startwday, $timezone, $timestart, $expected): void {
         $this->setTimezone($timezone);
         $time = strtotime($timestart);
         $expected = strtotime($expected);
@@ -456,7 +453,7 @@ class core_statslib_testcase extends advanced_testcase {
      * Note: The function results depend on installed modules.  The hard coded lists are the
      *       defaults for a new Moodle 2.3 install.
      */
-    public function test_statslib_get_action_names() {
+    public function test_statslib_get_action_names(): void {
         $basepostactions = array (
             0 => 'add',
             1 => 'delete',
@@ -539,7 +536,7 @@ class core_statslib_testcase extends advanced_testcase {
     /**
      * Test the temporary table creation and deletion.
      */
-    public function test_statslib_temp_table_create_and_drop() {
+    public function test_statslib_temp_table_create_and_drop(): void {
         global $DB;
 
         foreach ($this->tables as $table) {
@@ -564,14 +561,14 @@ class core_statslib_testcase extends advanced_testcase {
      *
      * @depends test_statslib_temp_table_create_and_drop
      */
-    public function test_statslib_temp_table_fill() {
+    public function test_statslib_temp_table_fill(): void {
         global $CFG, $DB, $USER;
 
         $dataset = $this->load_xml_data_file(__DIR__."/fixtures/statslib-test09.xml");
         $this->prepare_db($dataset, array('log'));
 
         // This nonsense needs to be rewritten.
-        $date = new DateTime('now', core_date::get_server_timezone_object());
+        $date = new \DateTime('now', \core_date::get_server_timezone_object());
         $start = self::DAY - $date->getOffset();
         $end   = $start + (24 * 3600);
 
@@ -588,8 +585,8 @@ class core_statslib_testcase extends advanced_testcase {
         stats_temp_table_create();
 
         $course = $this->getDataGenerator()->create_course();
-        $context = context_course::instance($course->id);
-        $fcontext = context_course::instance(SITEID);
+        $context = \context_course::instance($course->id);
+        $fcontext = \context_course::instance(SITEID);
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
 
@@ -603,8 +600,8 @@ class core_statslib_testcase extends advanced_testcase {
 
         \core_tests\event\create_executed::create(array('context' => $fcontext, 'courseid' => SITEID))->trigger();
         \core_tests\event\read_executed::create(array('context' => $context, 'courseid' => $course->id))->trigger();
-        \core_tests\event\update_executed::create(array('context' => context_system::instance()))->trigger();
-        \core_tests\event\delete_executed::create(array('context' => context_system::instance()))->trigger();
+        \core_tests\event\update_executed::create(array('context' => \context_system::instance()))->trigger();
+        \core_tests\event\delete_executed::create(array('context' => \context_system::instance()))->trigger();
 
         \core\event\user_loggedin::create(
             array(
@@ -618,8 +615,8 @@ class core_statslib_testcase extends advanced_testcase {
 
         $this->assertEquals(5, $DB->count_records('logstore_standard_log'));
 
-        \core_tests\event\delete_executed::create(array('context' => context_system::instance()))->trigger();
-        \core_tests\event\delete_executed::create(array('context' => context_system::instance()))->trigger();
+        \core_tests\event\delete_executed::create(array('context' => \context_system::instance()))->trigger();
+        \core_tests\event\delete_executed::create(array('context' => \context_system::instance()))->trigger();
 
         // Fake the origin of events.
         $DB->set_field('logstore_standard_log', 'origin', 'web', array());
@@ -666,7 +663,7 @@ class core_statslib_testcase extends advanced_testcase {
      *
      * @depends test_statslib_temp_table_create_and_drop
      */
-    public function test_statslib_temp_table_setup() {
+    public function test_statslib_temp_table_setup(): void {
         global $DB;
 
         $DB->delete_records('log');
@@ -684,7 +681,7 @@ class core_statslib_testcase extends advanced_testcase {
      *
      * @depends test_statslib_temp_table_create_and_drop
      */
-    public function test_statslib_temp_table_clean() {
+    public function test_statslib_temp_table_clean(): void {
         global $DB;
 
         $rows = array(
@@ -724,7 +721,7 @@ class core_statslib_testcase extends advanced_testcase {
      * @depends test_statslib_temp_table_fill
      * @dataProvider daily_log_provider
      */
-    public function test_statslib_cron_daily($xmlfile) {
+    public function test_statslib_cron_daily($xmlfile): void {
         global $CFG, $DB;
 
         $dataset = $this->load_xml_data_file(__DIR__."/fixtures/{$xmlfile}");
@@ -746,7 +743,7 @@ class core_statslib_testcase extends advanced_testcase {
      * @depends test_statslib_get_base_daily
      * @depends test_statslib_get_next_day_start
      */
-    public function test_statslib_cron_daily_no_default_profile_id() {
+    public function test_statslib_cron_daily_no_default_profile_id(): void {
         global $CFG, $DB;
         $CFG->defaultfrontpageroleid = 0;
 

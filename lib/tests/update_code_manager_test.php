@@ -14,14 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Provides core_update_code_manager_testcase class.
- *
- * @package     core_plugin
- * @category    test
- * @copyright   2015 David Mudrak <david@moodle.com>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,12 +24,14 @@ require_once(__DIR__.'/fixtures/testable_update_code_manager.php');
 /**
  * Tests for \core\update\code_manager features.
  *
+ * @package   core_plugin
+ * @category  test
  * @copyright 2015 David Mudrak <david@moodle.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_update_code_manager_testcase extends advanced_testcase {
+class update_code_manager_test extends \advanced_testcase {
 
-    public function test_get_remote_plugin_zip() {
+    public function test_get_remote_plugin_zip(): void {
         $codeman = new \core\update\testable_code_manager();
 
         $this->assertFalse($codeman->get_remote_plugin_zip('ftp://not.support.ed/', 'doesnotmatter'));
@@ -54,7 +49,7 @@ class core_update_code_manager_testcase extends advanced_testcase {
         $this->assertEquals(3, $codeman->downloadscounter);
     }
 
-    public function test_get_remote_plugin_zip_corrupted_cache() {
+    public function test_get_remote_plugin_zip_corrupted_cache(): void {
 
         $temproot = make_request_directory();
         $codeman = new \core\update\testable_code_manager(null, $temproot);
@@ -69,7 +64,7 @@ class core_update_code_manager_testcase extends advanced_testcase {
         $this->assertEquals(file_get_contents($returned), 'http://valid/');
     }
 
-    public function test_unzip_plugin_file() {
+    public function test_unzip_plugin_file(): void {
         $codeman = new \core\update\testable_code_manager();
         $zipfilepath = __DIR__.'/fixtures/update_validator/zips/invalidroot.zip';
         $targetdir = make_request_directory();
@@ -111,16 +106,16 @@ class core_update_code_manager_testcase extends advanced_testcase {
         $files = $codeman->unzip_plugin_file($zipfilepath, $targetdir, 'bar');
     }
 
-    public function test_unzip_plugin_file_multidir() {
+    public function test_unzip_plugin_file_multidir(): void {
         $codeman = new \core\update\testable_code_manager();
         $zipfilepath = __DIR__.'/fixtures/update_validator/zips/multidir.zip';
         $targetdir = make_request_directory();
         // Attempting to rename the root folder if there are multiple ones should lead to exception.
-        $this->expectException(moodle_exception::class);
+        $this->expectException(\moodle_exception::class);
         $files = $codeman->unzip_plugin_file($zipfilepath, $targetdir, 'foo');
     }
 
-    public function test_get_plugin_zip_root_dir() {
+    public function test_get_plugin_zip_root_dir(): void {
         $codeman = new \core\update\testable_code_manager();
 
         $zipfilepath = __DIR__.'/fixtures/update_validator/zips/invalidroot.zip';
@@ -133,7 +128,7 @@ class core_update_code_manager_testcase extends advanced_testcase {
         $this->assertSame(false, $codeman->get_plugin_zip_root_dir($zipfilepath));
     }
 
-    public function test_list_plugin_folder_files() {
+    public function test_list_plugin_folder_files(): void {
         $fixtures = __DIR__.'/fixtures/update_validator/plugindir';
         $codeman = new \core\update\testable_code_manager();
         $files = $codeman->list_plugin_folder_files($fixtures.'/foobar');
@@ -144,7 +139,7 @@ class core_update_code_manager_testcase extends advanced_testcase {
         $this->assertEquals($files['foobar/lang/en/local_foobar.php'], $fixtures.'/foobar/lang/en/local_foobar.php');
     }
 
-    public function test_zip_plugin_folder() {
+    public function test_zip_plugin_folder(): void {
         $fixtures = __DIR__.'/fixtures/update_validator/plugindir';
         $storage = make_request_directory();
         $codeman = new \core\update\testable_code_manager();
@@ -163,7 +158,7 @@ class core_update_code_manager_testcase extends advanced_testcase {
         }
     }
 
-    public function test_archiving_plugin_version() {
+    public function test_archiving_plugin_version(): void {
         $fixtures = __DIR__.'/fixtures/update_validator/plugindir';
         $codeman = new \core\update\testable_code_manager();
 

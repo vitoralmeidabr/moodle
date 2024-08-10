@@ -14,39 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for core\notification.
- *
- * @package   core
- * @category  phpunit
- * @copyright 2016 Andrew Nicols <andrew@nicols.co.uk>
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
+namespace core;
 
 /**
  * Unit tests for core\notification.
  *
  * @package   core
- * @category  phpunit
- * @category  phpunit
+ * @category  test
  * @copyright 2016 Andrew Nicols <andrew@nicols.co.uk>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_notification_testcase extends advanced_testcase {
+class notification_test extends \advanced_testcase {
 
     /**
      * Setup required for all notification tests.
      *
      * This includes emptying the list of notifications on the session, resetting any session which exists, and setting
-     * up a new moodle_page object.
+     * up a new \moodle_page object.
      */
     public function setUp(): void {
         global $PAGE, $SESSION;
 
         parent::setUp();
-        $PAGE = new moodle_page();
+        $PAGE = new \moodle_page();
         \core\session\manager::init_empty_session();
         $SESSION->notifications = [];
     }
@@ -55,7 +45,7 @@ class core_notification_testcase extends advanced_testcase {
      * Tear down required for all notification tests.
      *
      * This includes emptying the list of notifications on the session, resetting any session which exists, and setting
-     * up a new moodle_page object.
+     * up a new \moodle_page object.
      */
     public function tearDown(): void {
         global $PAGE, $SESSION;
@@ -69,7 +59,7 @@ class core_notification_testcase extends advanced_testcase {
     /**
      * Test the way in which notifications are added to the session in different stages of the page load.
      */
-    public function test_add_during_output_stages() {
+    public function test_add_during_output_stages(): void {
         global $PAGE, $SESSION;
 
         \core\notification::add('Example before header', \core\notification::INFO);
@@ -101,7 +91,7 @@ class core_notification_testcase extends advanced_testcase {
     /**
      * Test fetching of notifications from the session.
      */
-    public function test_fetch() {
+    public function test_fetch(): void {
         // Initially there won't be any notifications.
         $this->assertCount(0, \core\notification::fetch());
 
@@ -114,7 +104,7 @@ class core_notification_testcase extends advanced_testcase {
     /**
      * Test that session notifications are persisted across session clears.
      */
-    public function test_session_persistance() {
+    public function test_session_persistance(): void {
         global $PAGE, $SESSION;
 
         // Initially there won't be any notifications.

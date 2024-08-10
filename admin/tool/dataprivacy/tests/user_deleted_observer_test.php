@@ -14,18 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Tests for the event observer.
- *
- * @package    tool_dataprivacy
- * @copyright  2018 Mihail Geshoski <mihail@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace tool_dataprivacy;
 
-defined('MOODLE_INTERNAL') || die();
-
-use \tool_dataprivacy\event\user_deleted_observer;
-use \tool_dataprivacy\api;
+use tool_dataprivacy\event\user_deleted_observer;
 
 /**
  * Event observer test.
@@ -34,12 +25,12 @@ use \tool_dataprivacy\api;
  * @copyright  2018 Mihail Geshoski <mihail@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class tool_dataprivacy_user_deleted_observer_testcase extends advanced_testcase {
+class user_deleted_observer_test extends \advanced_testcase {
 
     /**
      * Ensure that a delete data request is created upon user deletion.
      */
-    public function test_create_delete_data_request() {
+    public function test_create_delete_data_request(): void {
         $this->resetAfterTest();
 
         // Enable automatic creation of delete data requests.
@@ -59,7 +50,7 @@ class tool_dataprivacy_user_deleted_observer_testcase extends advanced_testcase 
      * Ensure that a delete data request is not created upon user deletion if automatic creation of
      * delete data requests is disabled.
      */
-    public function test_create_delete_data_request_automatic_creation_disabled() {
+    public function test_create_delete_data_request_automatic_creation_disabled(): void {
         $this->resetAfterTest();
 
         // Disable automatic creation of delete data requests.
@@ -79,7 +70,7 @@ class tool_dataprivacy_user_deleted_observer_testcase extends advanced_testcase 
      * Ensure that a delete data request is being created upon user deletion
      * if an ongoing export data request (or any other except delete data request) for that user already exists.
      */
-    public function test_create_delete_data_request_export_data_request_preexists() {
+    public function test_create_delete_data_request_export_data_request_preexists(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
@@ -105,7 +96,7 @@ class tool_dataprivacy_user_deleted_observer_testcase extends advanced_testcase 
      * Ensure that a delete data request is not being created upon user deletion
      * if an ongoing delete data request for that user already exists.
      */
-    public function test_create_delete_data_request_ongoing_delete_data_request_preexists() {
+    public function test_create_delete_data_request_ongoing_delete_data_request_preexists(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
@@ -130,7 +121,7 @@ class tool_dataprivacy_user_deleted_observer_testcase extends advanced_testcase 
      * Ensure that a delete data request is being created upon user deletion
      * if a finished delete data request (excluding complete) for that user already exists.
      */
-    public function test_create_delete_data_request_canceled_delete_data_request_preexists() {
+    public function test_create_delete_data_request_canceled_delete_data_request_preexists(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
@@ -160,7 +151,7 @@ class tool_dataprivacy_user_deleted_observer_testcase extends advanced_testcase 
      * Ensure that a delete data request is being created upon user deletion
      * if a completed delete data request for that user already exists.
      */
-    public function test_create_delete_data_request_completed_delete_data_request_preexists() {
+    public function test_create_delete_data_request_completed_delete_data_request_preexists(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 

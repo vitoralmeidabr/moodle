@@ -14,21 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * The capability manager tests.
- *
- * @package    mod_forum
- * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace mod_forum;
+
+use mod_forum\local\container;
+use mod_forum\local\entities\forum;
+use mod_forum\local\managers\capability as capability_manager;
+use mod_forum_tests_generator_trait;
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/generator_trait.php');
-
-use mod_forum\local\entities\forum;
-use mod_forum\local\managers\capability as capability_manager;
 
 /**
  * The capability manager tests.
@@ -38,7 +34,7 @@ use mod_forum\local\managers\capability as capability_manager;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @coversDefaultClass \mod_forum\local\managers\capability
  */
-class mod_forum_managers_capability_testcase extends advanced_testcase {
+class managers_capability_test extends \advanced_testcase {
     // Make use of the test generator trait.
     use mod_forum_tests_generator_trait;
 
@@ -83,6 +79,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      */
     public function setUp(): void {
         global $DB;
+        parent::setUp();
 
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
@@ -90,19 +87,19 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
 
         $datagenerator = $this->getDataGenerator();
         $this->user = $datagenerator->create_user();
-        $this->managerfactory = \mod_forum\local\container::get_manager_factory();
-        $this->entityfactory = \mod_forum\local\container::get_entity_factory();
+        $this->managerfactory = container::get_manager_factory();
+        $this->entityfactory = container::get_entity_factory();
         $this->course = $datagenerator->create_course();
         $this->forumrecord = $datagenerator->create_module('forum', ['course' => $this->course->id]);
         $this->coursemodule = get_coursemodule_from_instance('forum', $this->forumrecord->id);
-        $this->context = context_module::instance($this->coursemodule->id);
+        $this->context = \context_module::instance($this->coursemodule->id);
         $this->roleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
 
         $datagenerator->enrol_user($this->user->id, $this->course->id, 'teacher');
         [$discussion, $post] = $this->helper_post_to_forum($this->forumrecord, $this->user, ['timemodified' => time() - 100]);
-        $this->discussion = $this->entityfactory->get_discussion_from_stdclass($discussion);
+        $this->discussion = $this->entityfactory->get_discussion_from_stdClass($discussion);
         $this->discussionrecord = $discussion;
-        $this->post = $this->entityfactory->get_post_from_stdclass(
+        $this->post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $post, ['timecreated' => time() - 100])
         );
         $this->postrecord = $post;
@@ -117,6 +114,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();
+        parent::tearDown();
     }
 
     /**
@@ -127,7 +125,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      */
     private function create_forum(array $forumproperties = []) {
         $forumrecord = (object) array_merge((array) $this->forumrecord, $forumproperties);
-        return $this->entityfactory->get_forum_from_stdclass(
+        return $this->entityfactory->get_forum_from_stdClass(
             $forumrecord,
             $this->context,
             $this->coursemodule,
@@ -162,7 +160,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_subscribe_to_forum
      */
-    public function test_can_subscribe_to_forum() {
+    public function test_can_subscribe_to_forum(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -178,7 +176,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_create_discussions
      */
-    public function test_can_create_discussions() {
+    public function test_can_create_discussions(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -218,8 +216,8 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
             ['course' => $this->course->id, 'groupmode' => SEPARATEGROUPS]
         );
         $coursemodule = get_coursemodule_from_instance('forum', $forumrecord->id);
-        $context = context_module::instance($coursemodule->id);
-        $forum = $this->entityfactory->get_forum_from_stdclass(
+        $context = \context_module::instance($coursemodule->id);
+        $forum = $this->entityfactory->get_forum_from_stdClass(
             $forumrecord,
             $context,
             $coursemodule,
@@ -259,7 +257,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_access_all_groups
      */
-    public function test_can_access_all_groups() {
+    public function test_can_access_all_groups(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -278,7 +276,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_access_group
      */
-    public function test_can_access_group() {
+    public function test_can_access_group(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -302,7 +300,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_view_discussions
      */
-    public function test_can_view_discussions() {
+    public function test_can_view_discussions(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -321,7 +319,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_move_discussions
      */
-    public function test_can_move_discussions() {
+    public function test_can_move_discussions(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -345,7 +343,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_pin_discussions
      */
-    public function test_can_pin_discussions() {
+    public function test_can_pin_discussions(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -364,7 +362,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_split_discussions
      */
-    public function test_can_split_discussions() {
+    public function test_can_split_discussions(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -388,7 +386,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_export_discussions
      */
-    public function test_can_export_discussions() {
+    public function test_can_export_discussions(): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -413,7 +411,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_manually_control_post_read_status
      */
-    public function test_can_manually_control_post_read_status() {
+    public function test_can_manually_control_post_read_status(): void {
         global $CFG, $DB;
         $this->resetAfterTest();
 
@@ -421,7 +419,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $forum = $this->create_forum();
         $user = $this->user;
         $capabilitymanager = $this->managerfactory->get_capability_manager($forum);
-        $cache = cache::make('mod_forum', 'forum_is_tracked');
+        $cache = \cache::make('mod_forum', 'forum_is_tracked');
 
         $user->trackforums = true;
         $prefid = $DB->insert_record('forum_track_prefs', ['userid' => $user->id, 'forumid' => $forum->get_id()]);
@@ -442,7 +440,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::must_post_before_viewing_discussion
      */
-    public function test_must_post_before_viewing_discussion() {
+    public function test_must_post_before_viewing_discussion(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -473,7 +471,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_subscribe_to_discussion
      */
-    public function test_can_subscribe_to_discussion() {
+    public function test_can_subscribe_to_discussion(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -490,7 +488,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_move_discussion
      */
-    public function test_can_move_discussion() {
+    public function test_can_move_discussion(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -515,7 +513,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_pin_discussion
      */
-    public function test_can_pin_discussion() {
+    public function test_can_pin_discussion(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -535,7 +533,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_post_in_discussion
      */
-    public function test_can_post_in_discussion() {
+    public function test_can_post_in_discussion(): void {
         $this->resetAfterTest();
 
         $discussion = $this->discussion;
@@ -577,8 +575,8 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
             ['course' => $this->course->id, 'groupmode' => SEPARATEGROUPS]
         );
         $coursemodule = get_coursemodule_from_instance('forum', $forumrecord->id);
-        $context = context_module::instance($coursemodule->id);
-        $forum = $this->entityfactory->get_forum_from_stdclass(
+        $context = \context_module::instance($coursemodule->id);
+        $forum = $this->entityfactory->get_forum_from_stdClass(
             $forumrecord,
             $context,
             $coursemodule,
@@ -593,7 +591,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $this->assertFalse($capabilitymanager->can_post_in_discussion($user, $discussion));
 
         $group = $this->getDataGenerator()->create_group(['courseid' => $this->course->id]);
-        $discussion = $this->entityfactory->get_discussion_from_stdclass(
+        $discussion = $this->entityfactory->get_discussion_from_stdClass(
             (object) array_merge((array) $this->discussionrecord, ['groupid' => $group->id])
         );
 
@@ -609,8 +607,8 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
             ['course' => $this->course->id, 'groupmode' => VISIBLEGROUPS]
         );
         $coursemodule = get_coursemodule_from_instance('forum', $forumrecord->id);
-        $context = context_module::instance($coursemodule->id);
-        $forum = $this->entityfactory->get_forum_from_stdclass(
+        $context = \context_module::instance($coursemodule->id);
+        $forum = $this->entityfactory->get_forum_from_stdClass(
             $forumrecord,
             $context,
             $coursemodule,
@@ -625,7 +623,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $this->assertTrue($capabilitymanager->can_post_in_discussion($user, $discussion));
 
         $group = $this->getDataGenerator()->create_group(['courseid' => $this->course->id]);
-        $discussion = $this->entityfactory->get_discussion_from_stdclass(
+        $discussion = $this->entityfactory->get_discussion_from_stdClass(
             (object) array_merge((array) $this->discussionrecord, ['groupid' => $group->id])
         );
 
@@ -653,7 +651,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_edit_post
      */
-    public function test_can_edit_post() {
+    public function test_can_edit_post(): void {
         global $CFG;
 
         $this->resetAfterTest();
@@ -672,6 +670,18 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $CFG->maxeditingtime = 200;
         $this->assertTrue($capabilitymanager->can_edit_post($user, $discussion, $post));
 
+        // Can not edit within editing time if $post->mailnow > 0 (selected).
+        $CFG->maxeditingtime = 200;
+        $post = $this->entityfactory->get_post_from_stdClass(
+            (object) array_merge((array) $this->postrecord, ['mailnow' => 1])
+        );
+        $this->assertFalse($capabilitymanager->can_edit_post($user, $discussion, $post));
+
+        // Back to normal - mailnow not selected.
+        $post = $this->entityfactory->get_post_from_stdClass(
+            (object) array_merge((array) $this->postrecord, ['mailnow' => 0])
+        );
+
         // 10 seconds to edit. No longer in editing time.
         $CFG->maxeditingtime = 10;
         $this->assertFalse($capabilitymanager->can_edit_post($user, $discussion, $post));
@@ -689,7 +699,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $forum = $this->create_forum(['type' => 'news']);
         $capabilitymanager = $this->managerfactory->get_capability_manager($forum);
         // Discussion hasn't started yet.
-        $discussion = $this->entityfactory->get_discussion_from_stdclass(
+        $discussion = $this->entityfactory->get_discussion_from_stdClass(
             (object) array_merge((array) $this->discussionrecord, ['timestart' => time() + 100])
         );
 
@@ -698,7 +708,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         // Back to a discussion that has started.
         $discussion = $this->discussion;
         // Post is a reply.
-        $post = $this->entityfactory->get_post_from_stdclass(
+        $post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $this->postrecord, ['parent' => 5])
         );
 
@@ -714,7 +724,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
 
         // Create a new post that definitely isn't the first post of the discussion.
         // Only the author, and a user with editanypost can edit it.
-        $post = $this->entityfactory->get_post_from_stdclass(
+        $post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $this->postrecord, ['id' => $post->get_id() + 100])
         );
         $this->give_capability('mod/forum:editanypost');
@@ -723,7 +733,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
 
         $post = $this->post;
         // Set the first post of the discussion to our post.
-        $discussion = $this->entityfactory->get_discussion_from_stdclass(
+        $discussion = $this->entityfactory->get_discussion_from_stdClass(
             (object) array_merge((array) $this->discussionrecord, ['firstpost' => $post->get_id()])
         );
 
@@ -739,7 +749,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_delete_post
      */
-    public function test_can_delete_post() {
+    public function test_can_delete_post(): void {
         global $CFG;
 
         $this->resetAfterTest();
@@ -752,7 +762,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $capabilitymanager = $this->managerfactory->get_capability_manager($forum);
 
         // Set the first post of the discussion to our post.
-        $discussion = $this->entityfactory->get_discussion_from_stdclass(
+        $discussion = $this->entityfactory->get_discussion_from_stdClass(
             (object) array_merge((array) $this->discussionrecord, ['firstpost' => $post->get_id()])
         );
 
@@ -760,7 +770,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $this->assertFalse($capabilitymanager->can_delete_post($user, $discussion, $post));
 
         // Set the first post of the discussion to something else.
-        $discussion = $this->entityfactory->get_discussion_from_stdclass(
+        $discussion = $this->entityfactory->get_discussion_from_stdClass(
             (object) array_merge((array) $this->discussionrecord, ['firstpost' => $post->get_id() - 1])
         );
 
@@ -773,8 +783,19 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         // 200 second editing time to make sure our post is still within it.
         $CFG->maxeditingtime = 200;
 
+        // Can not delete within editing time if $post->mailnow > 0 (selected).
+        $post = $this->entityfactory->get_post_from_stdClass(
+            (object) array_merge((array) $this->postrecord, ['mailnow' => 1])
+        );
+        $this->assertFalse($capabilitymanager->can_delete_post($user, $discussion, $post));
+
+        // Back to normal - mailnow not selected.
+        $post = $this->entityfactory->get_post_from_stdClass(
+            (object) array_merge((array) $this->postrecord, ['mailnow' => 0])
+        );
+
         // Make the post owned by someone else.
-        $post = $this->entityfactory->get_post_from_stdclass(
+        $post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $this->postrecord, ['userid' => $user->id - 1])
         );
 
@@ -805,7 +826,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_split_post
      */
-    public function test_can_split_post() {
+    public function test_can_split_post(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -815,7 +836,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $capabilitymanager = $this->managerfactory->get_capability_manager($forum);
 
         // Make the post a reply.
-        $post = $this->entityfactory->get_post_from_stdclass(
+        $post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $this->postrecord, ['parent' => 5])
         );
 
@@ -826,7 +847,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $this->assertTrue($capabilitymanager->can_split_post($user, $discussion, $post));
 
         // Make the post have no parent.
-        $post = $this->entityfactory->get_post_from_stdclass(
+        $post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $this->postrecord, ['parent' => 0])
         );
 
@@ -835,7 +856,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $forum = $this->create_forum(['type' => 'single']);
         $capabilitymanager = $this->managerfactory->get_capability_manager($forum);
         // Make the post a reply.
-        $post = $this->entityfactory->get_post_from_stdclass(
+        $post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $this->postrecord, ['parent' => 5])
         );
 
@@ -843,7 +864,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $this->assertFalse($capabilitymanager->can_split_post($user, $discussion, $post));
 
         // Make the post a private reply.
-        $post = $this->entityfactory->get_post_from_stdclass(
+        $post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $this->postrecord, ['parent' => 5, 'privatereplyto' => $user->id])
         );
 
@@ -856,7 +877,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_reply_to_post
      */
-    public function test_can_reply_to_post() {
+    public function test_can_reply_to_post(): void {
         $this->resetAfterTest();
 
         $discussion = $this->discussion;
@@ -899,8 +920,8 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
             ['course' => $this->course->id, 'groupmode' => SEPARATEGROUPS]
         );
         $coursemodule = get_coursemodule_from_instance('forum', $forumrecord->id);
-        $context = context_module::instance($coursemodule->id);
-        $forum = $this->entityfactory->get_forum_from_stdclass(
+        $context = \context_module::instance($coursemodule->id);
+        $forum = $this->entityfactory->get_forum_from_stdClass(
             $forumrecord,
             $context,
             $coursemodule,
@@ -915,7 +936,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $this->assertFalse($capabilitymanager->can_reply_to_post($user, $discussion, $post));
 
         $group = $this->getDataGenerator()->create_group(['courseid' => $this->course->id]);
-        $discussion = $this->entityfactory->get_discussion_from_stdclass(
+        $discussion = $this->entityfactory->get_discussion_from_stdClass(
             (object) array_merge((array) $this->discussionrecord, ['groupid' => $group->id])
         );
 
@@ -931,8 +952,8 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
             ['course' => $this->course->id, 'groupmode' => VISIBLEGROUPS]
         );
         $coursemodule = get_coursemodule_from_instance('forum', $forumrecord->id);
-        $context = context_module::instance($coursemodule->id);
-        $forum = $this->entityfactory->get_forum_from_stdclass(
+        $context = \context_module::instance($coursemodule->id);
+        $forum = $this->entityfactory->get_forum_from_stdClass(
             $forumrecord,
             $context,
             $coursemodule,
@@ -947,7 +968,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $this->assertTrue($capabilitymanager->can_reply_to_post($user, $discussion, $post));
 
         $group = $this->getDataGenerator()->create_group(['courseid' => $this->course->id]);
-        $discussion = $this->entityfactory->get_discussion_from_stdclass(
+        $discussion = $this->entityfactory->get_discussion_from_stdClass(
             (object) array_merge((array) $this->discussionrecord, ['groupid' => $group->id])
         );
 
@@ -958,7 +979,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $this->assertTrue($capabilitymanager->can_reply_to_post($user, $discussion, $post));
 
         // Make the post a private reply.
-        $post = $this->entityfactory->get_post_from_stdclass(
+        $post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $this->postrecord, ['parent' => 5, 'privatereplyto' => $user->id])
         );
 
@@ -969,7 +990,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
     /**
      * Test for \mod_forum\local\managers\capability::can_reply_to_post() involving Q & A forums.
      */
-    public function test_can_reply_to_post_in_qanda_forum() {
+    public function test_can_reply_to_post_in_qanda_forum(): void {
         global $CFG;
 
         $this->resetAfterTest();
@@ -997,7 +1018,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $now = time();
         $options = ['parent' => $this->post->get_id(), 'created' => $now - 100];
         $student1post = $this->helper_post_to_discussion($this->forumrecord, $this->discussionrecord, $student1, $options);
-        $student1postentity = $this->entityfactory->get_post_from_stdclass($student1post);
+        $student1postentity = $this->entityfactory->get_post_from_stdClass($student1post);
 
         // Confirm Student 2 cannot reply student 1's answer yet.
         $this->assertFalse($capabilitymanager->can_reply_to_post($student2, $this->discussion, $student1postentity));
@@ -1017,7 +1038,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_reply_privately_to_post
      */
-    public function test_can_reply_privately_to_post() {
+    public function test_can_reply_privately_to_post(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -1035,7 +1056,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $this->assertTrue($capabilitymanager->can_reply_privately_to_post($this->user, $post));
 
         // Make the post a private reply.
-        $post = $this->entityfactory->get_post_from_stdclass(
+        $post = $this->entityfactory->get_post_from_stdClass(
             (object) array_merge((array) $this->postrecord, ['parent' => 5, 'privatereplyto' => $user->id])
         );
 
@@ -1048,7 +1069,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_view_post
      */
-    public function test_can_view_post() {
+    public function test_can_view_post(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -1060,8 +1081,9 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $discussion = $this->discussion;
         $post = $this->post;
 
-        $privatepost = $this->entityfactory->get_post_from_stdclass(
-            (object) array_merge((array) $this->postrecord, ['parent' => $post->get_id(), 'privatereplyto' => $otheruser->id])
+        $postproperties = ['parent' => $post->get_id(), 'userid' => $otheruser->id, 'privatereplyto' => $otheruser->id];
+        $privatepost = $this->entityfactory->get_post_from_stdClass(
+            (object) array_merge((array) $this->postrecord, $postproperties)
         );
 
         $this->prevent_capability('mod/forum:readprivatereplies');
@@ -1073,7 +1095,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_view_post_shell
      */
-    public function test_can_view_post_shell() {
+    public function test_can_view_post_shell(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -1084,23 +1106,41 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
 
         $discussion = $this->discussion;
         $post = $this->post;
-        $privatepost = $this->entityfactory->get_post_from_stdclass(
-            (object) array_merge((array) $this->postrecord, ['parent' => $post->get_id(), 'privatereplyto' => $otheruser->id])
-        );
-        $privateposttome = $this->entityfactory->get_post_from_stdclass(
-            (object) array_merge((array) $this->postrecord, ['parent' => $post->get_id(), 'privatereplyto' => $user->id])
+
+        $postproperties = ['parent' => $post->get_id(), 'userid' => $user->id, 'privatereplyto' => $user->id];
+        $privatepostfrommetome = $this->entityfactory->get_post_from_stdClass(
+            (object) array_merge((array) $this->postrecord, $postproperties)
         );
 
-        // Can always view public replies, and those to me.
+        $postproperties = ['parent' => $post->get_id(), 'userid' => $user->id, 'privatereplyto' => $otheruser->id];
+        $privatepostfrommetoother = $this->entityfactory->get_post_from_stdClass(
+            (object) array_merge((array) $this->postrecord, $postproperties)
+        );
+
+        $postproperties = ['parent' => $post->get_id(), 'userid' => $otheruser->id, 'privatereplyto' => $user->id];
+        $privatepostfromothertome = $this->entityfactory->get_post_from_stdClass(
+            (object) array_merge((array) $this->postrecord, $postproperties)
+        );
+
+        $postproperties = ['parent' => $post->get_id(), 'userid' => $otheruser->id, 'privatereplyto' => $otheruser->id];
+        $privatepostfromothertoother = $this->entityfactory->get_post_from_stdClass(
+            (object) array_merge((array) $this->postrecord, $postproperties)
+        );
+
+        // Can always view public replies, and private replies by me or to me.
         $this->prevent_capability('mod/forum:readprivatereplies');
         $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $post));
-        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privateposttome));
-        $this->assertFalse($capabilitymanager->can_view_post_shell($this->user, $privatepost));
+        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privatepostfrommetome));
+        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privatepostfrommetoother));
+        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privatepostfromothertome));
+        $this->assertFalse($capabilitymanager->can_view_post_shell($this->user, $privatepostfromothertoother));
 
         $this->give_capability('mod/forum:readprivatereplies');
         $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $post));
-        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privateposttome));
-        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privatepost));
+        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privatepostfrommetome));
+        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privatepostfrommetoother));
+        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privatepostfromothertome));
+        $this->assertTrue($capabilitymanager->can_view_post_shell($this->user, $privatepostfromothertoother));
     }
 
     /**
@@ -1108,7 +1148,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_export_post
      */
-    public function test_can_export_post() {
+    public function test_can_export_post(): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -1146,7 +1186,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_view_participants
      */
-    public function test_can_view_participants() {
+    public function test_can_view_participants(): void {
         $this->resetAfterTest();
 
         $discussion = $this->discussion;
@@ -1187,7 +1227,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_view_hidden_posts
      */
-    public function test_can_view_hidden_posts() {
+    public function test_can_view_hidden_posts(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -1206,7 +1246,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_manage_forum
      */
-    public function test_can_manage_forum() {
+    public function test_can_manage_forum(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -1225,14 +1265,14 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_manage_tags
      */
-    public function test_can_manage_tags() {
+    public function test_can_manage_tags(): void {
         global $DB;
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
         $user = $this->user;
         $capabilitymanager = $this->managerfactory->get_capability_manager($forum);
-        $context = context_system::instance();
+        $context = \context_system::instance();
         $roleid = $DB->get_field('role', 'id', ['shortname' => 'user'], MUST_EXIST);
 
         assign_capability('moodle/tag:manage', CAP_PREVENT, $roleid, $context->id, true);
@@ -1247,7 +1287,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
      *
      * @covers ::can_view_any_private_reply
      */
-    public function test_can_view_any_private_reply() {
+    public function test_can_view_any_private_reply(): void {
         $this->resetAfterTest();
 
         $forum = $this->create_forum();
@@ -1263,7 +1303,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
     /**
      * Test delete a post with ratings.
      */
-    public function test_validate_delete_post_with_ratings() {
+    public function test_validate_delete_post_with_ratings(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -1275,7 +1315,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         self::getDataGenerator()->enrol_user($user->id, $course->id, $role->id);
 
         // Add a discussion.
-        $record = new stdClass();
+        $record = new \stdClass();
         $record->course = $course->id;
         $record->userid = $user->id;
         $record->forum = $forum->id;
@@ -1287,7 +1327,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $post->totalscore = 80;
         $DB->update_record('forum_posts', $post);
 
-        $vaultfactory = mod_forum\local\container::get_vault_factory();
+        $vaultfactory = container::get_vault_factory();
         $forumvault = $vaultfactory->get_forum_vault();
         $discussionvault = $vaultfactory->get_discussion_vault();
         $postvault = $vaultfactory->get_post_vault();
@@ -1305,7 +1345,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
     /**
      * Test delete a post with replies.
      */
-    public function test_validate_delete_post_with_replies() {
+    public function test_validate_delete_post_with_replies(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -1317,7 +1357,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         self::getDataGenerator()->enrol_user($user->id, $course->id, $role->id);
 
         // Add a discussion.
-        $record = new stdClass();
+        $record = new \stdClass();
         $record->course = $course->id;
         $record->userid = $user->id;
         $record->forum = $forum->id;
@@ -1326,7 +1366,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
 
         $parentpost = $DB->get_record('forum_posts', array('discussion' => $discussion->id));
         // Add a post.
-        $record = new stdClass();
+        $record = new \stdClass();
         $record->course = $course->id;
         $record->userid = $user->id;
         $record->forum = $forum->id;
@@ -1334,7 +1374,7 @@ class mod_forum_managers_capability_testcase extends advanced_testcase {
         $record->parent = $parentpost->id;
         $this->getDataGenerator()->get_plugin_generator('mod_forum')->create_post($record);
 
-        $vaultfactory = mod_forum\local\container::get_vault_factory();
+        $vaultfactory = container::get_vault_factory();
         $forumvault = $vaultfactory->get_forum_vault();
         $discussionvault = $vaultfactory->get_discussion_vault();
         $postvault = $vaultfactory->get_post_vault();

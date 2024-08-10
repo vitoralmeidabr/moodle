@@ -163,7 +163,16 @@ abstract class behat_generator_base {
      *
      * @return array entity name => information about how to generate.
      */
-    protected abstract function get_creatable_entities(): array;
+    abstract protected function get_creatable_entities(): array;
+
+    /**
+     * Get the list of available generators for this class.
+     *
+     * @return array
+     */
+    final public function get_available_generators(): array {
+        return $this->get_creatable_entities();
+    }
 
     /**
      * Do the work to generate an entity.
@@ -270,6 +279,17 @@ abstract class behat_generator_base {
                         ' data generator is not implemented');
             }
         }
+
+        // Notify that the all the elements have been generated.
+        if (method_exists($this->componentdatagenerator, 'finish_generate_' . $generatortype)) {
+            // Using the component's own data generator if it exists.
+            $this->componentdatagenerator->{'finish_generate_' . $generatortype}();
+
+        } else if (method_exists($this->datagenerator, 'finish_generate_' . $generatortype)) {
+            // Use a method on the core data geneator, if there is one.
+            $this->datagenerator->{'finish_generate_' . $generatortype}();
+
+        }
     }
 
     /**
@@ -311,6 +331,36 @@ abstract class behat_generator_base {
         global $DB;
 
         if (!$id = $DB->get_field('user', 'id', array('username' => $username))) {
+            throw new Exception('The specified user with username "' . $username . '" does not exist');
+        }
+        return $id;
+    }
+
+    /**
+     * Gets the user id from it's username.
+     * @throws Exception
+     * @param string $username
+     * @return int
+     */
+    protected function get_userfrom_id(string $username) {
+        global $DB;
+
+        if (!$id = $DB->get_field('user', 'id', ['username' => $username])) {
+            throw new Exception('The specified user with username "' . $username . '" does not exist');
+        }
+        return $id;
+    }
+
+    /**
+     * Gets the user id from it's username.
+     * @throws Exception
+     * @param string $username
+     * @return int
+     */
+    protected function get_userto_id(string $username) {
+        global $DB;
+
+        if (!$id = $DB->get_field('user', 'id', ['username' => $username])) {
             throw new Exception('The specified user with username "' . $username . '" does not exist');
         }
         return $id;

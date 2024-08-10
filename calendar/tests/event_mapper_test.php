@@ -22,10 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/calendar/lib.php');
+namespace core_calendar;
 
 use core_calendar\local\event\mappers\event_mapper;
 use core_calendar\local\event\value_objects\action;
@@ -38,17 +35,23 @@ use core_calendar\local\event\entities\event_interface;
 use core_calendar\local\event\entities\action_event_interface;
 use core_calendar\local\event\proxies\proxy_interface;
 
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/calendar/lib.php');
+
 /**
- * Event mapper testcase.
+ * Event mapper test.
  *
+ * @package    core_calendar
  * @copyright 2017 Cameron Ball <cameron@cameron1729.xyz>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_calendar_event_mapper_testcase extends advanced_testcase {
+class event_mapper_test extends \advanced_testcase {
     /**
      * Test legacy event -> event.
      */
-    public function test_from_legacy_event_to_event() {
+    public function test_from_legacy_event_to_event(): void {
         $this->resetAfterTest(true);
         $this->setAdminUser();
         $legacyevent = $this->create_event();
@@ -62,7 +65,7 @@ class core_calendar_event_mapper_testcase extends advanced_testcase {
     /**
      * Test event -> legacy event.
      */
-    public function test_from_event_to_legacy_event() {
+    public function test_from_event_to_legacy_event(): void {
         $this->resetAfterTest(true);
         $this->setAdminUser();
         $legacyevent = $this->create_event(['modname' => 'assign', 'instance' => 1]);
@@ -71,13 +74,13 @@ class core_calendar_event_mapper_testcase extends advanced_testcase {
             new event_mapper_test_event_factory()
         );
         $legacyevent = $mapper->from_event_to_legacy_event($event);
-        $this->assertInstanceOf(calendar_event::class, $legacyevent);
+        $this->assertInstanceOf(\calendar_event::class, $legacyevent);
     }
 
     /**
      * Test event -> stdClass.
      */
-    public function test_from_event_to_stdclass() {
+    public function test_from_event_to_stdclass(): void {
         $this->resetAfterTest(true);
         $this->setAdminUser();
         $legacyevent = $this->create_event(['modname' => 'assign', 'instance' => 1]);
@@ -85,7 +88,7 @@ class core_calendar_event_mapper_testcase extends advanced_testcase {
         $mapper = new event_mapper(
             new event_mapper_test_event_factory()
         );
-        $obj = $mapper->from_event_to_stdclass($event);
+        $obj = $mapper->from_event_to_stdClass($event);
         $this->assertInstanceOf(\stdClass::class, $obj);
         $this->assertEquals($obj->name, $event->get_name());
         $this->assertEquals($obj->eventtype, $event->get_type());
@@ -95,7 +98,7 @@ class core_calendar_event_mapper_testcase extends advanced_testcase {
     /**
      * Test event -> array.
      */
-    public function test_from_event_to_assoc_array() {
+    public function test_from_event_to_assoc_array(): void {
         $this->resetAfterTest(true);
         $this->setAdminUser();
         $legacyevent = $this->create_event(['modname' => 'assign', 'instance' => 1]);
@@ -113,7 +116,7 @@ class core_calendar_event_mapper_testcase extends advanced_testcase {
     /**
      * Test for action event -> legacy event.
      */
-    public function test_from_action_event_to_legacy_event() {
+    public function test_from_action_event_to_legacy_event(): void {
         $this->resetAfterTest(true);
         $this->setAdminUser();
         $legacyevent = $this->create_event(['modname' => 'assign', 'instance' => 1]);
@@ -125,7 +128,7 @@ class core_calendar_event_mapper_testcase extends advanced_testcase {
         );
         $legacyevent = $mapper->from_event_to_legacy_event($event);
 
-        $this->assertInstanceOf(calendar_event::class, $legacyevent);
+        $this->assertInstanceOf(\calendar_event::class, $legacyevent);
         $this->assertEquals($legacyevent->actionname, 'test action');
         $this->assertInstanceOf(\moodle_url::class, $legacyevent->actionurl);
         $this->assertEquals($legacyevent->actionnum, 1729);
@@ -153,7 +156,7 @@ class core_calendar_event_mapper_testcase extends advanced_testcase {
             $record->$name = $value;
         }
 
-        $event = new calendar_event($record);
+        $event = new \calendar_event($record);
         return $event->create($record, false);
     }
 }
@@ -461,7 +464,7 @@ class core_calendar_event_mapper_test_event_collection implements event_collecti
         return 2;
     }
 
-    public function getIterator() {
+    public function getIterator(): \Traversable {
         foreach ($this->events as $event) {
             yield $event;
         }

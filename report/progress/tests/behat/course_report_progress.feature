@@ -27,10 +27,9 @@ Feature: In a course administration page, navigate through report page, test for
     Given I log in as "admin"
     And I am on "Course 1" course homepage
     When I navigate to "Reports" in current page administration
-    And I select "Activity completion" from the "Report type" singleselect
-    Then "Report" "field" should exist
-    And the "Report" select box should contain "Activity completion"
-    And the field "Report" matches value "Activity completion"
+    And I click on "Activity completion" "link"
+    Then "Report" "field" should exist in the "tertiary-navigation" "region"
+    And I should see "Activity completion" in the "tertiary-navigation" "region"
 
   Scenario: Custom profile fields selected for identity should display on the activity completion report
     Given the following "custom profile fields" exist:
@@ -46,6 +45,6 @@ Feature: In a course administration page, navigate through report page, test for
       | showuseridentity | email,profile_field_frog |
     When I am on the "C1" "Course" page logged in as "admin"
     And I navigate to "Reports" in current page administration
-    And I select "Activity completion" from the "Report type" singleselect
+    And I click on "Activity completion" "link"
     Then I should see "Favourite frog"
     Then I should see "Kermit" in the "Student Two" "table_row"

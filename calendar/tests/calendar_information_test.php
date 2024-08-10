@@ -14,13 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for calendar_information.
- *
- * @package    core_calendar
- * @copyright  2017 Andrew Nicols <andrew@nicols.co.uk>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core_calendar;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -33,7 +27,7 @@ require_once(__DIR__ . '/helpers.php');
  * @copyright  2017 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class calendar_information_testcase extends advanced_testcase {
+class calendar_information_test extends \advanced_testcase {
 
     /**
      * Helper to mock a course and category structure.
@@ -82,7 +76,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see no other courses.
      * And I should see no categories.
      */
-    public function test_site_visibility_no_enrolment() {
+    public function test_site_visibility_no_enrolment(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -108,7 +102,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the site course.
      * And I should see no other courses.
      */
-    public function test_site_visibility_no_enrolment_category() {
+    public function test_site_visibility_no_enrolment_category(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -139,7 +133,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the site course.
      * And I should see no other courses.
      */
-    public function test_site_visibility_category_manager_site() {
+    public function test_site_visibility_category_manager_site(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -176,7 +170,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the site course.
      * And I should see no other courses.
      */
-    public function test_site_visibility_category_manager_own_category() {
+    public function test_site_visibility_category_manager_own_category(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -213,7 +207,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the site course.
      * And I should see no other courses.
      */
-    public function test_site_visibility_category_manager_parent_category() {
+    public function test_site_visibility_category_manager_parent_category(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -250,7 +244,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the site course.
      * And I should see no other courses.
      */
-    public function test_site_visibility_category_manager_child_category() {
+    public function test_site_visibility_category_manager_child_category(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -286,7 +280,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the category that my enrolled course is in.
      * And I should see the parents of the category that my enrolled course is in.
      */
-    public function test_site_visibility_single_course_site() {
+    public function test_site_visibility_single_course_site(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -322,7 +316,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the category of that course.
      * And I should see the parents of that course category.
      */
-    public function test_site_visibility_single_course_course_course() {
+    public function test_site_visibility_single_course_course_course(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -371,7 +365,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see no other courses.
      * And I should see no categories.
      */
-    public function test_site_visibility_single_course_category() {
+    public function test_site_visibility_single_course_category(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -412,7 +406,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see no other courses.
      * And I should see no categories.
      */
-    public function test_site_visibility_single_course_parent_category() {
+    public function test_site_visibility_single_course_parent_category(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -456,7 +450,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see no other courses.
      * And I should see no categories.
      */
-    public function test_site_visibility_single_course_sibling_category() {
+    public function test_site_visibility_single_course_sibling_category(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -496,7 +490,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see no other courses.
      * And I should see no categories.
      */
-    public function test_site_visibility_single_course_different_category() {
+    public function test_site_visibility_single_course_different_category(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -532,7 +526,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the category that my enrolled course is in.
      * And I should see the parents of the category that my enrolled course is in.
      */
-    public function test_site_visibility_two_courses_one_category_site() {
+    public function test_site_visibility_two_courses_one_category_site(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -568,7 +562,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the category that my enrolled courses are in.
      * And I should see the parents of the category that my enrolled course are in.
      */
-    public function test_site_visibility_two_courses_one_category_course() {
+    public function test_site_visibility_two_courses_one_category_course(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -614,7 +608,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the category that my enrolled courses are in.
      * And I should see the parents of the category that my enrolled course are in.
      */
-    public function test_site_visibility_two_courses_one_category_courseb() {
+    public function test_site_visibility_two_courses_one_category_courseb(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -661,7 +655,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the category that my enrolled courses are in.
      * And I should see the parents of the category that my enrolled course are in.
      */
-    public function test_site_visibility_two_courses_one_category_category() {
+    public function test_site_visibility_two_courses_one_category_category(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -697,7 +691,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the category that my enrolled courses are in.
      * And I should see the parents of the category that my enrolled course are in.
      */
-    public function test_site_visibility_two_courses_one_category_othercategory() {
+    public function test_site_visibility_two_courses_one_category_othercategory(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -731,7 +725,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the categories that my enrolled courses are in.
      * And I should see the parents of those categories.
      */
-    public function test_site_visibility_two_courses_two_categories_site() {
+    public function test_site_visibility_two_courses_two_categories_site(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -768,7 +762,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the categories that my enrolled courses are in.
      * And I should see the parents of those categories.
      */
-    public function test_site_visibility_two_courses_two_categories_coursea() {
+    public function test_site_visibility_two_courses_two_categories_coursea(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -815,7 +809,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the categories that my enrolled courses are in.
      * And I should see the parents of those categories.
      */
-    public function test_site_visibility_two_courses_two_categories_courseb() {
+    public function test_site_visibility_two_courses_two_categories_courseb(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -863,7 +857,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the categories that my enrolled courses are in.
      * And I should see the parents of those categories.
      */
-    public function test_site_visibility_two_courses_two_categories_category() {
+    public function test_site_visibility_two_courses_two_categories_category(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -904,7 +898,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the categories that my enrolled courses are in.
      * And I should see the parents of those categories.
      */
-    public function test_site_visibility_two_courses_two_categories_different_category() {
+    public function test_site_visibility_two_courses_two_categories_different_category(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -937,7 +931,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see no other courses.
      * And I should see no categories.
      */
-    public function test_site_visibility_admin_user() {
+    public function test_site_visibility_admin_user(): void {
         $this->resetAfterTest();
         list ($courses, $categories) = $this->mock_structure();
 
@@ -963,7 +957,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see no other courses.
      * And I should see no other categories.
      */
-    public function test_site_visibility_admin_user_with_enrolment_site() {
+    public function test_site_visibility_admin_user_with_enrolment_site(): void {
         global $USER;
 
         $this->resetAfterTest();
@@ -994,7 +988,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see the category of that course.
      * And I should see the parents of that course category.
      */
-    public function test_site_visibility_admin_user_with_enrolment_course() {
+    public function test_site_visibility_admin_user_with_enrolment_course(): void {
         global $USER;
 
         $this->resetAfterTest();
@@ -1041,7 +1035,7 @@ class calendar_information_testcase extends advanced_testcase {
      * And I should see no other courses.
      * And I should see no categories.
      */
-    public function test_site_visibility_admin_user_with_enrolment_category() {
+    public function test_site_visibility_admin_user_with_enrolment_category(): void {
         global $USER;
 
         $this->resetAfterTest();

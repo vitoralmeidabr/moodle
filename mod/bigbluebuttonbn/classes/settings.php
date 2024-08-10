@@ -21,15 +21,19 @@ use admin_setting;
 use admin_setting_configcheckbox;
 use admin_setting_configmultiselect;
 use admin_setting_configpasswordunmask;
+use admin_setting_configselect;
 use admin_setting_configstoredfile;
 use admin_setting_configtext;
 use admin_setting_configtextarea;
 use admin_setting_heading;
 use admin_settingpage;
 use cache_helper;
+use core_plugin_manager;
 use lang_string;
 use mod_bigbluebuttonbn\local\config;
 use mod_bigbluebuttonbn\local\helpers\roles;
+use mod_bigbluebuttonbn\local\plugins\admin_page_manage_extensions;
+use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
 
 /**
  * The mod_bigbluebuttonbn settings helper
@@ -41,14 +45,20 @@ use mod_bigbluebuttonbn\local\helpers\roles;
  */
 class settings {
 
-    /** @var admin_setting shared value */
+    /** @var admin_category shared value */
     private $admin;
+
+    /** @var bool whether the current user has moodle/site:config capability  */
+    private $hassiteconfig;
 
     /** @var bool Module is enabled */
     private $moduleenabled;
 
     /** @var string The name of the section */
     private $section;
+
+    /** @var string The parent name */
+    private $parent = "modbigbluebuttonbnfolder";
 
     /** @var string The section name prefix */
     private $sectionnameprefix = "mod_bigbluebuttonbn";
@@ -59,14 +69,16 @@ class settings {
      * @param admin_category $admin
      * @param \core\plugininfo\mod $module
      * @param string $categoryname for the plugin setting (main setting page)
+     * @param bool $hassiteconfig whether the current user has moodle/site:config capability
      */
-    public function __construct(admin_category $admin, \core\plugininfo\mod $module, string $categoryname) {
+    public function __construct(admin_category $admin, \core\plugininfo\mod $module, string $categoryname, bool $hassiteconfig) {
         $this->moduleenabled = $module->is_enabled() === true;
         $this->admin = $admin;
         $this->section = $categoryname;
+        $this->hassiteconfig = $hassiteconfig;
 
         $modbigbluebuttobnfolder = new admin_category(
-            $categoryname,
+            $this->parent,
             new lang_string('pluginname', 'mod_bigbluebuttonbn'),
             $module->is_enabled() === false
         );
@@ -74,15 +86,16 @@ class settings {
         $admin->add('modsettings', $modbigbluebuttobnfolder);
 
         $mainsettings = $this->add_general_settings();
-        $admin->add($categoryname, $mainsettings);
+        $admin->add($this->parent, $mainsettings);
     }
 
     /**
      * Add all settings.
      */
     public function add_all_settings(): void {
+        // Renders settings for welcome messages.
+        $this->add_defaultmessages_settings();
         // Evaluates if recordings are enabled for the Moodle site.
-
         // Renders settings for record feature.
         $this->add_record_settings();
         // Renders settings for import recordings.
@@ -102,6 +115,14 @@ class settings {
         $this->add_extended_settings();
         // Renders settings for experimental features.
         $this->add_experimental_settings();
+
+        // Add all subplugin settings if any.
+        $this->admin->add($this->parent, new admin_category('bbbextplugins',
+            new lang_string('subplugintype_bbbext', 'mod_bigbluebuttonbn'), !$this->moduleenabled));
+        $this->admin->add($this->parent, new admin_page_manage_extensions());
+        foreach (core_plugin_manager::instance()->get_plugins_of_type(extension::BBB_EXTENSION_PLUGIN_NAME) as $plugin) {
+            $plugin->load_settings($this->admin, extension::BBB_EXTENSION_PLUGIN_NAME, $this->hassiteconfig);
+        }
     }
 
     /**
@@ -131,8 +152,9 @@ class settings {
      * @throws \coding_exception
      */
     protected function add_general_settings(): admin_settingpage {
+        global $CFG, $OUTPUT;
         $settingsgeneral = new admin_settingpage(
-            "{$this->sectionnameprefix}_general",
+            $this->section,
             get_string('config_general', 'bigbluebuttonbn'),
             'moodle/site:config',
             !((boolean) setting_validator::section_general_shown()) && ($this->moduleenabled)
@@ -141,14 +163,24 @@ class settings {
             // Configuration for BigBlueButton.
             $item = new admin_setting_heading('bigbluebuttonbn_config_general',
                 '',
-                get_string('config_general_description', 'bigbluebuttonbn'));
-
+                get_string('config_general_description', 'bigbluebuttonbn')
+            );
             $settingsgeneral->add($item);
+
+            if (config::server_credentials_invalid()) {
+                // A notification should appear when default credentials are used.
+                $settingsgeneral->add(new admin_setting_heading(
+                    'bigbluebuttonbn_notification',
+                    '',
+                    $OUTPUT->notification(get_string('credentials_warning', 'mod_bigbluebuttonbn'), 'error')
+                ));
+            }
+
             $item = new admin_setting_configtext(
                 'bigbluebuttonbn_server_url',
                 get_string('config_server_url', 'bigbluebuttonbn'),
                 get_string('config_server_url_description', 'bigbluebuttonbn'),
-                config::DEFAULT_SERVER_URL,
+                '',
                 PARAM_RAW
             );
             $item->set_updatedcallback(
@@ -167,20 +199,62 @@ class settings {
                 'bigbluebuttonbn_shared_secret',
                 get_string('config_shared_secret', 'bigbluebuttonbn'),
                 get_string('config_shared_secret_description', 'bigbluebuttonbn'),
-                config::DEFAULT_SHARED_SECRET
+                ''
             );
             $this->add_conditional_element(
                 'shared_secret',
                 $item,
                 $settingsgeneral
             );
-            $settingsgeneral->add($item);
+
+            $item = new admin_setting_configselect(
+                'bigbluebuttonbn_checksum_algorithm',
+                get_string('config_checksum_algorithm', 'bigbluebuttonbn'),
+                get_string('config_checksum_algorithm_description', 'bigbluebuttonbn'),
+                config::DEFAULT_CHECKSUM_ALGORITHM,
+                array_combine(config::CHECKSUM_ALGORITHMS, config::CHECKSUM_ALGORITHMS)
+            );
+            $this->add_conditional_element(
+                'checksum_algorithm',
+                $item,
+                $settingsgeneral
+            );
+
+            $item = new admin_setting_configtext(
+                'bigbluebuttonbn_poll_interval',
+                get_string('config_poll_interval', 'bigbluebuttonbn'),
+                get_string('config_poll_interval_description', 'bigbluebuttonbn'),
+                bigbluebutton_proxy::DEFAULT_POLL_INTERVAL,
+                PARAM_INT
+            );
+            $this->add_conditional_element(
+                'poll_interval',
+                $item,
+                $settingsgeneral
+            );
+        }
+        return $settingsgeneral;
+    }
+
+    /**
+     * Helper function renders default messages settings if the feature is enabled.
+     */
+    protected function add_defaultmessages_settings(): void {
+        // Configuration for 'default messages' feature.
+        $defaultmessagessetting = new admin_settingpage(
+            "{$this->sectionnameprefix}_default_messages",
+            get_string('config_default_messages', 'bigbluebuttonbn'),
+            'moodle/site:config',
+            !((boolean) setting_validator::section_default_messages_shown()) && ($this->moduleenabled)
+        );
+
+        if ($this->admin->fulltree) {
             $item = new admin_setting_heading(
                 'bigbluebuttonbn_config_default_messages',
-                get_string('config_default_messages', 'bigbluebuttonbn'),
+                '',
                 get_string('config_default_messages_description', 'bigbluebuttonbn')
             );
-            $settingsgeneral->add($item);
+            $defaultmessagessetting->add($item);
             $item = new admin_setting_configtextarea(
                 'bigbluebuttonbn_welcome_default',
                 get_string('config_welcome_default', 'bigbluebuttonbn'),
@@ -191,9 +265,8 @@ class settings {
             $this->add_conditional_element(
                 'welcome_default',
                 $item,
-                $settingsgeneral
+                $defaultmessagessetting
             );
-            $settingsgeneral->add($item);
             $item = new admin_setting_configcheckbox(
                 'bigbluebuttonbn_welcome_editable',
                 get_string('config_welcome_editable', 'bigbluebuttonbn'),
@@ -203,10 +276,11 @@ class settings {
             $this->add_conditional_element(
                 'welcome_editable',
                 $item,
-                $settingsgeneral
+                $defaultmessagessetting
             );
         }
-        return $settingsgeneral;
+        $this->admin->add($this->parent, $defaultmessagessetting);
+
     }
 
     /**
@@ -308,8 +382,28 @@ class settings {
                 $item,
                 $recordingsetting
             );
+            $recordingsafeformat = [
+                'notes' => get_string('view_recording_format_notes', 'mod_bigbluebuttonbn'),
+                'podcast' => get_string('view_recording_format_podcast', 'mod_bigbluebuttonbn'),
+                'presentation' => get_string('view_recording_format_presentation', 'mod_bigbluebuttonbn'),
+                'screenshare' => get_string('view_recording_format_screenshare', 'mod_bigbluebuttonbn'),
+                'statistics' => get_string('view_recording_format_statistics', 'mod_bigbluebuttonbn'),
+                'video' => get_string('view_recording_format_video', 'mod_bigbluebuttonbn'),
+            ];
+            $item = new admin_setting_configmultiselect(
+                'bigbluebuttonbn_recording_safe_formats',
+                get_string('config_recording_safe_formats', 'mod_bigbluebuttonbn'),
+                get_string('config_recording_safe_formats_description', 'mod_bigbluebuttonbn'),
+                ['video', 'presentation'],
+                $recordingsafeformat
+            );
+            $this->add_conditional_element(
+                'recording_hide_button_editable',
+                $item,
+                $recordingsetting
+            );
         }
-        $this->admin->add($this->section, $recordingsetting);
+        $this->admin->add($this->parent, $recordingsetting);
     }
 
     /**
@@ -354,7 +448,7 @@ class settings {
                 $importrecordingsettings
             );
         }
-        $this->admin->add($this->section, $importrecordingsettings);
+        $this->admin->add($this->parent, $importrecordingsettings);
     }
 
     /**
@@ -443,13 +537,13 @@ class settings {
                 $showrecordingsettings
             );
             $item = new admin_setting_configcheckbox(
-                'bigbluebuttonbn_recordings_sortorder',
-                get_string('config_recordings_sortorder', 'bigbluebuttonbn'),
-                get_string('config_recordings_sortorder_description', 'bigbluebuttonbn'),
+                'bigbluebuttonbn_recordings_asc_sort',
+                get_string('config_recordings_asc_sort', 'bigbluebuttonbn'),
+                get_string('config_recordings_asc_sort_description', 'bigbluebuttonbn'),
                 0
             );
             $this->add_conditional_element(
-                'recordings_sortorder',
+                'recordings_asc_sort',
                 $item,
                 $showrecordingsettings
             );
@@ -465,7 +559,7 @@ class settings {
                 $showrecordingsettings
             );
         }
-        $this->admin->add($this->section, $showrecordingsettings);
+        $this->admin->add($this->parent, $showrecordingsettings);
     }
 
     /**
@@ -534,7 +628,7 @@ class settings {
                 $waitmoderatorsettings
             );
         }
-        $this->admin->add($this->section, $waitmoderatorsettings);
+        $this->admin->add($this->parent, $waitmoderatorsettings);
     }
 
     /**
@@ -568,7 +662,7 @@ class settings {
                 $voicebridgesettings
             );
         }
-        $this->admin->add($this->section, $voicebridgesettings);
+        $this->admin->add($this->parent, $voicebridgesettings);
     }
 
     /**
@@ -593,13 +687,13 @@ class settings {
             $preuploadsettings->add($item);
 
             $item = new admin_setting_configcheckbox(
-                'bigbluebuttonbn_preuploadpresentation_enabled',
-                get_string('config_preuploadpresentation_enabled', 'bigbluebuttonbn'),
-                get_string('config_preuploadpresentation_enabled_description', 'bigbluebuttonbn'),
+                'bigbluebuttonbn_preuploadpresentation_editable',
+                get_string('config_preuploadpresentation_editable', 'bigbluebuttonbn'),
+                get_string('config_preuploadpresentation_editable_description', 'bigbluebuttonbn'),
                 0
             );
             $this->add_conditional_element(
-                'preuploadpresentation_enabled',
+                'preuploadpresentation_editable',
                 $item,
                 $preuploadsettings
             );
@@ -622,7 +716,7 @@ class settings {
 
             $preuploadsettings->add($filemanager);
         }
-        $this->admin->add($this->section, $preuploadsettings);
+        $this->admin->add($this->parent, $preuploadsettings);
     }
 
     /**
@@ -668,7 +762,7 @@ class settings {
                 $userlimitsettings
             );
         }
-        $this->admin->add($this->section, $userlimitsettings);
+        $this->admin->add($this->parent, $userlimitsettings);
     }
 
     /**
@@ -709,7 +803,7 @@ class settings {
                 $participantsettings
             );
         }
-        $this->admin->add($this->section, $participantsettings);
+        $this->admin->add($this->parent, $participantsettings);
     }
 
     /**
@@ -754,7 +848,7 @@ class settings {
                 $muteonstartsetting
             );
         }
-        $this->admin->add($this->section, $muteonstartsetting);
+        $this->admin->add($this->parent, $muteonstartsetting);
     }
 
     /**
@@ -775,9 +869,8 @@ class settings {
             $this->add_lock_setting_from_name('disablepublicchat', $lockingsetting);
             $this->add_lock_setting_from_name('disablenote', $lockingsetting);
             $this->add_lock_setting_from_name('hideuserlist', $lockingsetting);
-            $this->add_lock_setting_from_name('lockonjoin', $lockingsetting);
         }
-        $this->admin->add($this->section, $lockingsetting);
+        $this->admin->add($this->parent, $lockingsetting);
     }
 
     /**
@@ -846,8 +939,19 @@ class settings {
                 $item,
                 $extendedcapabilitiessetting
             );
+            $item = new admin_setting_configcheckbox(
+                'bigbluebuttonbn_profile_picture_enabled',
+                get_string('config_profile_picture_enabled', 'bigbluebuttonbn'),
+                get_string('config_profile_picture_enabled_description', 'bigbluebuttonbn'),
+                false
+            );
+            $this->add_conditional_element(
+                'profile_picture_enabled',
+                $item,
+                $extendedcapabilitiessetting
+            );
         }
-        $this->admin->add($this->section, $extendedcapabilitiessetting);
+        $this->admin->add($this->parent, $extendedcapabilitiessetting);
         // Configuration for extended BN capabilities should go here.
     }
 
@@ -882,8 +986,20 @@ class settings {
                 $item,
                 $experimentalfeaturessetting
             );
+            // UI for 'register meeting events' feature.
+            $item = new admin_setting_configcheckbox(
+                'bigbluebuttonbn_guestaccess_enabled',
+                get_string('config_guestaccess_enabled', 'bigbluebuttonbn'),
+                get_string('config_guestaccess_enabled_description', 'bigbluebuttonbn'),
+                0
+            );
+            $this->add_conditional_element(
+                'guestaccess_enabled',
+                $item,
+                $experimentalfeaturessetting
+            );
         }
-        $this->admin->add($this->section, $experimentalfeaturessetting);
+        $this->admin->add($this->parent, $experimentalfeaturessetting);
     }
 
     /**

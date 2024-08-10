@@ -22,6 +22,8 @@
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace core_calendar;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
@@ -45,7 +47,7 @@ require_once($CFG->dirroot . '/user/profile/definelib.php');
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since Moodle 2.6
  */
-class core_calendar_type_testcase extends advanced_testcase {
+class calendartype_test extends \advanced_testcase {
     /** @var MoodleQuickForm Keeps reference of dummy form object */
     private $mform;
 
@@ -58,6 +60,7 @@ class core_calendar_type_testcase extends advanced_testcase {
      * Test set up.
      */
     protected function setUp(): void {
+        parent::setUp();
         // The user we are going to test this on.
         $this->user = self::getDataGenerator()->create_user();
         self::setUser($this->user);
@@ -70,7 +73,7 @@ class core_calendar_type_testcase extends advanced_testcase {
     /**
      * Test that setting the calendar type works.
      */
-    public function test_calendar_type_set() {
+    public function test_calendar_type_set(): void {
         // We want to reset the test data after this run.
         $this->resetAfterTest();
 
@@ -87,7 +90,7 @@ class core_calendar_type_testcase extends advanced_testcase {
      * Test that calling core Moodle functions responsible for displaying the date
      * have the same results as directly calling the same function in the calendar type.
      */
-    public function test_calendar_type_core_functions() {
+    public function test_calendar_type_core_functions(): void {
         // We want to reset the test data after this run.
         $this->resetAfterTest();
 
@@ -103,7 +106,7 @@ class core_calendar_type_testcase extends advanced_testcase {
      * unixtime is being converted back to a valid date to display in the date selector elements for
      * different calendar types.
      */
-    public function test_calendar_type_dateselector_elements() {
+    public function test_calendar_type_dateselector_elements(): void {
         // We want to reset the test data after this run.
         $this->resetAfterTest();
 
@@ -159,7 +162,7 @@ class core_calendar_type_testcase extends advanced_testcase {
      * Test that the user profile field datetime minimum and maximum year settings are saved as the
      * equivalent Gregorian years.
      */
-    public function test_calendar_type_datetime_field_submission() {
+    public function test_calendar_type_datetime_field_submission(): void {
         // We want to reset the test data after this run.
         $this->resetAfterTest();
 
@@ -284,7 +287,7 @@ class core_calendar_type_testcase extends advanced_testcase {
         $submissiondata = $form->get_data();
         // On the user profile field page after get_data, the function define_save is called
         // in the field base class, which then calls the field's function define_save_preprocess.
-        $field = new profile_define_datetime();
+        $field = new \profile_define_datetime();
         $submissiondata = $field->define_save_preprocess($submissiondata);
 
         // Create an array we want to compare with the date passed.
@@ -309,7 +312,7 @@ class core_calendar_type_testcase extends advanced_testcase {
 /**
  * Form object to be used in test case.
  */
-class temp_form_calendartype extends moodleform {
+class temp_form_calendartype extends \moodleform {
     /**
      * Form definition.
      */

@@ -45,7 +45,7 @@ class provider_test extends provider_testcase {
      * Test to check export_user_preferences.
      * returns user preferences data.
      */
-    public function test_export_user_preferences() {
+    public function test_export_user_preferences(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
         $user = $this->getDataGenerator()->create_user();
@@ -53,6 +53,7 @@ class provider_test extends provider_testcase {
         $showadvanced = 1;
         set_user_preference('definerole_showadvanced', $showadvanced);
         provider::export_user_preferences($user->id);
+        /** @var \core_privacy\tests\request\content_writer $writer */
         $writer = writer::with_context(\context_system::instance());
         $prefs = $writer->get_user_preferences('core_role');
         $this->assertEquals(transform::yesno($showadvanced), transform::yesno($prefs->definerole_showadvanced->value));
@@ -63,7 +64,7 @@ class provider_test extends provider_testcase {
     /**
      * Check all contexts are returned if there is any user data for this user.
      */
-    public function test_get_contexts_for_userid() {
+    public function test_get_contexts_for_userid(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -113,7 +114,7 @@ class provider_test extends provider_testcase {
     /**
      * Test that user data is exported correctly.
      */
-    public function test_export_user_data() {
+    public function test_export_user_data(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -184,54 +185,55 @@ class provider_test extends provider_testcase {
         // Retrieve role capabilities and role assignments.
         provider::export_user_data($approvedcontextlist);
         foreach ($contextlist as $context) {
+            /** @var \core_privacy\tests\request\content_writer $writer */
             $writer = writer::with_context($context);
             $this->assertTrue($writer->has_any_data());
             if ($context->contextlevel == CONTEXT_MODULE) {
-                if ($data = $writer->get_data($subcontextstudent)) {
+                if ($data = (array)$writer->get_data($subcontextstudent)) {
                     $this->assertEquals($user->id, reset($data)->userid);
                 }
-                if ($data = $writer->get_data($subcontextrc)) {
+                if ($data = (array)$writer->get_data($subcontextrc)) {
                     $this->assertEquals('moodle/backup:backupactivity', reset($data)->capability);
                     $this->assertEquals($strpermissions[CAP_ALLOW], reset($data)->permission);
                 }
             }
             if ($context->contextlevel == CONTEXT_COURSE) {
-                if ($data = $writer->get_data($subcontextstudent)) {
+                if ($data = (array)$writer->get_data($subcontextstudent)) {
                     $this->assertEquals($user->id, reset($data)->userid);
                 }
-                if ($data = $writer->get_data($subcontextrc)) {
+                if ($data = (array)$writer->get_data($subcontextrc)) {
                     $this->assertEquals('moodle/backup:backupcourse', reset($data)->capability);
                 }
             }
             if ($context->contextlevel == CONTEXT_COURSECAT) {
-                if ($data = $writer->get_data($subcontextmanager)) {
+                if ($data = (array)$writer->get_data($subcontextmanager)) {
                     $this->assertEquals($user->id, reset($data)->modifierid);
                 }
-                if ($data = $writer->get_data($subcontextrc)) {
+                if ($data = (array)$writer->get_data($subcontextrc)) {
                     $this->assertEquals('moodle/category:manage', reset($data)->capability);
                 }
             }
             if ($context->contextlevel == CONTEXT_SYSTEM) {
-                if ($data = $writer->get_data($subcontextmanager)) {
+                if ($data = (array)$writer->get_data($subcontextmanager)) {
                     $this->assertEquals($user->id, reset($data)->modifierid);
                 }
-                if ($data = $writer->get_data($subcontextrc)) {
+                if ($data = (array)$writer->get_data($subcontextrc)) {
                     $this->assertEquals('moodle/backup:backupcourse', reset($data)->capability);
                 }
             }
             if ($context->contextlevel == CONTEXT_BLOCK) {
-                if ($data = $writer->get_data($subcontextstudent)) {
+                if ($data = (array)$writer->get_data($subcontextstudent)) {
                     $this->assertEquals($user->id, reset($data)->userid);
                 }
-                if ($data = $writer->get_data($subcontextrc)) {
+                if ($data = (array)$writer->get_data($subcontextrc)) {
                     $this->assertEquals('moodle/block:edit', reset($data)->capability);
                 }
             }
             if ($context->contextlevel == CONTEXT_USER) {
-                if ($data = $writer->get_data($subcontextmanager)) {
+                if ($data = (array)$writer->get_data($subcontextmanager)) {
                     $this->assertEquals($user->id, reset($data)->userid);
                 }
-                if ($data = $writer->get_data($subcontextrc)) {
+                if ($data = (array)$writer->get_data($subcontextrc)) {
                     $this->assertEquals('moodle/competency:evidencedelete', reset($data)->capability);
                 }
             }
@@ -241,7 +243,7 @@ class provider_test extends provider_testcase {
     /**
      * Test for provider::delete_data_for_all_users_in_context().
      */
-    public function test_delete_data_for_all_users_in_context() {
+    public function test_delete_data_for_all_users_in_context(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -327,7 +329,7 @@ class provider_test extends provider_testcase {
     /**
      * Test for provider::delete_data_for_user().
      */
-    public function test_delete_data_for_user() {
+    public function test_delete_data_for_user(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -385,7 +387,7 @@ class provider_test extends provider_testcase {
     /**
      * Export for a user with a key against a script where no instance is specified.
      */
-    public function test_export_user_role_to_cohort() {
+    public function test_export_user_role_to_cohort(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -413,9 +415,10 @@ class provider_test extends provider_testcase {
         ];
         // Test User is assigned role teacher to cohort.
         provider::export_user_role_to_cohort($user->id);
+        /** @var \core_privacy\tests\request\content_writer $writer */
         $writer = writer::with_context($contextuserassignover);
         $this->assertTrue($writer->has_any_data());
-        $exported = $writer->get_related_data($subcontextteacher, 'cohortroles');
+        $exported = (array)$writer->get_related_data($subcontextteacher, 'cohortroles');
         $this->assertEquals($user->id, reset($exported)->userid);
 
         // Test User is member of a cohort which User2 is assigned to role to this cohort.
@@ -430,16 +433,17 @@ class provider_test extends provider_testcase {
         api::create_cohort_role_assignment($params);
         api::sync_all_cohort_roles();
         provider::export_user_role_to_cohort($user->id);
+        /** @var \core_privacy\tests\request\content_writer $writer */
         $writer = writer::with_context($contextuser);
         $this->assertTrue($writer->has_any_data());
-        $exported = $writer->get_related_data($subcontextteacher, 'cohortroles');
+        $exported = (array)$writer->get_related_data($subcontextteacher, 'cohortroles');
         $this->assertEquals($user2->id, reset($exported)->userid);
     }
 
     /**
      * Test for provider::delete_user_role_to_cohort().
      */
-    public function test_delete_user_role_to_cohort() {
+    public function test_delete_user_role_to_cohort(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -474,7 +478,7 @@ class provider_test extends provider_testcase {
     /**
      * Test that only users within a course context are fetched.
      */
-    public function test_get_users_in_context() {
+    public function test_get_users_in_context(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -595,7 +599,7 @@ class provider_test extends provider_testcase {
     /**
      * Test that data for users in approved userlist is deleted.
      */
-    public function test_delete_data_for_users() {
+    public function test_delete_data_for_users(): void {
         global $DB;
 
         $this->resetAfterTest();

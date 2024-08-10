@@ -15,21 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * The module forums external functions unit tests
- *
- * @package    mod_forum
- * @category   external
- * @copyright  2013 Andrew Nicols
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace mod_forum;
 
-defined('MOODLE_INTERNAL') || die();
+use mod_forum_tests_cron_trait;
+use mod_forum_tests_generator_trait;
+
+defined('MOODLE_INTERNAL') || die;
 
 require_once(__DIR__ . '/cron_trait.php');
 require_once(__DIR__ . '/generator_trait.php');
 
-class mod_forum_maildigest_testcase extends advanced_testcase {
+/**
+ * The module forums external functions unit tests
+ *
+ * @package    mod_forum
+ * @category   test
+ * @copyright  2013 Andrew Nicols
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class maildigest_test extends \advanced_testcase {
 
     // Make use of the cron tester trait.
     use mod_forum_tests_cron_trait;
@@ -37,12 +41,19 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
     // Make use of the test generator trait.
     use mod_forum_tests_generator_trait;
 
+    /** @var \phpunit_message_sink */
+    protected $messagesink;
+
+    /** @var \phpunit_message_sink */
+    protected $mailsink;
+
     /**
      * Set up message and mail sinks, and set up other requirements for the
      * cron to be tested here.
      */
     public function setUp(): void {
         global $CFG;
+        parent::setUp();
 
         // Messaging is not compatible with transactions...
         $this->preventResetByRollback();
@@ -52,7 +63,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         $this->mailsink = $this->redirectEmails();
 
         // Confirm that we have an empty message sink so far.
-        $messages = $this->messagesink->get_messages();
+        $messages = $this->messagesink->get_messages_by_component('mod_forum');
         $this->assertEquals(0, count($messages));
 
         $messages = $this->mailsink->get_messages();
@@ -84,6 +95,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
 
         $this->mailsink->clear();
         $this->mailsink->close();
+        parent::tearDown();
     }
 
     /**
@@ -95,9 +107,9 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
     protected function helper_setup_user_in_course() {
         global $DB;
 
-        $return = new stdClass();
-        $return->courses = new stdClass();
-        $return->forums = new stdClass();
+        $return = new \stdClass();
+        $return->courses = new \stdClass();
+        $return->forums = new \stdClass();
         $return->forumids = array();
 
         // Create a user.
@@ -108,7 +120,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         $return->courses->course1 = $this->getDataGenerator()->create_course();
 
         // Create forums.
-        $record = new stdClass();
+        $record = new \stdClass();
         $record->course = $return->courses->course1->id;
         $record->forcesubscribe = 1;
 
@@ -128,7 +140,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         return $return;
     }
 
-    public function test_set_maildigest() {
+    public function test_set_maildigest(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -184,7 +196,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         forum_set_user_maildigest($forum1, 42, $user);
     }
 
-    public function test_get_user_digest_options_default() {
+    public function test_get_user_digest_options_default(): void {
         global $USER, $DB;
 
         $this->resetAfterTest(true);
@@ -223,7 +235,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         $this->assertEquals($options[-1], get_string('emaildigestdefault', 'mod_forum', $digestoptions[2]));
     }
 
-    public function test_get_user_digest_options_sorting() {
+    public function test_get_user_digest_options_sorting(): void {
         global $USER, $DB;
 
         $this->resetAfterTest(true);
@@ -248,7 +260,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         }
     }
 
-    public function test_cron_no_posts() {
+    public function test_cron_no_posts(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -262,7 +274,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
      * Sends several notifications to one user as:
      * * single messages based on a user profile setting.
      */
-    public function test_cron_profile_single_mails() {
+    public function test_cron_profile_single_mails(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -313,7 +325,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
      * Sends several notifications to one user as:
      * * daily digests coming from the user profile setting.
      */
-    public function test_cron_profile_digest_email() {
+    public function test_cron_profile_digest_email(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -363,7 +375,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
     /**
      * Send digests to a user who cannot view fullnames
      */
-    public function test_cron_digest_view_fullnames_off() {
+    public function test_cron_digest_view_fullnames_off(): void {
         global $DB, $CFG;
 
         $CFG->fullnamedisplay = 'lastname';
@@ -395,7 +407,9 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         $this->send_digests_and_assert($user, $posts);
 
         // The user does not, by default, have permission to view the fullname.
-        $messagecontent = $this->messagesink->get_messages()[0]->fullmessage;
+        $messages = $this->messagesink->get_messages_by_component('mod_forum');
+        $messages = reset($messages);
+        $messagecontent = $messages->fullmessage;
 
         // Assert that the expected name is present (lastname only).
         $this->assertStringContainsString(fullname($user, false), $messagecontent);
@@ -407,7 +421,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
     /**
      * Send digests to a user who can view fullnames.
      */
-    public function test_cron_digest_view_fullnames_on() {
+    public function test_cron_digest_view_fullnames_on(): void {
         global $DB, $CFG;
 
         $CFG->fullnamedisplay = 'lastname';
@@ -446,7 +460,9 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
 
         // The user does not, by default, have permission to view the fullname.
         // However we have given the user that capability so we expect to see both firstname and lastname.
-        $messagecontent = $this->messagesink->get_messages()[0]->fullmessage;
+        $messages = $this->messagesink->get_messages_by_component('mod_forum');
+        $messages = reset($messages);
+        $messagecontent = $messages->fullmessage;
 
         // Assert that the expected name is present (lastname only).
         $this->assertStringContainsString(fullname($user, false), $messagecontent);
@@ -460,7 +476,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
      * * daily digests coming from the per-forum setting; and
      * * single e-mails from the profile setting.
      */
-    public function test_cron_mixed_email_1() {
+    public function test_cron_mixed_email_1(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -514,7 +530,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
      * * single e-mails from the per-forum setting; and
      * * daily digests coming from the per-user setting.
      */
-    public function test_cron_mixed_email_2() {
+    public function test_cron_mixed_email_2(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -567,7 +583,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
      * Sends several notifications to one user as:
      * * daily digests coming from the per-forum setting.
      */
-    public function test_cron_forum_digest_email() {
+    public function test_cron_forum_digest_email(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -617,7 +633,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
     /**
      * The digest being in the past is queued til the next day.
      */
-    public function test_cron_digest_previous_day() {
+    public function test_cron_digest_previous_day(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -649,7 +665,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         ];
         $this->queue_tasks_and_assert($expect);
 
-        $tasks = $DB->get_records('task_adhoc');
+        $tasks = $DB->get_records('task_adhoc', ['component' => 'mod_forum']);
         $task = reset($tasks);
         $this->assertGreaterThanOrEqual(time(), $task->nextruntime);
     }
@@ -657,7 +673,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
     /**
      * The digest being in the future is queued for today.
      */
-    public function test_cron_digest_same_day() {
+    public function test_cron_digest_same_day(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -689,7 +705,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         ];
         $this->queue_tasks_and_assert($expect);
 
-        $tasks = $DB->get_records('task_adhoc');
+        $tasks = $DB->get_records('task_adhoc', ['component' => 'mod_forum']);
         $task = reset($tasks);
         $digesttime = usergetmidnight(time(), \core_date::get_server_timezone()) + ($CFG->digestmailtime * 3600);
         $this->assertLessThanOrEqual($digesttime, $task->nextruntime);
@@ -699,7 +715,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
      * Tests that if a new message is posted after the days digest time,
      * but before that days digests are sent a new task is created.
      */
-    public function test_cron_digest_queue_next_before_current_processed() {
+    public function test_cron_digest_queue_next_before_current_processed(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -742,7 +758,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         $this->queue_tasks_and_assert($expect);
 
         // There should now be two tasks queued.
-        $tasks = $DB->get_records('task_adhoc');
+        $tasks = $DB->get_records('task_adhoc', ['component' => 'mod_forum']);
         $this->assertCount(2, $tasks);
 
         // Add yet another another discussions to forum 1.
@@ -758,14 +774,14 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
         $this->queue_tasks_and_assert($expect);
 
         // There should still be two tasks queued.
-        $tasks = $DB->get_records('task_adhoc');
+        $tasks = $DB->get_records('task_adhoc', ['component' => 'mod_forum']);
         $this->assertCount(2, $tasks);
     }
 
     /**
      * The sending of a digest marks posts as read if automatic message read marking is set.
      */
-    public function test_cron_digest_marks_posts_read() {
+    public function test_cron_digest_marks_posts_read(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -822,7 +838,7 @@ class mod_forum_maildigest_testcase extends advanced_testcase {
     /**
      * The sending of a digest does not mark posts as read when manual message read marking is set.
      */
-    public function test_cron_digest_leaves_posts_unread() {
+    public function test_cron_digest_leaves_posts_unread(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);

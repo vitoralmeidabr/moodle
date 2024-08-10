@@ -118,7 +118,7 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::save
      */
-    public function test_save_new() {
+    public function test_save_new(): void {
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();
@@ -134,7 +134,7 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::save
      */
-    public function test_add_uniqueness_constraints() {
+    public function test_add_uniqueness_constraints(): void {
         $this->resetAfterTest();
         $reslink1 = $this->generate_resource_link();
         $reslink2 = clone $reslink1;
@@ -150,7 +150,7 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::find
      */
-    public function test_find() {
+    public function test_find(): void {
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();
@@ -167,7 +167,7 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::find_by_resource
      */
-    public function test_find_by_resource() {
+    public function test_find_by_resource(): void {
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();
@@ -196,7 +196,8 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::find_by_resource_and_user
      */
-    public function test_find_by_resource_and_user() {
+    public function test_find_by_resource_and_user(): void {
+        global $CFG;
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();
@@ -214,7 +215,7 @@ class resource_link_repository_test extends \advanced_testcase {
         $user = $newreslink->add_user(
             $user1->id,
             'platform-user-id-123',
-            'en',
+            $CFG->lang,
             'Sydney',
             'AU',
             'Test university',
@@ -227,7 +228,7 @@ class resource_link_repository_test extends \advanced_testcase {
         $user2 = $newreslink3->add_user(
             $user2->id,
             'platform-user-id-777',
-            'en',
+            $CFG->lang,
             'Melbourne',
             'AU',
             'Test university',
@@ -254,7 +255,8 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::delete
      */
-    public function test_delete() {
+    public function test_delete(): void {
+        global $CFG;
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();
@@ -265,7 +267,7 @@ class resource_link_repository_test extends \advanced_testcase {
         $user = $newreslink->add_user(
             2,
             'source-id-123',
-            'en',
+            $CFG->lang,
             'Perth',
             'AU',
             'An Example Institution',
@@ -292,7 +294,8 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::delete_by_resource
      */
-    public function test_delete_by_resource() {
+    public function test_delete_by_resource(): void {
+        global $CFG;
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();
@@ -302,7 +305,7 @@ class resource_link_repository_test extends \advanced_testcase {
         $user = $newreslink->add_user(
             2,
             'source-id-123',
-            'en',
+            $CFG->lang,
             'Perth',
             'AU',
             'An Example Institution',
@@ -336,7 +339,8 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::delete_by_deployment
      */
-    public function test_delete_by_deployment() {
+    public function test_delete_by_deployment(): void {
+        global $CFG;
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();
@@ -347,7 +351,7 @@ class resource_link_repository_test extends \advanced_testcase {
         $user = $newreslink->add_user(
             2,
             'source-id-123',
-            'en',
+            $CFG->lang,
             'Perth',
             'AU',
             'An Example Institution',
@@ -374,7 +378,7 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::exists
      */
-    public function test_exists() {
+    public function test_exists(): void {
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();
@@ -389,7 +393,7 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::save
      */
-    public function test_save_existing() {
+    public function test_save_existing(): void {
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();
@@ -407,7 +411,7 @@ class resource_link_repository_test extends \advanced_testcase {
      *
      * @covers ::save
      */
-    public function test_update_stale() {
+    public function test_update_stale(): void {
         $this->resetAfterTest();
         $resourcelink = $this->generate_resource_link();
         $repository = new resource_link_repository();

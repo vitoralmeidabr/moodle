@@ -14,14 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for core analysers.
- *
- * @package   core
- * @category  test
- * @copyright 2017 David Monllaó {@link http://www.davidmonllao.com}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core;
+
+use test_target_course_level_shortname;
+use test_target_shortname;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -37,14 +33,14 @@ require_once(__DIR__ . '/../../lib/enrollib.php');
  * @copyright 2017 David Monllaó {@link http://www.davidmonllao.com}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_analytics_analysers_testcase extends advanced_testcase {
+class analysers_test extends \advanced_testcase {
 
     /**
      * test_courses_analyser
      *
      * @return void
      */
-    public function test_courses_analyser() {
+    public function test_courses_analyser(): void {
         $this->resetAfterTest(true);
 
         $course1 = $this->getDataGenerator()->create_course();
@@ -59,9 +55,8 @@ class core_analytics_analysers_testcase extends advanced_testcase {
         $this->assertInstanceOf('\context_course', $analyser->sample_access_context($course1->id));
 
         // Just 1 sample per course.
-        $class = new ReflectionClass('\core\analytics\analyser\courses');
+        $class = new \ReflectionClass('\core\analytics\analyser\courses');
         $method = $class->getMethod('get_all_samples');
-        $method->setAccessible(true);
         list($sampleids, $samplesdata) = $method->invoke($analyser, $analysable);
         $this->assertCount(1, $sampleids);
         $sampleid = reset($sampleids);
@@ -91,7 +86,7 @@ class core_analytics_analysers_testcase extends advanced_testcase {
      *
      * @return void
      */
-    public function test_site_courses_analyser() {
+    public function test_site_courses_analyser(): void {
         $this->resetAfterTest(true);
 
         $course1 = $this->getDataGenerator()->create_course();
@@ -109,9 +104,8 @@ class core_analytics_analysers_testcase extends advanced_testcase {
         $this->assertInstanceOf('\context_system', $analyser->sample_access_context($course1->id));
         $this->assertInstanceOf('\context_system', $analyser->sample_access_context($course3->id));
 
-        $class = new ReflectionClass('\core\analytics\analyser\site_courses');
+        $class = new \ReflectionClass('\core\analytics\analyser\site_courses');
         $method = $class->getMethod('get_all_samples');
-        $method->setAccessible(true);
         list($sampleids, $samplesdata) = $method->invoke($analyser, $analysable);
         $this->assertCount(3, $sampleids);
 
@@ -134,7 +128,7 @@ class core_analytics_analysers_testcase extends advanced_testcase {
      *
      * @return void
      */
-    public function test_student_enrolments_analyser() {
+    public function test_student_enrolments_analyser(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -161,9 +155,8 @@ class core_analytics_analysers_testcase extends advanced_testcase {
         $this->assertInstanceOf('\core_analytics\course', $analyser->get_sample_analysable($ue1->id));
         $this->assertInstanceOf('\context_course', $analyser->sample_access_context($ue1->id));
 
-        $class = new ReflectionClass('\core\analytics\analyser\student_enrolments');
+        $class = new \ReflectionClass('\core\analytics\analyser\student_enrolments');
         $method = $class->getMethod('get_all_samples');
-        $method->setAccessible(true);
         list($sampleids, $samplesdata) = $method->invoke($analyser, $analysable);
         // Only students.
         $this->assertCount(2, $sampleids);
@@ -201,7 +194,7 @@ class core_analytics_analysers_testcase extends advanced_testcase {
      *
      * @return null
      */
-    public function test_get_analysables_iterator() {
+    public function test_get_analysables_iterator(): void {
         global $DB;
 
         $this->resetAfterTest(true);

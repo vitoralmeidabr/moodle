@@ -14,15 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Tests for backup_xml_transformer class.
- *
- * @package     core_backup
- * @subpackage  moodle2
- * @category    backup
- * @copyright   2017 Dmitrii Metelkin (dmitriim@catalyst-au.net)
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core_backup;
+
+use backup_xml_transformer;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -34,10 +28,12 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
  * Tests for backup_xml_transformer.
  *
  * @package core_backup
+ * @subpackage  moodle2
+ * @category    test
  * @copyright 2017 Dmitrii Metelkin (dmitriim@catalyst-au.net)
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class backup_xml_transformer_testcase extends advanced_testcase {
+class backup_xml_transformer_test extends \advanced_testcase {
 
     /**
      * Initial set up.
@@ -87,7 +83,7 @@ class backup_xml_transformer_testcase extends advanced_testcase {
      * @param string $content Testing content.
      * @param string $expected Expected result.
      */
-    public function test_filephp_links_replace($content, $expected) {
+    public function test_filephp_links_replace($content, $expected): void {
         global $CFG;
 
         $CFG->wwwroot = 'http://test.test';

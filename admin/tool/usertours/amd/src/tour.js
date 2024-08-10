@@ -34,8 +34,10 @@ import * as Aria from 'core/aria';
 import Popper from 'core/popper';
 import {dispatchEvent} from 'core/event_dispatcher';
 import {eventTypes} from './events';
-import {get_string as getString} from 'core/str';
+import {getString} from 'core/str';
 import {prefetchStrings} from 'core/prefetch';
+import {notifyFilterContentUpdated} from 'core/event';
+import PendingPromise from 'core/pending';
 
 /**
  * The minimum spacing for tour step to display.
@@ -44,7 +46,7 @@ import {prefetchStrings} from 'core/prefetch';
  * @constant
  * @type {number}
  */
-const MINSPACING = 50;
+const MINSPACING = 10;
 
 /**
  * A user tour.
@@ -82,6 +84,12 @@ const Tour = class {
 
         // Apply configuration.
         this.configure.apply(this, arguments);
+
+        // Unset recalculate state.
+        this.possitionNeedToBeRecalculated = false;
+
+        // Unset recalculate count.
+        this.recalculatedNo = 0;
 
         try {
             this.storage = window.sessionStorage;
@@ -396,6 +404,11 @@ const Tour = class {
             return false;
         }
 
+        // Check if the CSS styles are allowed on the browser or not.
+        if (!this.isCSSAllowed()) {
+            return false;
+        }
+
         let target = this.getStepTarget(stepConfig);
         if (target && target.length && target.is(':visible')) {
             // Without a target, there can be no step.
@@ -403,6 +416,22 @@ const Tour = class {
         }
 
         return false;
+    }
+
+    /**
+     * Is the browser actually allow CSS styles?
+     *
+     * @returns {boolean} True if the browser is allowing CSS styles
+     */
+    isCSSAllowed() {
+        const testCSSElement = document.createElement('div');
+        testCSSElement.classList.add('hide');
+        document.body.appendChild(testCSSElement);
+        const styles = window.getComputedStyle(testCSSElement);
+        const isAllowed = styles.display === 'none';
+        testCSSElement.remove();
+
+        return isAllowed;
     }
 
     /**
@@ -458,14 +487,22 @@ const Tour = class {
             return this.endTour();
         }
 
+        const pendingPromise = new PendingPromise(`tool_usertours/tour:_gotoStep-${stepConfig.stepNumber}`);
+
         if (typeof stepConfig.delay !== 'undefined' && stepConfig.delay && !stepConfig.delayed) {
             stepConfig.delayed = true;
-            window.setTimeout(this._gotoStep.bind(this), stepConfig.delay, stepConfig, direction);
+            window.setTimeout(function(stepConfig, direction) {
+                this._gotoStep(stepConfig, direction);
+                pendingPromise.resolve();
+            }, stepConfig.delay, stepConfig, direction);
 
             return this;
         } else if (!stepConfig.orphan && !this.isStepActuallyVisible(stepConfig)) {
-            let fn = direction == -1 ? 'getPreviousStepNumber' : 'getNextStepNumber';
-            return this.gotoStep(this[fn](stepConfig.stepNumber), direction);
+            const fn = direction == -1 ? 'getPreviousStepNumber' : 'getNextStepNumber';
+            this.gotoStep(this[fn](stepConfig.stepNumber), direction);
+
+            pendingPromise.resolve();
+            return this;
         }
 
         this.hide();
@@ -476,6 +513,7 @@ const Tour = class {
             this.dispatchEvent(eventTypes.stepRendered, {stepConfig});
         }
 
+        pendingPromise.resolve();
         return this;
     }
 
@@ -757,6 +795,8 @@ const Tour = class {
         let currentStepNode = $('<span data-flexitour="container"></span>')
             .html(stepConfig.template)
             .hide();
+        // Trigger the Moodle filters.
+        notifyFilterContentUpdated(currentStepNode);
 
         // The scroll animation occurs on the body or html.
         let animationTarget = $('body, html')
@@ -793,12 +833,14 @@ const Tour = class {
                 left: 0,
             });
 
+            const pendingPromise = new PendingPromise(`tool_usertours/tour:addStepToPage-${stepConfig.stepNumber}`);
             animationTarget
                 .animate({
                     scrollTop: this.calculateScrollTop(stepConfig),
                 }).promise().then(function() {
                         this.positionStep(stepConfig);
                         this.revealStep(stepConfig);
+                        pendingPromise.resolve();
                         return;
                     }.bind(this))
                     .catch(function() {
@@ -870,6 +912,7 @@ const Tour = class {
      */
     revealStep(stepConfig) {
         // Fade the step in.
+        const pendingPromise = new PendingPromise(`tool_usertours/tour:revealStep-${stepConfig.stepNumber}`);
         this.currentStepNode.fadeIn('', $.proxy(function() {
                 // Announce via ARIA.
                 this.announceStep(stepConfig);
@@ -883,6 +926,7 @@ const Tour = class {
                     if (this.currentStepNode) {
                         this.currentStepNode.focus();
                     }
+                    pendingPromise.resolve();
                 }, this), 100);
 
             }, this));
@@ -924,6 +968,7 @@ const Tour = class {
         // Configure ARIA attributes on the target.
         let target = this.getStepTarget(stepConfig);
         if (target) {
+            target.data('original-tabindex', target.attr('tabindex'));
             if (!target.attr('tabindex')) {
                 target.attr('tabindex', 0);
             }
@@ -1101,7 +1146,7 @@ const Tour = class {
                 if (!previousTarget.attr('tabindex')) {
                     previousTarget.attr('tabindex', '-1');
                 }
-                previousTarget.focus();
+                previousTarget.first().focus();
             }
         }
 
@@ -1129,6 +1174,7 @@ const Tour = class {
             return this;
         }
 
+        const pendingPromise = new PendingPromise('tool_usertours/tour:hide');
         if (this.currentStepNode && this.currentStepNode.length) {
             this.currentStepNode.hide();
             if (this.currentStepPopper) {
@@ -1150,6 +1196,12 @@ const Tour = class {
 
                 if (target.data('original-tabindex')) {
                     target.attr('tabindex', target.data('tabindex'));
+                } else {
+                    // If the target does not have the tabindex attribute at the beginning. We need to remove it.
+                    // We should wait a little here before removing the attribute to prevent the browser from adding it again.
+                    window.setTimeout(() => {
+                        target.removeAttr('tabindex');
+                    }, 400);
                 }
             }
 
@@ -1157,17 +1209,22 @@ const Tour = class {
             this.currentStepConfig = null;
         }
 
-        let fadeTime = 0;
-        if (transition) {
-            fadeTime = 400;
-        }
-
         // Remove the backdrop features.
         $('[data-flexitour="step-background"]').remove();
         $('[data-flexitour="step-backdrop"]').removeAttr('data-flexitour');
-        $('[data-flexitour="backdrop"]').fadeOut(fadeTime, function() {
-            $(this).remove();
-        });
+
+        const backdrop = $('[data-flexitour="backdrop"]');
+        if (backdrop.length) {
+            if (transition) {
+                const backdropRemovalPromise = new PendingPromise('tool_usertours/tour:hide:backdrop');
+                backdrop.fadeOut(400, function() {
+                    $(this).remove();
+                    backdropRemovalPromise.resolve();
+                });
+            } else {
+                backdrop.remove();
+            }
+        }
 
         // Remove aria-describedby and tabindex attributes.
         if (this.currentStepNode && this.currentStepNode.length) {
@@ -1188,6 +1245,8 @@ const Tour = class {
 
         this.currentStepNode = null;
         this.currentStepPopper = null;
+
+        pendingPromise.resolve();
         return this;
     }
 
@@ -1296,6 +1355,7 @@ const Tour = class {
      */
     positionStep(stepConfig) {
         let content = this.currentStepNode;
+        let thisT = this;
         if (!content || !content.length) {
             // Unable to find the step node.
             return this;
@@ -1335,9 +1395,15 @@ const Tour = class {
             },
             onCreate: function(data) {
                 recalculateArrowPosition(data);
+                recalculateStepPosition(data);
             },
             onUpdate: function(data) {
                 recalculateArrowPosition(data);
+                if (thisT.possitionNeedToBeRecalculated) {
+                    thisT.recalculatedNo++;
+                    thisT.possitionNeedToBeRecalculated = false;
+                    recalculateStepPosition(data);
+                }
             },
         };
 
@@ -1385,6 +1451,90 @@ const Tour = class {
                     $(arrowElement).css('left', newArrowPos);
                 }
             }
+        };
+
+        const recalculateStepPosition = function(data) {
+            const placement = data.placement.split('-')[0];
+            const isVertical = ['left', 'right'].indexOf(placement) !== -1;
+            const popperElement = $(data.instance.popper);
+            const targetElement = $(data.instance.reference);
+            const arrowElement = popperElement.find('[data-role="arrow"]');
+            const stepElement = popperElement.find('[data-role="flexitour-step"]');
+            const viewportHeight = $(window).height();
+            const viewportWidth = $(window).width();
+            const arrowHeight = parseFloat(arrowElement.outerHeight(true));
+            const popperHeight = parseFloat(popperElement.outerHeight(true));
+            const targetHeight = parseFloat(targetElement.outerHeight(true));
+            const arrowWidth = parseFloat(arrowElement.outerWidth(true));
+            const popperWidth = parseFloat(popperElement.outerWidth(true));
+            const targetWidth = parseFloat(targetElement.outerWidth(true));
+            let maxHeight;
+
+            if (thisT.recalculatedNo > 1) {
+                // The current screen is too small, and cannot fit with the original placement.
+                // We should set the placement to auto so the PopperJS can calculate the perfect placement.
+                thisT.currentStepPopper.options.placement = isVertical ? 'auto-left' : 'auto-bottom';
+            }
+            if (thisT.recalculatedNo > 2) {
+                // Return here to prevent recursive calling.
+                return;
+            }
+
+            if (isVertical) {
+                // Find the best place to put the tour: Left of right.
+                const leftSpace = targetElement.offset().left > 0 ? targetElement.offset().left : 0;
+                const rightSpace = viewportWidth - leftSpace - targetWidth;
+                const remainingSpace = leftSpace >= rightSpace ? leftSpace : rightSpace;
+                maxHeight = viewportHeight - MINSPACING * 2;
+                if (remainingSpace < (popperWidth + arrowWidth)) {
+                    const maxWidth = remainingSpace - MINSPACING - arrowWidth;
+                    if (maxWidth > 0) {
+                        popperElement.css({
+                            'max-width': maxWidth + 'px',
+                        });
+                        // Not enough space, flag true to make Popper to recalculate the position.
+                        thisT.possitionNeedToBeRecalculated = true;
+                    }
+                } else if (maxHeight < popperHeight) {
+                    // Check if the Popper's height can fit the viewport height or not.
+                    // If not, set the correct max-height value for the Popper element.
+                    popperElement.css({
+                        'max-height': maxHeight + 'px',
+                    });
+                }
+            } else {
+                // Find the best place to put the tour: Top of bottom.
+                const topSpace = targetElement.offset().top > 0 ? targetElement.offset().top : 0;
+                const bottomSpace = viewportHeight - topSpace - targetHeight;
+                const remainingSpace = topSpace >= bottomSpace ? topSpace : bottomSpace;
+                maxHeight = remainingSpace - MINSPACING - arrowHeight;
+                if (remainingSpace < (popperHeight + arrowHeight)) {
+                    // Not enough space, flag true to make Popper to recalculate the position.
+                    thisT.possitionNeedToBeRecalculated = true;
+                }
+            }
+
+            // Check if the Popper's height can fit the viewport height or not.
+            // If not, set the correct max-height value for the body.
+            const currentStepBody = stepElement.find('[data-placeholder="body"]').first();
+            const headerEle = stepElement.find('.modal-header').first();
+            const footerEle = stepElement.find('.modal-footer').first();
+            const headerHeight = headerEle.outerHeight(true) ?? 0;
+            const footerHeight = footerEle.outerHeight(true) ?? 0;
+            maxHeight = maxHeight - headerHeight - footerHeight;
+            if (maxHeight > 0) {
+                headerEle.removeClass('minimal');
+                footerEle.removeClass('minimal');
+                currentStepBody.css({
+                    'max-height': maxHeight + 'px',
+                    'overflow': 'auto',
+                });
+            } else {
+                headerEle.addClass('minimal');
+                footerEle.addClass('minimal');
+            }
+            // Call the Popper update method to update the position.
+            thisT.currentStepPopper.update();
         };
 
         let background = $('[data-flexitour="step-background"]');
@@ -1503,9 +1653,7 @@ const Tour = class {
                 }
 
                 let targetPosition = this.calculatePosition(targetNode);
-                if (targetPosition === 'fixed') {
-                    background.css('top', 0);
-                } else if (targetPosition === 'absolute') {
+                if (targetPosition === 'absolute') {
                     background.css('position', 'fixed');
                 }
 
@@ -1516,21 +1664,18 @@ const Tour = class {
                 });
                 fader.attr('data-flexitour', 'step-background-fader');
 
-                if (targetNode.parents('[data-region="fixed-drawer"]').length) {
+                if (!stepConfig.zIndex) {
                     let targetClone = targetNode.clone();
-                    background.append(targetClone);
-                }
-
-                if (stepConfig.zIndex) {
+                    background.append(targetClone.first());
+                    $('body').append(fader);
+                    $('body').append(background);
+                } else {
                     if (stepConfig.attachPoint === 'append') {
                         stepConfig.attachTo.append(background);
                     } else {
                         fader.insertAfter(stepConfig.attachTo);
                         background.insertAfter(stepConfig.attachTo);
                     }
-                } else {
-                    $('body').append(fader);
-                    $('body').append(background);
                 }
 
                 // Add the backdrop data to the actual target.
@@ -1560,12 +1705,15 @@ const Tour = class {
      */
     calculateZIndex(elem) {
         elem = $(elem);
+        if (this.requireDefaultTourZindex(elem)) {
+            return 0;
+        }
         while (elem.length && elem[0] !== document) {
             // Ignore z-index if position is set to a value where z-index is ignored by the browser
             // This makes behavior of this function consistent across browsers
             // WebKit always returns auto if the element is positioned.
             let position = elem.css("position");
-            if (position === "absolute" || position === "relative" || position === "fixed") {
+            if (position === "absolute" || position === "fixed") {
                 // IE returns 0 when zIndex is not specified
                 // other browsers return a string
                 // we ignore the case of nested elements with an explicit value of 0
@@ -1579,6 +1727,23 @@ const Tour = class {
         }
 
         return 0;
+    }
+
+    /**
+     * Check if the element require the default tour z-index.
+     *
+     * Some page elements have fixed z-index. However, their weight is not enough to cover
+     * other page elements like the top navbar or a sticky footer so they use the default
+     * tour z-index instead.
+     *
+     * @param {jQuery} elem the page element to highlight
+     * @return {Boolean} true if the element requires the default tour z-index instead of the calculated one
+     */
+    requireDefaultTourZindex(elem) {
+        if (elem.parents('[data-region="fixed-drawer"]').length !== 0) {
+            return true;
+        }
+        return false;
     }
 
     /**

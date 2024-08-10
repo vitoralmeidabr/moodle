@@ -14,14 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for user/editlib.php.
- *
- * @package    core_user
- * @category   phpunit
- * @copyright  2013 Adrian Greeve <adrian@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core_user;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,19 +25,19 @@ require_once($CFG->dirroot.'/user/editlib.php');
  * Unit tests for user editlib api.
  *
  * @package    core_user
- * @category   phpunit
+ * @category   test
  * @copyright  2013 Adrian Greeve <adrian@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_user_editlib_testcase extends advanced_testcase {
+class editlib_test extends \advanced_testcase {
 
     /**
      * Test that the required fields are returned in the correct order.
      */
-    function test_useredit_get_required_name_fields() {
+    function test_useredit_get_required_name_fields(): void {
         global $CFG;
         // Back up config settings for restore later.
-        $originalcfg = new stdClass();
+        $originalcfg = new \stdClass();
         $originalcfg->fullnamedisplay = $CFG->fullnamedisplay;
 
         $CFG->fullnamedisplay = 'language';
@@ -67,10 +60,10 @@ class core_user_editlib_testcase extends advanced_testcase {
     /**
      * Test that the enabled fields are returned in the correct order.
      */
-    function test_useredit_get_enabled_name_fields() {
+    function test_useredit_get_enabled_name_fields(): void {
         global $CFG;
         // Back up config settings for restore later.
-        $originalcfg = new stdClass();
+        $originalcfg = new \stdClass();
         $originalcfg->fullnamedisplay = $CFG->fullnamedisplay;
 
         $CFG->fullnamedisplay = 'language';
@@ -93,10 +86,10 @@ class core_user_editlib_testcase extends advanced_testcase {
     /**
      * Test that the disabled fields are returned.
      */
-    function test_useredit_get_disabled_name_fields() {
+    function test_useredit_get_disabled_name_fields(): void {
         global $CFG;
         // Back up config settings for restore later.
-        $originalcfg = new stdClass();
+        $originalcfg = new \stdClass();
         $originalcfg->fullnamedisplay = $CFG->fullnamedisplay;
 
         $CFG->fullnamedisplay = 'language';

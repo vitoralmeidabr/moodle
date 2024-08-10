@@ -24,16 +24,15 @@
 "use strict";
 
 import $ from 'jquery';
-import {dispatchEvent} from 'core/event_dispatcher';
+import AutoComplete from 'core/form-autocomplete';
 import 'core/inplace_editable';
 import Notification from 'core/notification';
 import Pending from 'core/pending';
 import {prefetchStrings} from 'core/prefetch';
 import SortableList from 'core/sortable_list';
-import {get_string as getString} from 'core/str';
+import {getString} from 'core/str';
 import Templates from 'core/templates';
 import {add as addToast} from 'core/toast';
-import * as reportEvents from 'core_reportbuilder/local/events';
 import * as reportSelectors from 'core_reportbuilder/local/selectors';
 import {addFilter, deleteFilter, reorderFilter} from 'core_reportbuilder/local/repository/filters';
 
@@ -51,11 +50,27 @@ const reloadSettingsFiltersRegion = (reportElement, templateContext) => {
     return Templates.renderForPromise('core_reportbuilder/local/settings/filters', {filters: templateContext})
         .then(({html, js}) => {
             Templates.replaceNode(settingsFiltersRegion, html, js);
+
+            initFiltersForm();
+
             // Re-focus the add filter element after reloading the region.
             const reportAddFilter = reportElement.querySelector(reportSelectors.actions.reportAddFilter);
             reportAddFilter?.focus();
+
             return pendingPromise.resolve();
         });
+};
+
+/**
+ * Initialise filters form, must be called on each init because the form container is re-created when switching editor modes
+ */
+const initFiltersForm = () => {
+    const reportElement = document.querySelector(reportSelectors.regions.report);
+
+    // Enhance filter selector.
+    const reportAddFilter = reportElement.querySelector(reportSelectors.actions.reportAddFilter);
+    AutoComplete.enhanceField(reportAddFilter, false, '', getString('selectafilter', 'core_reportbuilder'))
+        .catch(Notification.exception);
 };
 
 /**
@@ -70,30 +85,30 @@ export const init = initialized => {
         'filteradded',
         'filterdeleted',
         'filtermoved',
+        'selectafilter',
     ]);
 
     prefetchStrings('core', [
         'delete',
     ]);
 
+    initFiltersForm();
     if (initialized) {
         return;
     }
 
-    document.addEventListener('click', event => {
-
-        // Add filter to report.
+    // Add filter to report.
+    document.addEventListener('change', event => {
         const reportAddFilter = event.target.closest(reportSelectors.actions.reportAddFilter);
         if (reportAddFilter) {
             event.preventDefault();
 
-            const reportElement = reportAddFilter.closest(reportSelectors.regions.report);
-
             // Check if dropdown is closed with no filter selected.
-            if (reportAddFilter.value === '0') {
+            if (reportAddFilter.value === "" || reportAddFilter.value === "0") {
                 return;
             }
 
+            const reportElement = reportAddFilter.closest(reportSelectors.regions.report);
             const pendingPromise = new Pending('core_reportbuilder/filters:add');
 
             addFilter(reportElement.dataset.reportId, reportAddFilter.value)
@@ -104,6 +119,9 @@ export const init = initialized => {
                 .then(() => pendingPromise.resolve())
                 .catch(Notification.exception);
         }
+    });
+
+    document.addEventListener('click', event => {
 
         // Remove filter from report.
         const reportRemoveFilter = event.target.closest(reportSelectors.actions.reportRemoveFilter);
@@ -125,10 +143,7 @@ export const init = initialized => {
                 return deleteFilter(reportElement.dataset.reportId, filterContainer.dataset.filterId)
                     .then(data => reloadSettingsFiltersRegion(reportElement, data))
                     .then(() => addToast(getString('filterdeleted', 'core_reportbuilder', filterName)))
-                    .then(() => {
-                        dispatchEvent(reportEvents.tableReload, {}, reportElement);
-                        return pendingPromise.resolve();
-                    })
+                    .then(() => pendingPromise.resolve())
                     .catch(Notification.exception);
             }).catch(() => {
                 return;
@@ -153,8 +168,10 @@ export const init = initialized => {
                 targetFilterPosition--;
             }
 
-            reorderFilter(reportElement.dataset.reportId, filterId, targetFilterPosition)
-                .then(data => reloadSettingsFiltersRegion(reportElement, data))
+            // Re-order filter, giving drop event transition time to finish.
+            const reorderPromise = reorderFilter(reportElement.dataset.reportId, filterId, targetFilterPosition);
+            Promise.all([reorderPromise, new Promise(resolve => setTimeout(resolve, 1000))])
+                .then(([data]) => reloadSettingsFiltersRegion(reportElement, data))
                 .then(() => getString('filtermoved', 'core_reportbuilder', info.element.data('filterName')))
                 .then(addToast)
                 .then(() => pendingPromise.resolve())

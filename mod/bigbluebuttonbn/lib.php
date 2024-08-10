@@ -28,14 +28,18 @@ defined('MOODLE_INTERNAL') || die;
 use core_calendar\action_factory;
 use core_calendar\local\event\entities\action_interface;
 use mod_bigbluebuttonbn\completion\custom_completion;
+use mod_bigbluebuttonbn\extension;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\bigbluebutton;
+use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use mod_bigbluebuttonbn\local\helpers\files;
 use mod_bigbluebuttonbn\local\helpers\mod_helper;
 use mod_bigbluebuttonbn\local\helpers\reset;
+use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
 use mod_bigbluebuttonbn\logger;
 use mod_bigbluebuttonbn\meeting;
 use mod_bigbluebuttonbn\recording;
+use mod_bigbluebuttonbn\local\config;
 
 global $CFG;
 
@@ -71,7 +75,7 @@ function bigbluebuttonbn_supports($feature) {
         FEATURE_GRADE_HAS_GRADE => false,
         FEATURE_GRADE_OUTCOMES => false,
         FEATURE_SHOW_DESCRIPTION => true,
-        FEATURE_MOD_PURPOSE => MOD_PURPOSE_OTHER
+        FEATURE_MOD_PURPOSE => MOD_PURPOSE_COMMUNICATION,
     ];
     if (isset($features[(string) $feature])) {
         return $features[$feature];
@@ -96,12 +100,17 @@ function bigbluebuttonbn_add_instance($bigbluebuttonbn) {
     $bigbluebuttonbn->presentation = files::save_media_file($bigbluebuttonbn);
     // Encode meetingid.
     $bigbluebuttonbn->meetingid = meeting::get_unique_meetingid_seed();
+    [$bigbluebuttonbn->guestlinkuid, $bigbluebuttonbn->guestpassword] =
+        \mod_bigbluebuttonbn\plugin::generate_guest_meeting_credentials();
     // Insert a record.
     $bigbluebuttonbn->id = $DB->insert_record('bigbluebuttonbn', $bigbluebuttonbn);
     // Log insert action.
     logger::log_instance_created($bigbluebuttonbn);
     // Complete the process.
     mod_helper::process_post_save($bigbluebuttonbn);
+
+    // Call any active subplugin so to signal a new creation.
+    extension::add_instance($bigbluebuttonbn);
     return $bigbluebuttonbn->id;
 }
 
@@ -122,6 +131,10 @@ function bigbluebuttonbn_update_instance($bigbluebuttonbn) {
     $bigbluebuttonbn->id = $bigbluebuttonbn->instance;
     $bigbluebuttonbn->presentation = files::save_media_file($bigbluebuttonbn);
 
+    if (empty($bigbluebuttonbn->guestjoinurl) || empty($bigbluebuttonbn->guestpassword)) {
+        [$bigbluebuttonbn->guestlinkuid, $bigbluebuttonbn->guestpassword] =
+            \mod_bigbluebuttonbn\plugin::generate_guest_meeting_credentials();
+    }
     // Update a record.
     $DB->update_record('bigbluebuttonbn', $bigbluebuttonbn);
 
@@ -133,6 +146,8 @@ function bigbluebuttonbn_update_instance($bigbluebuttonbn) {
 
     // Complete the process.
     mod_helper::process_post_save($bigbluebuttonbn);
+    // Call any active subplugin so to signal update.
+    extension::update_instance($bigbluebuttonbn);
     return true;
 }
 
@@ -156,22 +171,37 @@ function bigbluebuttonbn_delete_instance($id) {
     try {
         $meeting = new meeting($instance);
         $meeting->end_meeting();
-        $groups = groups_get_course_group($instance->get_course());
-        if ($groups) {
-            foreach ($groups as $group) {
-                $instance->set_group_id($group->id);
-                $meeting = new meeting($instance);
-                $meeting->end_meeting();
-            }
-        }
     } catch (moodle_exception $e) {
         // Do not log any issue when testing.
         if (!(defined('PHPUNIT_TEST') && PHPUNIT_TEST) && !defined('BEHAT_SITE_RUNNING')) {
-            debugging($e->getMessage(), DEBUG_NORMAL, $e->getTrace());
+            debugging($e->getMessage(), DEBUG_DEVELOPER, $e->getTrace());
+        }
+    }
+    // Get all possible groups (course and course module).
+    $groupids = [];
+    if (groups_get_activity_groupmode($instance->get_cm())) {
+        $coursegroups = groups_get_activity_allowed_groups($instance->get_cm());
+        $groupids = array_map(
+            function($gp) {
+                return $gp->id;
+            },
+            $coursegroups);
+    }
+    // End all meetings for all groups.
+    foreach ($groupids as $groupid) {
+        try {
+            $instance->set_group_id($groupid);
+            $meeting = new meeting($instance);
+            $meeting->end_meeting();
+        } catch (moodle_exception $e) {
+            debugging($e->getMessage() . ' for group ' . $groupid, DEBUG_NORMAL, $e->getTrace());
         }
     }
 
     $result = true;
+
+    // Call any active subplugin so to signal deletion.
+    extension::delete_instance($id);
 
     // Delete the instance.
     if (!$DB->delete_records('bigbluebuttonbn', ['id' => $id])) {
@@ -208,24 +238,11 @@ function bigbluebuttonbn_delete_instance($id) {
  * @return stdClass with info and time (timestamp of the last log)
  */
 function bigbluebuttonbn_user_outline(stdClass $course, stdClass $user, cm_info $mod, stdClass $bigbluebuttonbn): stdClass {
-    $customcompletion = new custom_completion($mod, $user->id);
-    $completed = $customcompletion->get_overall_completion_state();
-    $result = new stdClass();
-    if ($completed) {
-        $results = [];
-        $lastlog = 0;
-        foreach ($customcompletion->get_available_custom_rules() as $rule) {
-            $results[] = $customcompletion->get_printable_state($rule);
-            $lastlogrule = $customcompletion->get_last_log_timestamp($rule);
-            if ($lastlogrule > $lastlog) {
-                $lastlog = $lastlogrule;
-            }
-        }
-        $result = new stdClass();
-        $result->info = join(', ', $results);
-        $result->time = $lastlog;
-    }
-    return $result;
+    [$infos, $logtimestamps] = \mod_bigbluebuttonbn\local\helpers\user_info::get_user_info_outline($course, $user, $mod);
+    return (object) [
+        'info' => join(',', $infos),
+        'time' => !empty($logtimestamps) ? max($logtimestamps) : 0
+    ];
 }
 
 /**
@@ -239,12 +256,8 @@ function bigbluebuttonbn_user_outline(stdClass $course, stdClass $user, cm_info 
  *
  */
 function bigbluebuttonbn_user_complete(stdClass $course, stdClass $user, cm_info $mod, stdClass $bigbluebuttonbn) {
-    $customcompletion = new custom_completion($mod, $user->id);
-    $result = [];
-    foreach ($customcompletion->get_available_custom_rules() as $rule) {
-        $result[] = $customcompletion->get_printable_state($rule);
-    }
-    echo join(', ', $result);
+    [$infos] = \mod_bigbluebuttonbn\local\helpers\user_info::get_user_info_outline($course, $user, $mod);
+    echo join(', ', $infos);
 }
 
 /**
@@ -269,9 +282,9 @@ function bigbluebuttonbn_get_extra_capabilities() {
 /**
  * Called by course/reset.php
  *
- * @param object $mform
+ * @param MoodleQuickForm $mform
  */
-function bigbluebuttonbn_reset_course_form_definition(object &$mform) {
+function bigbluebuttonbn_reset_course_form_definition(&$mform) {
     $items = reset::reset_course_items();
     $mform->addElement('header', 'bigbluebuttonbnheader', get_string('modulenameplural', 'bigbluebuttonbn'));
     foreach ($items as $item => $default) {
@@ -327,6 +340,13 @@ function bigbluebuttonbn_reset_userdata(stdClass $data) {
         unset($items['tags']);
         $status[] = reset::reset_getstatus('tags');
     }
+
+    if (!empty($data->reset_bigbluebuttonbn_logs)) {
+        // Remove all the tags linked to the room/activities in this course.
+        reset::reset_logs($data->courseid);
+        unset($items['logs']);
+        $status[] = reset::reset_getstatus('logs');
+    }
     return $status;
 }
 
@@ -341,23 +361,25 @@ function bigbluebuttonbn_reset_userdata(stdClass $data) {
  * @return null|cached_cm_info
  */
 function bigbluebuttonbn_get_coursemodule_info($coursemodule) {
-    global $DB;
-
-    $dbparams = ['id' => $coursemodule->instance];
-    $fields = 'id, name, intro, introformat, completionattendance';
-    $bigbluebuttonbn = $DB->get_record('bigbluebuttonbn', $dbparams, $fields);
-    if (!$bigbluebuttonbn) {
+    $instance = instance::get_from_instanceid($coursemodule->instance);
+    if (empty($instance)) {
         return null;
     }
     $info = new cached_cm_info();
-    $info->name = $bigbluebuttonbn->name;
+    // Warning here: if any of the instance method calls ::get_cm this will result is a recursive call.
+    // So best is just to access instance variables not linked to the cm.
+    $info->name = $instance->get_instance_var('name');
     if ($coursemodule->showdescription) {
         // Convert intro to html. Do not filter cached version, filters run at display time.
-        $info->content = format_module_intro('bigbluebuttonbn', $bigbluebuttonbn, $coursemodule->id, false);
+        $info->content = format_module_intro('bigbluebuttonbn', $instance->get_instance_data(), $coursemodule->id, false);
     }
+    $customcompletionfields = custom_completion::get_defined_custom_rules();
     // Populate the custom completion rules as key => value pairs, but only if the completion mode is 'automatic'.
     if ($coursemodule->completion == COMPLETION_TRACKING_AUTOMATIC) {
-        $info->customdata['customcompletionrules']['completionattendance'] = $bigbluebuttonbn->completionattendance;
+        foreach ($customcompletionfields as $completiontype) {
+            $info->customdata['customcompletionrules'][$completiontype] =
+                $instance->get_instance_var($completiontype) ?? 0;
+        }
     }
 
     return $info;
@@ -367,7 +389,7 @@ function bigbluebuttonbn_get_coursemodule_info($coursemodule) {
  * Serves the bigbluebuttonbn attachments. Implements needed access control ;-).
  *
  * @param stdClass $course course object
- * @param cm_info $cm course module object
+ * @param stdClass $cm course module object
  * @param context $context context object
  * @param string $filearea file area
  * @param array $args extra arguments
@@ -474,8 +496,20 @@ function mod_bigbluebuttonbn_core_calendar_provide_event_action(
     $instance = instance::get_from_instanceid($bigbluebuttonbn->id);
     // Get if the room is available.
     $roomavailable = $instance->is_currently_open();
-    // Get if the user can join.
-    $meetinginfo = meeting::get_meeting_info_for_instance($instance);
+
+    $meetinginfo = null;
+    // Check first if the server can be contacted.
+    try {
+        if (empty(bigbluebutton_proxy::get_server_version())) {
+            // In this case we should already have debugging message printed.
+            return null;
+        }
+        // Get if the user can join.
+        $meetinginfo = meeting::get_meeting_info_for_instance($instance);
+    } catch (moodle_exception $e) {
+        debugging('Error - Cannot retrieve info from meeting ('.$instance->get_meeting_id().') ' . $e->getMessage());
+        return null;
+    }
     $usercanjoin = $meetinginfo->canjoin;
 
     // Check if the room is closed and the user has already joined this session or played the record.
@@ -670,7 +704,7 @@ function bigbluebuttonbn_print_recent_activity(object $course, bool $viewfullnam
         if ($logs) {
             echo $OUTPUT->heading(get_string('new_bigblubuttonbn_activities', 'bigbluebuttonbn') . ':', 6);
             foreach ($logs as $log) {
-                $activityurl = new moodle_url('/mod/bigbluebuttonbn/index.php', ['id' => $instance->get_instance_id()]);
+                $activityurl = new moodle_url('/mod/bigbluebuttonbn/index.php', ['id' => $course->id]);
                 print_recent_activity_note($log->timecreated,
                     $log,
                     logger::get_printable_event_name($log) . ' - ' . $instance->get_meeting_name(),
@@ -682,5 +716,44 @@ function bigbluebuttonbn_print_recent_activity(object $course, bool $viewfullnam
 
         echo $out;
     }
+    return true;
+}
+
+
+/**
+ * Creates a number of BigblueButtonBN activities.
+ *
+ * @param tool_generator_course_backend $backend
+ * @param testing_data_generator $generator
+ * @param int $courseid
+ * @param int $number
+ * @return void
+ */
+function bigbluebuttonbn_course_backend_generator_create_activity(tool_generator_course_backend $backend,
+    testing_data_generator $generator,
+    int $courseid,
+    int $number
+) {
+    // Set up generator.
+    $bbbgenerator = $generator->get_plugin_generator('mod_bigbluebuttonbn');
+
+    // Create assignments.
+    $backend->log('createbigbluebuttonbn', $number, true, 'mod_bigbluebuttonbn');
+    for ($i = 0; $i < $number; $i++) {
+        $record = array('course' => $courseid);
+        $options = array('section' => $backend->get_target_section());
+        $bbbgenerator->create_instance($record, $options);
+        $backend->dot($i, $number);
+    }
+    $backend->end_log();
+}
+
+/**
+ * Whether the activity is branded.
+ * This information is used, for instance, to decide if a filter should be applied to the icon or not.
+ *
+ * @return bool True if the activity is branded, false otherwise.
+ */
+function bigbluebuttonbn_is_branded(): bool {
     return true;
 }

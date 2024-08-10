@@ -21,7 +21,6 @@ Feature: In a course administration page, navigate through report page, test for
     Given I log in as "admin"
     And I am on "Course 1" course homepage
     When I navigate to "Reports" in current page administration
-    And I select "Activity report" from the "Report type" singleselect
-    Then "Report" "field" should exist
-    And the "Report" select box should contain "Activity report"
-    And the field "Report" matches value "Activity report"
+    And I click on "Activity report" "link"
+    Then "Report" "field" should exist in the "tertiary-navigation" "region"
+    And I should see "Activity report" in the "tertiary-navigation" "region"

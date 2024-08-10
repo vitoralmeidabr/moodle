@@ -16,8 +16,6 @@ Feature: View activity completion in the quiz activity
       | user     | course | role           |
       | teacher1 | C1     | editingteacher |
       | student1 | C1     | student        |
-    And the following config values are set as admin:
-      | grade_item_advanced | hiddenuntil |
     And the following "question categories" exist:
       | contextlevel | reference | name           |
       | Course       | C1        | Test questions |
@@ -76,7 +74,7 @@ Feature: View activity completion in the quiz activity
     And I log in as "teacher1"
     And I am on "Course 1" course homepage
     And I navigate to "Reports" in current page administration
-    And I select "Activity completion" from the "Report type" singleselect
+    And I click on "Activity completion" "link"
     And "<expectedactivitycompletion>" "icon" should exist in the "Student 1" "table_row"
 
     Examples:

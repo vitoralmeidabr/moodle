@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-use mod_lti\external\get_tool_types_and_proxies;
+namespace mod_lti\external;
+
+use core_external\external_api;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -30,12 +32,13 @@ require_once($CFG->dirroot . '/mod/lti/tests/mod_lti_testcase.php');
  * @copyright  2021 Catalyst IT
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mod_lti_get_tool_types_and_proxies_testcase extends mod_lti_testcase {
+class get_tool_types_and_proxies_test extends \mod_lti_testcase {
 
     /**
      * This method runs before every test.
      */
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
         $this->setAdminUser();
     }
@@ -43,7 +46,7 @@ class mod_lti_get_tool_types_and_proxies_testcase extends mod_lti_testcase {
     /**
      * Test get_tool_types_and_proxies.
      */
-    public function test_mod_lti_get_tool_types_and_proxies() {
+    public function test_mod_lti_get_tool_types_and_proxies(): void {
         $proxy = $this->generate_tool_proxy(1);
         $this->generate_tool_type(1, $proxy->id);
 
@@ -64,7 +67,7 @@ class mod_lti_get_tool_types_and_proxies_testcase extends mod_lti_testcase {
     /**
      * Test get_tool_types_and_proxies with multiple pages of tool types.
      */
-    public function test_mod_lti_get_tool_types_and_proxies_with_multiple_pages() {
+    public function test_mod_lti_get_tool_types_and_proxies_with_multiple_pages(): void {
         for ($i = 0; $i < 3; $i++) {
             $proxy = $this->generate_tool_proxy($i);
             $this->generate_tool_type($i, $proxy->id);
@@ -82,7 +85,7 @@ class mod_lti_get_tool_types_and_proxies_testcase extends mod_lti_testcase {
     /**
      * Test get_tool_types_and_proxies with multiple pages of tool types and offset.
      */
-    public function test_mod_lti_get_tool_types_and_proxies_with_multiple_pages_last_page() {
+    public function test_mod_lti_get_tool_types_and_proxies_with_multiple_pages_last_page(): void {
         for ($i = 0; $i < 6; $i++) {
             $proxy = $this->generate_tool_proxy($i);
             $this->generate_tool_type($i, $proxy->id);
@@ -100,7 +103,7 @@ class mod_lti_get_tool_types_and_proxies_testcase extends mod_lti_testcase {
     /**
      * Test get_tool_types_and_proxies without pagination.
      */
-    public function test_mod_lti_get_tool_types_and_proxies_without_pagination() {
+    public function test_mod_lti_get_tool_types_and_proxies_without_pagination(): void {
         for ($i = 0; $i < 10; $i++) {
             $proxy = $this->generate_tool_proxy($i);
             $this->generate_tool_type($i, $proxy->id);

@@ -330,12 +330,12 @@ function choice_user_submit_response($formanswer, $choice, $userid, $course, $cm
     $continueurl = new moodle_url('/mod/choice/view.php', array('id' => $cm->id));
 
     if (empty($formanswer)) {
-        print_error('atleastoneoption', 'choice', $continueurl);
+        throw new \moodle_exception('atleastoneoption', 'choice', $continueurl);
     }
 
     if (is_array($formanswer)) {
         if (!$choice->allowmultiple) {
-            print_error('multiplenotallowederror', 'choice', $continueurl);
+            throw new \moodle_exception('multiplenotallowederror', 'choice', $continueurl);
         }
         $formanswers = $formanswer;
     } else {
@@ -345,7 +345,7 @@ function choice_user_submit_response($formanswer, $choice, $userid, $course, $cm
     $options = $DB->get_records('choice_options', array('choiceid' => $choice->id), '', 'id');
     foreach ($formanswers as $key => $val) {
         if (!isset($options[$val])) {
-            print_error('cannotsubmit', 'choice', $continueurl);
+            throw new \moodle_exception('cannotsubmit', 'choice', $continueurl);
         }
     }
     // Start lock to prevent synchronous access to the same data
@@ -360,7 +360,7 @@ function choice_user_submit_response($formanswer, $choice, $userid, $course, $cm
         // Opening the lock.
         $choicelock = $lockfactory->get_lock($resouce, $timeout, MINSECS);
         if (!$choicelock) {
-            print_error('cannotsubmit', 'choice', $continueurl);
+            throw new \moodle_exception('cannotsubmit', 'choice', $continueurl);
         }
     }
 
@@ -476,7 +476,7 @@ function choice_user_submit_response($formanswer, $choice, $userid, $course, $cm
     } else {
         // This is a choice with limited options, and one of the options selected has just run over its limit.
         $choicelock->release();
-        print_error('choicefull', 'choice', $continueurl);
+        throw new \moodle_exception('choicefull', 'choice', $continueurl);
     }
 
     // Release lock.
@@ -721,11 +721,12 @@ function choice_get_post_actions() {
  * Implementation of the function for printing the form elements that control
  * whether the course reset functionality affects the choice.
  *
- * @param object $mform form passed by reference
+ * @param MoodleQuickForm $mform form passed by reference
  */
 function choice_reset_course_form_definition(&$mform) {
     $mform->addElement('header', 'choiceheader', get_string('modulenameplural', 'choice'));
-    $mform->addElement('advcheckbox', 'reset_choice', get_string('removeresponses','choice'));
+    $mform->addElement('static', 'choicedelete', get_string('delete'));
+    $mform->addElement('advcheckbox', 'reset_choice', get_string('removeresponses', 'choice'));
 }
 
 /**
@@ -750,23 +751,31 @@ function choice_reset_userdata($data) {
     global $CFG, $DB;
 
     $componentstr = get_string('modulenameplural', 'choice');
-    $status = array();
+    $status = [];
 
     if (!empty($data->reset_choice)) {
         $choicessql = "SELECT ch.id
                        FROM {choice} ch
                        WHERE ch.course=?";
 
-        $DB->delete_records_select('choice_answers', "choiceid IN ($choicessql)", array($data->courseid));
-        $status[] = array('component'=>$componentstr, 'item'=>get_string('removeresponses', 'choice'), 'error'=>false);
+        $DB->delete_records_select('choice_answers', "choiceid IN ($choicessql)", [$data->courseid]);
+        $status[] = [
+            'component' => $componentstr,
+            'item' => get_string('removeresponses', 'choice'),
+            'error' => false,
+        ];
     }
 
-    /// updating dates - shift may be negative too
+    // Updating dates - shift may be negative too.
     if ($data->timeshift) {
         // Any changes to the list of dates that needs to be rolled should be same during course restore and course reset.
         // See MDL-9367.
-        shift_course_mod_dates('choice', array('timeopen', 'timeclose'), $data->timeshift, $data->courseid);
-        $status[] = array('component'=>$componentstr, 'item'=>get_string('datechanged'), 'error'=>false);
+        shift_course_mod_dates('choice', ['timeopen', 'timeclose'], $data->timeshift, $data->courseid);
+        $status[] = [
+            'component' => $componentstr,
+            'item' => get_string('date'),
+            'error' => false,
+        ];
     }
 
     return $status;

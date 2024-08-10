@@ -28,20 +28,17 @@ $setmode = optional_param('setmode', false, PARAM_BOOL);
 $contextid = required_param('context', PARAM_INT);
 $pageurl = required_param('pageurl', PARAM_LOCALURL);
 
-require_sesskey();
+// Behat requires JS to get the session. To allow browserkit
+// to enable edit mode sesskey validation is skipped for behat scripts.
+if (!defined('BEHAT_SITE_RUNNING')) {
+    require_sesskey();
+}
+
 require_login();
 
 $context = \context_helper::instance_by_id($contextid);
 $PAGE->set_context($context);
 
-if ($context->id === \context_user::instance($USER->id)->id) {
-    $PAGE->set_blocks_editing_capability('moodle/my:manageblocks');
-}
-
-if ($PAGE->user_allowed_editing()) {
-    $USER->editing = $setmode;
-} else {
-    \core\notification::add(get_string('cannotswitcheditmodeon', 'error'), \core\notification::ERROR);
-}
+$USER->editing = $setmode;
 
 redirect($pageurl);

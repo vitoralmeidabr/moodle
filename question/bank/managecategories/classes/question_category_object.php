@@ -306,8 +306,14 @@ class question_category_object {
      * @param int $questionsincategory
      * @param object $category
      * @throws \coding_exception
+     *
+     * @deprecated No longer used by internal code and not recommended since Moodle 4.2 MDL-77299.
      */
     public function display_move_form($questionsincategory, $category): void {
+        debugging(
+            'display_move_form() is deprecated and no longer used by internal code.',
+            DEBUG_DEVELOPER
+        );
         global $OUTPUT;
         $vars = new stdClass();
         $vars->name = $category->name;
@@ -324,17 +330,8 @@ class question_category_object {
      * @throws \dml_exception
      */
     public function move_questions(int $oldcat, int $newcat): void {
-        global $DB;
-
-        $sql = "SELECT q.id, 1
-                  FROM {question} q
-                  JOIN {question_versions} qv ON qv.questionid = q.id
-                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-                 WHERE qbe.questioncategoryid = ?
-                   AND (q.parent = 0 OR q.parent = q.id)";
-
-        $questionids = $DB->get_records_sql_menu($sql, [$oldcat]);
-        question_move_questions_to_category(array_keys($questionids), $newcat);
+        $questionids = $this->get_real_question_ids_in_category($oldcat);
+        question_move_questions_to_category($questionids, $newcat);
     }
 
     /**
@@ -476,33 +473,12 @@ class question_category_object {
             $cat->stamp = make_unique_id_code();
         }
         $DB->update_record('question_categories', $cat);
+        // Update the set_reference records when moving a category to a different context.
+        move_question_set_references($cat->id, $cat->id, $oldcat->contextid, $tocontextid);
 
         // Log the update of this category.
         $event = \core\event\question_category_updated::create_from_question_category_instance($cat);
         $event->trigger();
-
-        // If the category name has changed, rename any random questions in that category.
-        if ($oldcat->name != $cat->name) {
-            // Get the question ids for each question category.
-            $sql = "SELECT q.id
-                      FROM {question} q
-                      JOIN {question_versions} qv ON qv.questionid = q.id
-                      JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-                     WHERE qbe.questioncategoryid = ?";
-
-            $questionids = $DB->get_records_sql($sql, [$cat->id]);
-
-            foreach ($questionids as $question) {
-                $where = "qtype = 'random' AND id = ? AND " . $DB->sql_compare_text('questiontext') . " = ?";
-
-                $randomqtype = question_bank::get_qtype('random');
-                $randomqname = $randomqtype->question_name($cat, false);
-                $DB->set_field_select('question', 'name', $randomqname, $where, [$question->id, '0']);
-
-                $randomqname = $randomqtype->question_name($cat, true);
-                $DB->set_field_select('question', 'name', $randomqname, $where, [$question->id, '1']);
-            }
-        }
 
         if ($oldcat->contextid != $tocontextid) {
             // Moving to a new context. Must move files belonging to questions.
@@ -515,5 +491,28 @@ class question_category_object {
             // Always redirect after successful action.
             redirect($this->pageurl);
         }
+    }
+
+    /**
+     * Returns ids of the question in the given question category.
+     *
+     * This method only returns the real question. It does not include
+     * subquestions of question types like multianswer.
+     *
+     * @param int $categoryid id of the category.
+     * @return int[] array of question ids.
+     */
+    public function get_real_question_ids_in_category(int $categoryid): array {
+        global $DB;
+
+        $sql = "SELECT q.id
+                  FROM {question} q
+                  JOIN {question_versions} qv ON qv.questionid = q.id
+                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+                 WHERE qbe.questioncategoryid = :categoryid
+                   AND (q.parent = 0 OR q.parent = q.id)";
+
+        $questionids = $DB->get_records_sql($sql, ['categoryid' => $categoryid]);
+        return array_keys($questionids);
     }
 }

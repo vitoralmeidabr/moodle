@@ -30,6 +30,7 @@ use \core_privacy\local\metadata\collection;
 use \core_privacy\local\request\contextlist;
 use \core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\userlist;
+use core_privacy\local\request\writer;
 use \core_privacy\local\request\approved_userlist;
 
 /**
@@ -42,6 +43,7 @@ use \core_privacy\local\request\approved_userlist;
 class provider implements
         \core_privacy\local\metadata\provider,
         \core_privacy\local\request\core_userlist_provider,
+        \core_privacy\local\request\user_preference_provider,
         \core_privacy\local\request\plugin\provider {
 
     /**
@@ -50,7 +52,7 @@ class provider implements
      * @param   collection $collection The initialised collection to add items to.
      * @return  collection A listing of user data stored through this system.
      */
-    public static function get_metadata(collection $collection) : collection {
+    public static function get_metadata(collection $collection): collection {
         $messageemailmessages = [
             'useridto' => 'privacy:metadata:message_email_messages:useridto',
             'conversationid' => 'privacy:metadata:message_email_messages:conversationid',
@@ -81,7 +83,7 @@ class provider implements
      * @param   int         $userid     The user to search.
      * @return  contextlist $contextlist  The contextlist containing the list of contexts used in this plugin.
      */
-    public static function get_contexts_for_userid(int $userid) : contextlist {
+    public static function get_contexts_for_userid(int $userid): contextlist {
         $contextlist = new contextlist();
         return $contextlist;
     }
@@ -124,5 +126,22 @@ class provider implements
      * @param   approved_contextlist    $contextlist    The approved contexts and user information to delete information for.
      */
     public static function delete_data_for_user(approved_contextlist $contextlist) {
+    }
+
+    /**
+     * Export all user preferences for the plugin
+     *
+     * @param int $userid
+     */
+    public static function export_user_preferences(int $userid) {
+        $preference = get_user_preferences('message_processor_email_email', null, $userid);
+        if (!empty($preference)) {
+            writer::export_user_preference(
+                'message_email',
+                'email',
+                $preference,
+                get_string('privacy:preference:email', 'message_email')
+            );
+        }
     }
 }

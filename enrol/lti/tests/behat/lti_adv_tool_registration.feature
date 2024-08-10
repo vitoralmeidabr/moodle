@@ -124,7 +124,7 @@ Feature: Register a platform with the tool
       | Public keyset URL          | https://lms.example.com/jwks |
       | Access token URL           | https://lms.example.com/token |
     And I press "Save changes"
-    Then I should see "Invalid Client ID. This Client ID is already registered for the Platform ID provided."
+    Then I should see "Invalid client ID. This client ID is already registered for the platform ID provided."
 
   Scenario: An admin can add deployment ids for a given platform registration
     Given the following "enrol_lti > application registrations" exist:
@@ -198,18 +198,18 @@ Feature: Register a platform with the tool
     And the "value" attribute of "Initiate login URL" "field" should contain "enrol/lti/login.php"
     And the "value" attribute of "JWKS URL" "field" should contain "enrol/lti/jwks.php"
     And the "value" attribute of "Deep linking URL" "field" should contain "enrol/lti/launch_deeplink.php"
-    And "Copy to clipboard" "link" should exist in the "Registration URL" "table_row"
-    And "Copy to clipboard" "link" should exist in the "Tool URL" "table_row"
-    And "Copy to clipboard" "link" should exist in the "Initiate login URL" "table_row"
-    And "Copy to clipboard" "link" should exist in the "JWKS URL" "table_row"
-    And "Copy to clipboard" "link" should exist in the "Deep linking URL" "table_row"
-    When I click on "Copy to clipboard" "link" in the "Registration URL" "table_row"
+    And "Copy to clipboard" "button" should exist in the "Registration URL" "table_row"
+    And "Copy to clipboard" "button" should exist in the "Tool URL" "table_row"
+    And "Copy to clipboard" "button" should exist in the "Initiate login URL" "table_row"
+    And "Copy to clipboard" "button" should exist in the "JWKS URL" "table_row"
+    And "Copy to clipboard" "button" should exist in the "Deep linking URL" "table_row"
+    When I click on "Copy to clipboard" "button" in the "Registration URL" "table_row"
     Then I should see "Registration URL copied to clipboard"
-    And I click on "Copy to clipboard" "link" in the "Tool URL" "table_row"
+    And I click on "Copy to clipboard" "button" in the "Tool URL" "table_row"
     And I should see "Tool URL copied to clipboard"
-    And I click on "Copy to clipboard" "link" in the "Initiate login URL" "table_row"
+    And I click on "Copy to clipboard" "button" in the "Initiate login URL" "table_row"
     And I should see "Initiate login URL copied to clipboard"
-    And I click on "Copy to clipboard" "link" in the "JWKS URL" "table_row"
+    And I click on "Copy to clipboard" "button" in the "JWKS URL" "table_row"
     And I should see "JWKS URL copied to clipboard"
-    And I click on "Copy to clipboard" "link" in the "Deep linking URL" "table_row"
+    And I click on "Copy to clipboard" "button" in the "Deep linking URL" "table_row"
     And I should see "Deep linking URL copied to clipboard"

@@ -14,17 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * lock unit tests
- *
- * @package    core
- * @category   test
- * @copyright  2013 Damyon Wiese
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
+namespace core;
 
 /**
  * Unit tests for our locking implementations.
@@ -34,12 +24,13 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2013 Damyon Wiese
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class lock_testcase extends advanced_testcase {
+class lock_test extends \advanced_testcase {
 
     /**
      * Some lock types will store data in the database.
      */
     protected function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest(true);
     }
 
@@ -129,7 +120,7 @@ class lock_testcase extends advanced_testcase {
      * Tests the testable lock factories classes.
      * @return void
      */
-    public function test_locks() {
+    public function test_locks(): void {
         // Run the suite on the current configured default (may be non-core).
         $this->run_on_lock_factory(\core\lock\lock_config::get_lock_factory_class());
 

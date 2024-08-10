@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace core_reportbuilder\local\filters;
 
+use context_system;
+use core_user;
 use lang_string;
 use MoodleQuickForm;
 use core_reportbuilder\local\helpers\database;
@@ -39,6 +41,9 @@ class user extends base {
     /** @var int Filter for current user */
     public const USER_CURRENT = 1;
 
+    /** @var int Filter for selected user */
+    public const USER_SELECT = 2;
+
     /**
      * Return an array of operators available for this filter
      *
@@ -48,6 +53,7 @@ class user extends base {
         $operators = [
             self::USER_ANY => new lang_string('userany', 'core_reportbuilder'),
             self::USER_CURRENT => new lang_string('usercurrent', 'core_reportbuilder'),
+            self::USER_SELECT => new lang_string('select'),
         ];
 
         return $this->filter->restrict_limited_operators($operators);
@@ -65,6 +71,20 @@ class user extends base {
 
         $mform->setType("{$this->name}_operator", PARAM_INT);
         $mform->setDefault("{$this->name}_operator", self::USER_ANY);
+
+        // Specific user selection.
+        $valuelabel = get_string('filterfieldvalue', 'core_reportbuilder', $this->get_header());
+        $options = [
+            'ajax' => 'core_user/form_user_selector',
+            'multiple' => true,
+            'valuehtmlcallback' => static function($userid): string {
+                $user = core_user::get_user($userid);
+                return fullname($user, has_capability('moodle/site:viewfullnames', context_system::instance()));
+            }
+        ];
+        $mform->addElement('autocomplete', "{$this->name}_value", $valuelabel, [], $options)
+            ->setHiddenLabel(true);
+        $mform->hideIf("{$this->name}_value", "{$this->name}_operator", 'neq', self::USER_SELECT);
     }
 
     /**
@@ -74,17 +94,31 @@ class user extends base {
      * @return array
      */
     public function get_sql_filter(array $values): array {
-        global $USER;
+        global $DB, $USER;
 
         $fieldsql = $this->filter->get_field_sql();
         $params = $this->filter->get_field_params();
 
         $operator = $values["{$this->name}_operator"] ?? self::USER_ANY;
+        $userids = $values["{$this->name}_value"] ?? [];
+
         switch ($operator) {
             case self::USER_CURRENT:
                 $paramuserid = database::generate_param_name();
                 $sql = "{$fieldsql} = :{$paramuserid}";
                 $params[$paramuserid] = $USER->id;
+            break;
+            case self::USER_SELECT:
+                [$useridselect, $useridparams] = $DB->get_in_or_equal(
+                    $userids,
+                    SQL_PARAMS_NAMED,
+                    database::generate_param_name('_'),
+                    true,
+                    null,
+                );
+
+                $sql = "{$fieldsql} {$useridselect}";
+                $params = array_merge($params, $useridparams);
             break;
             default:
                 // Invalid or inactive filter.
@@ -92,5 +126,17 @@ class user extends base {
         }
 
         return [$sql, $params];
+    }
+
+    /**
+     * Return sample filter values
+     *
+     * @return array
+     */
+    public function get_sample_values(): array {
+        return [
+            "{$this->name}_operator" => self::USER_SELECT,
+            "{$this->name}_value" => [1],
+        ];
     }
 }

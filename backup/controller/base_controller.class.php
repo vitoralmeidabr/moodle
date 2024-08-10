@@ -43,6 +43,9 @@ abstract class base_controller extends backup implements loggable {
      */
     protected $copy;
 
+    /** @var int Backup mode. */
+    protected $mode;
+
     /**
      * Gets the progress reporter, which can be used to report progress within
      * the backup or restore process.
@@ -104,28 +107,18 @@ abstract class base_controller extends backup implements loggable {
     }
 
     /**
-     * Store extra data for course copy operations.
-     *
-     * For a course copying these is data required to be passed to the restore step.
-     * We store this data in its own section of the backup controller
-     *
-     * @param \stdClass $data The course copy data.
-     * @throws backup_controller_exception
+     * @deprecated since Moodle 4.1 MDL-74548
      */
-    public function set_copy(\stdClass $data): void {
-        // Only allow setting of copy data when controller is in copy mode.
-        if ($this->mode != backup::MODE_COPY) {
-            throw new backup_controller_exception('cannot_set_copy_vars_wrong_mode');
-        }
-        $this->copy = $data;
+    #[\core\attribute\deprecated(since: '4.1', mdl: 'MDL-74548', final: true)]
+    public function set_copy(): void {
+        \core\deprecation::emit_deprecation_if_present([self::class, __FUNCTION__]);
     }
 
     /**
-     * Get the course copy data.
-     *
-     * @return \stdClass
+     * @deprecated since Moodle 4.1 MDL-74548
      */
-    public function get_copy(): \stdClass {
-        return $this->copy;
+    #[\core\attribute\deprecated('restore_controller::get_copy()', since: '4.1', mdl: 'MDL-74548', final: true)]
+    public function get_copy() {
+        \core\deprecation::emit_deprecation_if_present([self::class, __FUNCTION__]);
     }
 }

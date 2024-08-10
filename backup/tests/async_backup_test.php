@@ -14,13 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Asyncronhous backup tests.
- *
- * @package    core_backup
- * @copyright  2018 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core_backup;
+
+use backup;
+use backup_controller;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,15 +29,16 @@ require_once($CFG->libdir . '/completionlib.php');
 /**
  * Asyncronhous backup tests.
  *
+ * @package    core_backup
  * @copyright  2018 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_backup_async_backup_testcase extends \core_privacy\tests\provider_testcase {
+class async_backup_test extends \advanced_testcase {
 
     /**
      * Tests the asynchronous backup.
      */
-    public function test_async_backup() {
+    public function test_async_backup(): void {
         global $CFG, $DB, $USER;
 
         $this->resetAfterTest(true);
@@ -66,7 +64,7 @@ class core_backup_async_backup_testcase extends \core_privacy\tests\provider_tes
         // We need a grade, easiest is to add an assignment.
         $assignrow = $generator->create_module('assign', array(
                 'course' => $course->id));
-        $assign = new assign(context_module::instance($assignrow->cmid), false, false);
+        $assign = new \assign(\context_module::instance($assignrow->cmid), false, false);
         $item = $assign->get_grade_item();
 
         // Make a test grouping as well.
@@ -89,7 +87,7 @@ class core_backup_async_backup_testcase extends \core_privacy\tests\provider_tes
         set_config('buffersize', 0, 'logstore_standard');
         get_log_manager(true);
 
-        // Start backup process.
+        // Case 1: Make a course backup without users.
         $this->setUser($teacher->id);
 
         // Make the backup controller for an async backup.
@@ -107,7 +105,6 @@ class core_backup_async_backup_testcase extends \core_privacy\tests\provider_tes
 
         // Create the adhoc task.
         $asynctask = new \core\task\asynchronous_backup_task();
-        $asynctask->set_blocking(false);
         $asynctask->set_custom_data(['backupid' => $backupid]);
         $asynctask->set_userid($USER->id);
         \core\task\manager::queue_adhoc_task($asynctask);
@@ -134,12 +131,57 @@ class core_backup_async_backup_testcase extends \core_privacy\tests\provider_tes
                 'target' => 'course_backup'], '*', MUST_EXIST);
         $otherdata = json_decode($logrec->other);
         $this->assertEquals($backupid, $otherdata->backupid);
+
+        // Check backup was stored in correct area.
+        $usercontextid = $DB->get_field('context', 'id', ['contextlevel' => CONTEXT_USER, 'instanceid' => $teacher->id]);
+        $this->assertEquals(1, $DB->count_records('files', ['contextid' => $usercontextid,
+                'component' => 'user', 'filearea' => 'backup', 'filename' => 'backup.mbz']));
+
+        // Case 2: Make a second backup with users and not anonymised.
+        $this->setAdminUser();
+        $bc = new backup_controller(backup::TYPE_1COURSE, $course->id, backup::FORMAT_MOODLE,
+                backup::INTERACTIVE_YES, backup::MODE_ASYNC, $USER->id);
+        $bc->get_plan()->get_setting('users')->set_status(\backup_setting::NOT_LOCKED);
+        $bc->get_plan()->get_setting('users')->set_value(true);
+        $bc->get_plan()->get_setting('anonymize')->set_value(false);
+        $bc->finish_ui();
+        $backupid = $bc->get_backupid();
+        $bc->destroy();
+
+        // Create the adhoc task.
+        $asynctask = new \core\task\asynchronous_backup_task();
+        $asynctask->set_custom_data(['backupid' => $backupid]);
+        \core\task\manager::queue_adhoc_task($asynctask);
+
+        // Execute adhoc task.
+        $now = time();
+        $task = \core\task\manager::get_next_adhoc_task($now);
+        $task->execute();
+        \core\task\manager::adhoc_task_complete($task);
+
+        $postbackuprec = $DB->get_record('backup_controllers', ['backupid' => $backupid]);
+
+        // Check backup was created successfully.
+        $this->assertEquals(backup::STATUS_FINISHED_OK, $postbackuprec->status);
+        $this->assertEquals(1.0, $postbackuprec->progress);
+        $this->assertEquals($USER->id, $postbackuprec->userid);
+
+        // Check that the backupid was logged correctly.
+        $logrec = $DB->get_record('logstore_standard_log', ['userid' => $postbackuprec->userid,
+                'target' => 'course_backup'], '*', MUST_EXIST);
+        $otherdata = json_decode($logrec->other);
+        $this->assertEquals($backupid, $otherdata->backupid);
+
+        // Check backup was stored in correct area.
+        $coursecontextid = $DB->get_field('context', 'id', ['contextlevel' => CONTEXT_COURSE, 'instanceid' => $course->id]);
+        $this->assertEquals(1, $DB->count_records('files', ['contextid' => $coursecontextid,
+                'component' => 'backup', 'filearea' => 'course', 'filename' => 'backup.mbz']));
     }
 
     /**
      * Tests the asynchronous backup will resolve in duplicate cases.
      */
-    public function test_complete_async_backup() {
+    public function test_complete_async_backup(): void {
         global $CFG, $DB, $USER;
 
         $this->resetAfterTest(true);
@@ -161,7 +203,7 @@ class core_backup_async_backup_testcase extends \core_privacy\tests\provider_tes
         // We need a grade, easiest is to add an assignment.
         $assignrow = $generator->create_module('assign', array(
                 'course' => $course->id));
-        $assign = new assign(context_module::instance($assignrow->cmid), false, false);
+        $assign = new \assign(\context_module::instance($assignrow->cmid), false, false);
         $item = $assign->get_grade_item();
 
         // Make a test grouping as well.
@@ -198,7 +240,6 @@ class core_backup_async_backup_testcase extends \core_privacy\tests\provider_tes
 
         // Now queue an adhoc task and check it handles and completes gracefully.
         $asynctask = new \core\task\asynchronous_backup_task();
-        $asynctask->set_blocking(false);
         $asynctask->set_custom_data(array('backupid' => $backupid));
         \core\task\manager::queue_adhoc_task($asynctask);
 

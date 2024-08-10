@@ -24,7 +24,7 @@ namespace enrol_lti\local\ltiadvantage\entity;
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @coversDefaultClass \enrol_lti\local\ltiadvantage\entity\user
  */
-class user_test extends \advanced_testcase {
+final class user_test extends \advanced_testcase {
 
     /**
      * Test creation of a user instance using the factory method.
@@ -34,7 +34,7 @@ class user_test extends \advanced_testcase {
      * @param array $expectations various expectations for the test cases.
      * @covers ::create
      */
-    public function test_create(array $args, array $expectations) {
+    public function test_create(array $args, array $expectations): void {
         if ($expectations['valid']) {
             $user = user::create(...array_values($args));
             $this->assertInstanceOf(user::class, $user);
@@ -64,7 +64,8 @@ class user_test extends \advanced_testcase {
      *
      * @return array the data for testing.
      */
-    public function create_data_provider(): array {
+    public static function create_data_provider(): array {
+        global $CFG;
         return [
             'Valid create, only required args provided' => [
                 'args' => [
@@ -72,7 +73,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99'
                 ],
                 'expectations' => [
@@ -80,7 +81,7 @@ class user_test extends \advanced_testcase {
                     'resourceid' => 22,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => '',
                     'country' => '',
@@ -99,7 +100,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => 'Melbourne',
                     'country' => 'AU',
@@ -115,7 +116,7 @@ class user_test extends \advanced_testcase {
                     'resourceid' => 22,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => 'Melbourne',
                     'country' => 'AU',
@@ -134,7 +135,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => 'Melbourne',
                     'country' => 'AU',
@@ -151,7 +152,7 @@ class user_test extends \advanced_testcase {
                     'resourceid' => 22,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => 'Melbourne',
                     'country' => 'AU',
@@ -164,19 +165,19 @@ class user_test extends \advanced_testcase {
                     'id' => null
                 ]
             ],
-            'Invalid create, lang with bad value (fr not installed)' => [
+            'Invalid create, lang with bad value (vvvv not installed)' => [
                 'args' => [
                     'resourceid' => 22,
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'fr',
+                    'lang' => 'vvvv',
                     'timezone' => '99',
                 ],
                 'expectations' => [
                     'valid' => false,
                     'exception' => \coding_exception::class,
-                    'exceptionmessage' => "Invalid lang 'fr' provided."
+                    'exceptionmessage' => "Invalid lang 'vvvv' provided."
                 ]
             ],
             'Invalid create, timezone with bad value' => [
@@ -185,7 +186,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => 'NOT/FOUND',
                 ],
                 'expectations' => [
@@ -200,7 +201,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => '',
                     'country' => 'FFF',
@@ -217,7 +218,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => '',
                     'country' => '',
@@ -241,7 +242,7 @@ class user_test extends \advanced_testcase {
      * @param array $expectations various expectations for the test cases.
      * @covers ::create_from_resource_link
      */
-    public function test_create_from_resource_link(array $args, array $expectations) {
+    public function test_create_from_resource_link(array $args, array $expectations): void {
         if ($expectations['valid']) {
             $user = user::create_from_resource_link(...array_values($args));
             $this->assertInstanceOf(user::class, $user);
@@ -271,7 +272,8 @@ class user_test extends \advanced_testcase {
      *
      * @return array the data for testing.
      */
-    public function create_from_resource_link_data_provider(): array {
+    public static function create_from_resource_link_data_provider(): array {
+        global $CFG;
         return [
             'Valid creation, all args provided explicitly' => [
                 'args' => [
@@ -280,7 +282,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => 'Melbourne',
                     'country' => 'AU',
@@ -295,7 +297,7 @@ class user_test extends \advanced_testcase {
                     'resourceid' => 22,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => 'Melbourne',
                     'country' => 'AU',
@@ -312,7 +314,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => 'UTC'
                 ],
                 'expectations' => [
@@ -323,7 +325,7 @@ class user_test extends \advanced_testcase {
                     'resourceid' => 22,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => 'UTC',
                     'city' => '',
                     'country' => '',
@@ -340,7 +342,7 @@ class user_test extends \advanced_testcase {
                     'user' => 2,
                     'deploymentid' => 33,
                     'sourceid' => '',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => 'UTC'
                 ],
                 'expectations' => [
@@ -372,7 +374,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => ''
                 ],
                 'expectations' => [
@@ -381,20 +383,20 @@ class user_test extends \advanced_testcase {
                     'exceptionmessage' => 'Invalid timezone value. Cannot be an empty string.'
                 ]
             ],
-            'Invalid creation, only required args provided, invalid lang (fr not installed)' => [
+            'Invalid creation, only required args provided, invalid lang (vvvv not installed)' => [
                 'args' => [
                     'resourcelinkid' => 11,
                     'resourceid' => 22,
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'fr',
+                    'lang' => 'vvvv',
                     'timezone' => 'UTC'
                 ],
                 'expectations' => [
                     'valid' => false,
                     'exception' => \coding_exception::class,
-                    'exceptionmessage' => "Invalid lang 'fr' provided."
+                    'exceptionmessage' => "Invalid lang 'vvvv' provided."
                 ]
             ],
             'Invalid creation, only required args provided, invalid timezone' => [
@@ -404,7 +406,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => 'NOT/FOUND'
                 ],
                 'expectations' => [
@@ -420,7 +422,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => 'Melbourne',
                     'country' => 'FFF',
@@ -440,7 +442,7 @@ class user_test extends \advanced_testcase {
                     'userid' => 2,
                     'deploymentid' => 33,
                     'sourceid' => 'user-id-123',
-                    'lang' => 'en',
+                    'lang' => $CFG->lang,
                     'timezone' => '99',
                     'city' => 'Melbourne',
                     'country' => 'AU',
@@ -462,13 +464,14 @@ class user_test extends \advanced_testcase {
      * @return user a user instance.
      */
     protected function create_test_user(): user {
+        global $CFG;
         $args = [
             'resourcelinkid' => 11,
             'resourceid' => 22,
             'userid' => 2,
             'deploymentid' => 33,
             'sourceid' => 'user-id-123',
-            'lang' => 'en',
+            'lang' => $CFG->lang,
             'timezone' => 'UTC'
         ];
         return user::create_from_resource_link(...array_values($args));
@@ -484,7 +487,7 @@ class user_test extends \advanced_testcase {
      * @param array $expectations the array of expectations
      * @covers ::__construct
      */
-    public function test_setters_and_getters(string $methodname, $arg, array $expectations) {
+    public function test_setters_and_getters(string $methodname, $arg, array $expectations): void {
         $user = $this->create_test_user();
         $setter = 'set_'.$methodname;
         $getter = 'get_'.$methodname;
@@ -508,7 +511,8 @@ class user_test extends \advanced_testcase {
      *
      * @return array the array of test data.
      */
-    public function setters_getters_data_provider(): array {
+    public static function setters_getters_data_provider(): array {
+        global $CFG;
         return [
             'Testing set_resourcelinkid with valid id' => [
                 'methodname' => 'resourcelinkid',
@@ -616,12 +620,12 @@ class user_test extends \advanced_testcase {
             ],
             'Testing set_maildisplay with a valid int: 2' => [
                 'methodname' => 'maildisplay',
-                'arg' => '1',
+                'arg' => '2',
                 'expectations' => [
                     'valid' => true,
                 ]
             ],
-            'Testing set_maildisplay with invalid int' => [
+            'Testing set_maildisplay with invalid int: -1' => [
                 'methodname' => 'maildisplay',
                 'arg' => '-1',
                 'expectations' => [
@@ -630,7 +634,7 @@ class user_test extends \advanced_testcase {
                     'exceptionmessage' => "Invalid maildisplay value '-1'. Must be in the range {0..2}."
                 ]
             ],
-            'Testing set_maildisplay with invalid int' => [
+            'Testing set_maildisplay with invalid int: 3' => [
                 'methodname' => 'maildisplay',
                 'arg' => '3',
                 'expectations' => [
@@ -641,7 +645,7 @@ class user_test extends \advanced_testcase {
             ],
             'Testing set_lang with valid lang code' => [
                 'methodname' => 'lang',
-                'arg' => 'en',
+                'arg' => $CFG->lang,
                 'expectations' => [
                     'valid' => true,
                 ]
@@ -655,7 +659,7 @@ class user_test extends \advanced_testcase {
                     'exceptionmessage' => 'Invalid lang value. Cannot be an empty string.'
                 ]
             ],
-            'Testing set_lang with an empty string' => [
+            'Testing set_lang with invalid lang code' => [
                 'methodname' => 'lang',
                 'arg' => 'ff',
                 'expectations' => [

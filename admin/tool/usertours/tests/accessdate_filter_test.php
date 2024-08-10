@@ -14,17 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Tests for time filter.
- *
- * @package    tool_usertours
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace tool_usertours;
 
-defined('MOODLE_INTERNAL') || die();
-
-use tool_usertours\tour;
 use tool_usertours\local\filter\accessdate;
 
 /**
@@ -33,10 +24,11 @@ use tool_usertours\local\filter\accessdate;
  * @package    tool_usertours
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers    \tool_usertours\local\filter\accessdate
  */
-class tool_usertours_accessdate_filter_test extends advanced_testcase {
-
+class accessdate_filter_test extends \advanced_testcase {
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest(true);
     }
 
@@ -45,7 +37,7 @@ class tool_usertours_accessdate_filter_test extends advanced_testcase {
      *
      * @return array
      */
-    public function filter_matches_provider() {
+    public static function filter_matches_provider(): array {
         return [
             'No config set; Matches' => [
                 [],
@@ -54,61 +46,61 @@ class tool_usertours_accessdate_filter_test extends advanced_testcase {
             ],
             'Filter is not enabled; Match' => [
                 ['filter_accessdate' => accessdate::FILTER_ACCOUNT_CREATION, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 0],
+                    'filter_accessdate_enabled' => 0, ],
                 ['timecreated' => time() - (89 * DAYSECS)],
                 true,
             ],
             'Filter is not enabled (tour would not be displayed if it was); Match' => [
                 ['filter_accessdate' => accessdate::FILTER_ACCOUNT_CREATION, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 0],
+                    'filter_accessdate_enabled' => 0, ],
                 ['timecreated' => time() - (91 * DAYSECS)],
                 true,
             ],
             'Inside range of account creation date; Match' => [
                 ['filter_accessdate' => accessdate::FILTER_ACCOUNT_CREATION, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 1],
+                    'filter_accessdate_enabled' => 1, ],
                 ['timecreated' => time() - (89 * DAYSECS)],
                 true,
             ],
             'Outside range of account creation date; No match' => [
                 ['filter_accessdate' => accessdate::FILTER_ACCOUNT_CREATION, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 1],
+                    'filter_accessdate_enabled' => 1, ],
                 ['timecreated' => time() - (91 * DAYSECS)],
                 false,
             ],
             'Inside range of first login date; Match' => [
                 ['filter_accessdate' => accessdate::FILTER_FIRST_LOGIN, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 1],
+                    'filter_accessdate_enabled' => 1, ],
                 ['firstaccess' => time() - (89 * DAYSECS)],
                 true,
             ],
             'Outside range of first login date; No match' => [
                 ['filter_accessdate' => accessdate::FILTER_FIRST_LOGIN, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 1],
+                    'filter_accessdate_enabled' => 1, ],
                 ['firstaccess' => time() - (91 * DAYSECS)],
                 false,
             ],
             'Inside range of last login date; Match' => [
                 ['filter_accessdate' => accessdate::FILTER_LAST_LOGIN, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 1],
+                    'filter_accessdate_enabled' => 1, ],
                 ['lastlogin' => time() - (89 * DAYSECS)],
                 true,
             ],
             'Outside range of last login date; No match' => [
                 ['filter_accessdate' => accessdate::FILTER_LAST_LOGIN, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 1],
+                    'filter_accessdate_enabled' => 1, ],
                 ['lastlogin' => time() - (91 * DAYSECS)],
                 false,
             ],
             'User has never logged in, but tour should be visible; Match' => [
                 ['filter_accessdate' => accessdate::FILTER_LAST_LOGIN, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 1],
+                    'filter_accessdate_enabled' => 1, ],
                 ['lastlogin' => 0, 'timecreated' => time() - (89 * DAYSECS)],
                 true,
             ],
             'User has never logged in, and tour should not be visible; No match' => [
                 ['filter_accessdate' => accessdate::FILTER_LAST_LOGIN, 'filter_accessdate_range' => 90 * DAYSECS,
-                    'filter_accessdate_enabled' => 1],
+                    'filter_accessdate_enabled' => 1, ],
                 ['lastlogin' => 0, 'timecreated' => time() - (91 * DAYSECS)],
                 false,
             ],
@@ -124,7 +116,7 @@ class tool_usertours_accessdate_filter_test extends advanced_testcase {
      * @param array $userstate any user state required for test.
      * @param bool $expected result expected.
      */
-    public function test_filter_matches($filtervalues, $userstate, $expected) {
+    public function test_filter_matches($filtervalues, $userstate, $expected): void {
         $course = $this->getDataGenerator()->create_course();
         $context = \context_course::instance($course->id);
 
@@ -136,5 +128,4 @@ class tool_usertours_accessdate_filter_test extends advanced_testcase {
 
         $this->assertEquals($expected, accessdate::filter_matches($tour, $context));
     }
-
 }

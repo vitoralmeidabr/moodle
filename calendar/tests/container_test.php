@@ -14,19 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Event container tests.
- *
- * @package    core_calendar
- * @copyright  2017 Cameron Ball <cameron@cameron1729.xyz>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-
-require_once($CFG->dirroot . '/calendar/lib.php');
+namespace core_calendar;
 
 use core_calendar\local\event\entities\action_event;
 use core_calendar\local\event\entities\event;
@@ -35,19 +23,29 @@ use core_calendar\local\event\factories\event_factory;
 use core_calendar\local\event\factories\event_factory_interface;
 use core_calendar\local\event\mappers\event_mapper;
 use core_calendar\local\event\mappers\event_mapper_interface;
+use core_completion\api;
+
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+
+require_once($CFG->dirroot . '/calendar/lib.php');
 
 /**
- * Core container testcase.
+ * Event container test..
  *
+ * @package core_calendar
  * @copyright 2017 Cameron Ball <cameron@cameron1729.xyz>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \core_calendar\local\event\container
  */
-class core_calendar_container_testcase extends advanced_testcase {
+class container_test extends \advanced_testcase {
 
     /**
      * Test setup.
      */
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
         $this->setAdminUser();
     }
@@ -55,7 +53,7 @@ class core_calendar_container_testcase extends advanced_testcase {
     /**
      * Test getting the event factory.
      */
-    public function test_get_event_factory() {
+    public function test_get_event_factory(): void {
         $factory = \core_calendar\local\event\container::get_event_factory();
 
         // Test that the container is returning the right type.
@@ -74,7 +72,7 @@ class core_calendar_container_testcase extends advanced_testcase {
      * @dataProvider get_event_factory_testcases()
      * @param \stdClass $dbrow Row from the "database".
      */
-    public function test_event_factory_create_instance($dbrow) {
+    public function test_event_factory_create_instance($dbrow): void {
         $legacyevent = $this->create_event($dbrow);
         $factory = \core_calendar\local\event\container::get_event_factory();
         $course = $this->getDataGenerator()->create_course();
@@ -135,7 +133,7 @@ class core_calendar_container_testcase extends advanced_testcase {
      * @dataProvider get_event_factory_testcases()
      * @param \stdClass $dbrow Row from the "database".
      */
-    public function test_event_factory_when_module_visibility_is_toggled_as_admin($dbrow) {
+    public function test_event_factory_when_module_visibility_is_toggled_as_admin($dbrow): void {
         $legacyevent = $this->create_event($dbrow);
         $factory = \core_calendar\local\event\container::get_event_factory();
         $course = $this->getDataGenerator()->create_course();
@@ -161,7 +159,7 @@ class core_calendar_container_testcase extends advanced_testcase {
      * @dataProvider get_event_factory_testcases()
      * @param \stdClass $dbrow Row from the "database".
      */
-    public function test_event_factory_when_module_visibility_is_toggled_as_guest($dbrow) {
+    public function test_event_factory_when_module_visibility_is_toggled_as_guest($dbrow): void {
         $legacyevent = $this->create_event($dbrow);
         $factory = \core_calendar\local\event\container::get_event_factory();
         $course = $this->getDataGenerator()->create_course();
@@ -190,7 +188,7 @@ class core_calendar_container_testcase extends advanced_testcase {
      * @dataProvider get_event_factory_testcases()
      * @param \stdClass $dbrow Row from the "database".
      */
-    public function test_event_factory_when_course_visibility_is_toggled_as_admin($dbrow) {
+    public function test_event_factory_when_course_visibility_is_toggled_as_admin($dbrow): void {
         $legacyevent = $this->create_event($dbrow);
         $factory = \core_calendar\local\event\container::get_event_factory();
 
@@ -215,7 +213,7 @@ class core_calendar_container_testcase extends advanced_testcase {
      * @dataProvider get_event_factory_testcases()
      * @param \stdClass $dbrow Row from the "database".
      */
-    public function test_event_factory_when_course_visibility_is_toggled_as_student($dbrow) {
+    public function test_event_factory_when_course_visibility_is_toggled_as_student($dbrow): void {
         $legacyevent = $this->create_event($dbrow);
         $factory = \core_calendar\local\event\container::get_event_factory();
 
@@ -244,7 +242,7 @@ class core_calendar_container_testcase extends advanced_testcase {
     /**
      * Test that the event factory deals with invisible categorys as an admin.
      */
-    public function test_event_factory_when_category_visibility_is_toggled_as_admin() {
+    public function test_event_factory_when_category_visibility_is_toggled_as_admin(): void {
         // Create a hidden category.
         $category = $this->getDataGenerator()->create_category(['visible' => 0]);
 
@@ -267,7 +265,7 @@ class core_calendar_container_testcase extends advanced_testcase {
     /**
      * Test that the event factory deals with invisible categorys as an user.
      */
-    public function test_event_factory_when_category_visibility_is_toggled_as_user() {
+    public function test_event_factory_when_category_visibility_is_toggled_as_user(): void {
         // Create a hidden category.
         $category = $this->getDataGenerator()->create_category(['visible' => 0]);
 
@@ -296,7 +294,7 @@ class core_calendar_container_testcase extends advanced_testcase {
     /**
      * Test that the event factory deals with invisible categorys as an guest.
      */
-    public function test_event_factory_when_category_visibility_is_toggled_as_guest() {
+    public function test_event_factory_when_category_visibility_is_toggled_as_guest(): void {
         // Create a hidden category.
         $category = $this->getDataGenerator()->create_category(['visible' => 0]);
 
@@ -322,7 +320,7 @@ class core_calendar_container_testcase extends advanced_testcase {
     /**
      * Test that the event factory deals with completion related events properly.
      */
-    public function test_event_factory_with_completion_related_event() {
+    public function test_event_factory_with_completion_related_event(): void {
         global $CFG;
 
         $CFG->enablecompletion = true;
@@ -372,10 +370,44 @@ class core_calendar_container_testcase extends advanced_testcase {
     }
 
     /**
+     * Checks that completed activities events do not show.
+     */
+    public function test_event_factory_with_completed_module_related_event(): void {
+        global $CFG, $DB;
+
+        $this->setAdminUser();
+
+        // Create a course.
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $user = $this->getDataGenerator()->create_and_enrol($course);
+        // Create an assign activity with a time set.
+        $time = time();
+        $assign = $this->getDataGenerator()->create_module(
+            'assign', ['course' => $course->id, 'completion' => COMPLETION_TRACKING_MANUAL]);
+
+        // Create the event but set it to tomorrow.
+        $CFG->enablecompletion = true;
+        api::update_completion_date_event($assign->cmid, 'assign', $assign,
+            $time + DAYSECS);
+
+        $this->setUser($user);
+        // Check that we get should be completed event.
+        $this->assertCount(1, \core_calendar\local\event\container::get_event_vault()->get_events());
+        // Then Complete the activity.
+        $completion = new \completion_info($course);
+        $cmassign = get_coursemodule_from_id('assign', $assign->cmid);
+        // This should trigger another call to the update_completion_date_event.
+        $completion->update_state($cmassign, COMPLETION_COMPLETE, $user->id);
+        // Check that we do not see the event anymore.
+        $this->assertCount(0, \core_calendar\local\event\container::get_event_vault()->get_events());
+    }
+
+
+    /**
      * Test that the event factory only returns an event if the logged in user
      * is enrolled in the course.
      */
-    public function test_event_factory_unenrolled_user() {
+    public function test_event_factory_unenrolled_user(): void {
         $user = $this->getDataGenerator()->create_user();
         // Create the course we will be using.
         $course = $this->getDataGenerator()->create_course();
@@ -428,17 +460,17 @@ class core_calendar_container_testcase extends advanced_testcase {
     /**
      * Test that when course module is deleted all events are also deleted.
      */
-    public function test_delete_module_delete_events() {
+    public function test_delete_module_delete_events(): void {
         global $DB;
         $user = $this->getDataGenerator()->create_user();
         // Create the course we will be using.
         $course = $this->getDataGenerator()->create_course();
         $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
 
-        foreach (core_component::get_plugin_list('mod') as $modname => $unused) {
+        foreach (\core_component::get_plugin_list('mod') as $modname => $unused) {
             try {
                 $generator = $this->getDataGenerator()->get_plugin_generator('mod_'.$modname);
-            } catch (coding_exception $e) {
+            } catch (\coding_exception $e) {
                 // Module generator is not implemented.
                 continue;
             }
@@ -459,7 +491,7 @@ class core_calendar_container_testcase extends advanced_testcase {
     /**
      * Test getting the event mapper.
      */
-    public function test_get_event_mapper() {
+    public function test_get_event_mapper(): void {
         $mapper = \core_calendar\local\event\container::get_event_mapper();
 
         $this->assertInstanceOf(event_mapper_interface::class, $mapper);
@@ -544,7 +576,7 @@ class core_calendar_container_testcase extends advanced_testcase {
             $record->$name = $value;
         }
 
-        $event = new calendar_event($record);
+        $event = new \calendar_event($record);
         return $event->create($record, false);
     }
 

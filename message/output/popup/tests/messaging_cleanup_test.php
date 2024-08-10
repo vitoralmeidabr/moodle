@@ -14,18 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Test message popup messaging cleanup task
- *
- * @package     message_popup
- * @category    test
- * @copyright   2020 Paul Holden <paulh@moodle.com>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
+namespace message_popup;
 
 use core\task\messaging_cleanup_task;
+use message_popup_test_helper;
+
+defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/message/output/popup/tests/base.php');
@@ -38,7 +32,7 @@ require_once($CFG->dirroot . '/message/output/popup/tests/base.php');
  * @copyright   2020 Paul Holden <paulh@moodle.com>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class message_popup_messaging_cleanup_testcase extends advanced_testcase {
+class messaging_cleanup_test extends \advanced_testcase {
 
     // Helper trait for sending fake popup notifications.
     use message_popup_test_helper;
@@ -48,7 +42,7 @@ class message_popup_messaging_cleanup_testcase extends advanced_testcase {
      *
      * @return void
      */
-    public function test_cleanup_all_notifications() {
+    public function test_cleanup_all_notifications(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -79,7 +73,7 @@ class message_popup_messaging_cleanup_testcase extends advanced_testcase {
      *
      * @return void
      */
-    public function test_cleanup_read_notifications() {
+    public function test_cleanup_read_notifications(): void {
         global $DB;
 
         $this->resetAfterTest();

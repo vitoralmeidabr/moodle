@@ -49,6 +49,7 @@ class lib_test extends \lti_advantage_testcase {
      * This is executed before running any tests in this file.
      */
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
         $this->setAdminUser();
     }
@@ -56,7 +57,7 @@ class lib_test extends \lti_advantage_testcase {
     /**
      * Test for enrol_lti_plugin::delete_instance().
      */
-    public function test_delete_instance() {
+    public function test_delete_instance(): void {
         global $DB;
 
         // Create tool enrolment instance.
@@ -126,7 +127,7 @@ class lib_test extends \lti_advantage_testcase {
      *
      * @covers \enrol_lti_plugin::delete_instance
      */
-    public function test_delete_instance_lti_advantage() {
+    public function test_delete_instance_lti_advantage(): void {
         global $DB;
         // Setup.
         [
@@ -171,7 +172,7 @@ class lib_test extends \lti_advantage_testcase {
     /**
      * Test for getting user enrolment actions.
      */
-    public function test_get_user_enrolment_actions() {
+    public function test_get_user_enrolment_actions(): void {
         global $CFG, $DB, $PAGE;
         $this->resetAfterTest();
 
@@ -215,5 +216,37 @@ class lib_test extends \lti_advantage_testcase {
         $actions = $plugin->get_user_enrolment_actions($manager, $ue);
         // LTI enrolment has 1 enrol actions for active users -- unenrol.
         $this->assertCount(1, $actions);
+    }
+
+    /**
+     * Test the behaviour of an enrolment method when the activity to which it provides access is deleted.
+     *
+     * @covers \enrol_lti_pre_course_module_delete
+     */
+    public function test_course_module_deletion(): void {
+        // Create two modules and publish them.
+        $course = $this->getDataGenerator()->create_course();
+        $mod = $this->getDataGenerator()->create_module('assign', ['course' => $course->id]);
+        $mod2 = $this->getDataGenerator()->create_module('assign', ['course' => $course->id]);
+        $tooldata = [
+            'cmid' => $mod->cmid,
+            'courseid' => $course->id,
+        ];
+        $tool = $this->getDataGenerator()->create_lti_tool((object)$tooldata);
+        $tooldata['cmid'] = $mod2->cmid;
+        $tool2 = $this->getDataGenerator()->create_lti_tool((object)$tooldata);
+
+        // Verify the instances are both enabled.
+        $modinstance = helper::get_lti_tool($tool->id);
+        $mod2instance = helper::get_lti_tool($tool2->id);
+        $this->assertEquals(ENROL_INSTANCE_ENABLED, $modinstance->status);
+        $this->assertEquals(ENROL_INSTANCE_ENABLED, $mod2instance->status);
+
+        // Delete a module and verify the associated instance is disabled.
+        course_delete_module($mod->cmid);
+        $modinstance = helper::get_lti_tool($tool->id);
+        $mod2instance = helper::get_lti_tool($tool2->id);
+        $this->assertEquals(ENROL_INSTANCE_DISABLED, $modinstance->status);
+        $this->assertEquals(ENROL_INSTANCE_ENABLED, $mod2instance->status);
     }
 }

@@ -14,15 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * This file contains tests for the 'missing' question type.
- *
- * @package    qtype
- * @subpackage missingtype
- * @copyright  2010 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace qtype_missingtype;
 
+use qbehaviour_deferredfeedback;
+use qtype_missingtype;
+use qtype_missingtype_question;
+use question_attempt_step;
+use question_bank;
+use question_contains_tag_with_attribute;
+use question_display_options;
+use question_state;
+use testable_question_attempt;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -35,13 +37,14 @@ require_once($CFG->dirroot . '/question/type/missingtype/questiontype.php');
 /**
  * Unit tests for the 'missing' question type.
  *
+ * @package    qtype_missingtype
  * @copyright  2010 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_missing_test extends question_testcase {
+class missingtype_test extends \question_testcase {
 
     protected function get_unknown_questiondata() {
-        $questiondata = new stdClass();
+        $questiondata = new \stdClass();
         $questiondata->id = 0;
         $questiondata->category = 0;
         $questiondata->contextid = 0;
@@ -69,33 +72,33 @@ class qtype_missing_test extends question_testcase {
         return $questiondata;
     }
 
-    public function test_cannot_grade() {
+    public function test_cannot_grade(): void {
         $q = new qtype_missingtype_question();
-        $this->expectException(moodle_exception::class);
+        $this->expectException(\moodle_exception::class);
         $q->grade_response(array());
     }
 
-    public function test_load_qtype_strict() {
-        $this->expectException(moodle_exception::class);
+    public function test_load_qtype_strict(): void {
+        $this->expectException(\moodle_exception::class);
         $qtype = question_bank::get_qtype('strange_unknown');
     }
 
-    public function test_load_qtype_lax() {
+    public function test_load_qtype_lax(): void {
         $qtype = question_bank::get_qtype('strange_unknown', false);
         $this->assertInstanceOf('qtype_missingtype', $qtype);
     }
 
-    public function test_make_question() {
+    public function test_make_question(): void {
         $questiondata = $this->get_unknown_questiondata();
         $q = question_bank::make_question($questiondata);
         $this->assertInstanceOf('qtype_missingtype_question', $q);
-        $this->assertEquals($q->questiontext, html_writer::tag('div',
+        $this->assertEquals($q->questiontext, \html_writer::tag('div',
                 get_string('missingqtypewarning', 'qtype_missingtype'),
                 array('class' => 'warning missingqtypewarning')) .
                 $questiondata->questiontext);
     }
 
-    public function test_render_missing() {
+    public function test_render_missing(): void {
         $questiondata = $this->get_unknown_questiondata();
         $q = question_bank::make_question($questiondata);
         $qa = new testable_question_attempt($q, 0);
@@ -115,28 +118,28 @@ class qtype_missing_test extends question_testcase {
                 'div', 'class', 'warning missingqtypewarning'), $output);
     }
 
-    public function test_get_question_summary() {
+    public function test_get_question_summary(): void {
         $q = new qtype_missingtype_question();
         $q->questiontext = '<b>Test</b>';
         $this->assertEquals('TEST', $q->get_question_summary());
     }
 
-    public function test_summarise_response() {
+    public function test_summarise_response(): void {
         $q = new qtype_missingtype_question();
         $this->assertNull($q->summarise_response(array('a' => 'irrelevant')));
     }
 
-    public function test_can_analyse_responses() {
+    public function test_can_analyse_responses(): void {
         $qtype = new qtype_missingtype();
         $this->assertFalse($qtype->can_analyse_responses());
     }
 
-    public function test_get_random_guess_score() {
+    public function test_get_random_guess_score(): void {
         $qtype = new qtype_missingtype();
         $this->assertNull($qtype->get_random_guess_score(null));
     }
 
-    public function test_get_possible_responses() {
+    public function test_get_possible_responses(): void {
         $qtype = new qtype_missingtype();
         $this->assertEquals(array(), $qtype->get_possible_responses(null));
     }

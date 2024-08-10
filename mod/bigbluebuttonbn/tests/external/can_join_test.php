@@ -16,7 +16,7 @@
 
 namespace mod_bigbluebuttonbn\external;
 
-use external_api;
+use core_external\external_api;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\test\testcase_helper_trait;
 use moodle_exception;
@@ -33,7 +33,7 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @category   test
  * @copyright  2021 Andrew Lyons <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \mod_bigbluebuttonbn\external\can_join
+ * @covers \mod_bigbluebuttonbn\external\can_join
  */
 class can_join_test extends \externallib_advanced_testcase {
     use testcase_helper_trait;
@@ -48,7 +48,7 @@ class can_join_test extends \externallib_advanced_testcase {
     /**
      * Helper
      *
-     * @param ... $params
+     * @param mixed ...$params
      * @return mixed
      */
     protected function can_join(...$params) {
@@ -60,7 +60,8 @@ class can_join_test extends \externallib_advanced_testcase {
     /**
      * Test execute API CALL with no instance
      */
-    public function test_execute_no_instance() {
+    public function test_execute_no_instance(): void {
+        $this->resetAfterTest();
         $canjoin = $this->can_join(1234, 5678);
 
         $this->assertIsArray($canjoin);
@@ -71,7 +72,7 @@ class can_join_test extends \externallib_advanced_testcase {
     /**
      * Test execute API CALL without login
      */
-    public function test_execute_without_login() {
+    public function test_execute_without_login(): void {
         $this->resetAfterTest();
 
         $course = $this->getDataGenerator()->create_course();
@@ -85,7 +86,7 @@ class can_join_test extends \externallib_advanced_testcase {
     /**
      * Test execute API CALL with invalid login
      */
-    public function test_execute_with_invalid_login() {
+    public function test_execute_with_invalid_login(): void {
         $this->resetAfterTest();
 
         $generator = $this->getDataGenerator();
@@ -103,7 +104,7 @@ class can_join_test extends \externallib_advanced_testcase {
     /**
      * When login as a student
      */
-    public function test_execute_with_valid_login() {
+    public function test_execute_with_valid_login(): void {
         $this->resetAfterTest();
 
         $generator = $this->getDataGenerator();

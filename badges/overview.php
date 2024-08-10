@@ -33,7 +33,7 @@ $awards = optional_param('awards', '', PARAM_ALPHANUM);
 require_login();
 
 if (empty($CFG->enablebadges)) {
-    print_error('badgesdisabled', 'badges');
+    throw new \moodle_exception('badgesdisabled', 'badges');
 }
 
 $badge = new badge($badgeid);
@@ -42,7 +42,7 @@ $navurl = new moodle_url('/badges/index.php', array('type' => $badge->type));
 
 if ($badge->type == BADGE_TYPE_COURSE) {
     if (empty($CFG->badges_allowcoursebadges)) {
-        print_error('coursebadgesdisabled', 'badges');
+        throw new \moodle_exception('coursebadgesdisabled', 'badges');
     }
     require_login($badge->courseid);
     $course = get_course($badge->courseid);
@@ -74,9 +74,9 @@ echo $output->render_tertiary_navigation($actionbar);
 echo $OUTPUT->heading(print_badge_image($badge, $context, 'small') . ' ' . $badge->name);
 
 if ($awards == 'cron') {
-    echo $OUTPUT->notification(get_string('awardoncron', 'badges'), 'notifysuccess');
-} else if ($awards != 0) {
-    echo $OUTPUT->notification(get_string('numawardstat', 'badges', $awards), 'notifysuccess');
+    echo $OUTPUT->notification(get_string('awardoncron', 'badges', ['badgename' => $badge->name]), 'info');
+} else if ((int)$awards > 0) {
+    echo $OUTPUT->notification(get_string('numawardstat', 'badges', ['badgename' => $badge->name, 'awards' => $awards]), 'info');
 }
 echo $output->print_badge_status_box($badge);
 echo $output->print_badge_overview($badge, $context);

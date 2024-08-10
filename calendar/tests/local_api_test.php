@@ -14,19 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Contains the class containing unit tests for the calendar local API.
- *
- * @package    core_calendar
- * @copyright  2017 Mark Nelson <markn@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core_calendar;
+
+use core_calendar\local\event\container;
 
 defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/helpers.php');
-
-use \core_calendar\local\event\container;
 
 /**
  * Class contaning unit tests for the calendar local API.
@@ -34,13 +28,15 @@ use \core_calendar\local\event\container;
  * @package    core_calendar
  * @copyright  2017 Mark Nelson <markn@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @coversDefaultClass \core_calendar\local\api
  */
-class core_calendar_local_api_testcase extends advanced_testcase {
+class local_api_test extends \advanced_testcase {
 
     /**
      * Tests set up
      */
     protected function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
     }
 
@@ -83,7 +79,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * If there are no events on or after the given time then an empty result set should
      * be returned.
      */
-    public function test_get_calendar_action_events_by_timesort_after_time() {
+    public function test_get_calendar_action_events_by_timesort_after_time(): void {
         $user = $this->getDataGenerator()->create_user();
         $course = $this->getDataGenerator()->create_course();
         $generator = $this->getDataGenerator()->get_plugin_generator('mod_assign');
@@ -139,7 +135,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * If there are no events before the given time then an empty result set should be
      * returned.
      */
-    public function test_get_calendar_action_events_by_timesort_before_time() {
+    public function test_get_calendar_action_events_by_timesort_before_time(): void {
         $user = $this->getDataGenerator()->create_user();
         $course = $this->getDataGenerator()->create_course();
         $generator = $this->getDataGenerator()->get_plugin_generator('mod_assign');
@@ -190,7 +186,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * If there are no events in the given time range then an empty result set should be
      * returned.
      */
-    public function test_get_calendar_action_events_by_timesort_time_range() {
+    public function test_get_calendar_action_events_by_timesort_time_range(): void {
         $user = $this->getDataGenerator()->create_user();
         $course = $this->getDataGenerator()->create_course();
         $generator = $this->getDataGenerator()->get_plugin_generator('mod_assign');
@@ -242,7 +238,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * If there are no events in the given time range then an empty result set should be
      * returned.
      */
-    public function test_get_calendar_action_events_by_timesort_time_limit_offset() {
+    public function test_get_calendar_action_events_by_timesort_time_limit_offset(): void {
         $user = $this->getDataGenerator()->create_user();
         $course = $this->getDataGenerator()->create_course();
         $generator = $this->getDataGenerator()->get_plugin_generator('mod_assign');
@@ -292,8 +288,9 @@ class core_calendar_local_api_testcase extends advanced_testcase {
 
     /**
      * Test get_calendar_action_events_by_timesort with search feature.
+     * @covers ::get_action_events_by_timesort
      */
-    public function test_get_calendar_action_events_by_timesort_with_search() {
+    public function test_get_calendar_action_events_by_timesort_with_search(): void {
         // Generate data.
         $user = $this->getDataGenerator()->create_user();
         $course = $this->getDataGenerator()->create_course();
@@ -323,6 +320,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
         $event6 = create_event(array_merge($params, ['name' => 'Event 6', 'timesort' => 6]));
         $event7 = create_event(array_merge($params, ['name' => 'Event 7', 'timesort' => 7]));
         $event8 = create_event(array_merge($params, ['name' => 'Event 8', 'timesort' => 8]));
+        $event9 = create_event(array_merge($params, ['name' => 'Assign with advanced name', 'timesort' => 9]));
 
         $this->setUser($user);
 
@@ -331,13 +329,25 @@ class core_calendar_local_api_testcase extends advanced_testcase {
         $this->assertEmpty($result);
 
         // Search for event name called 'Event 1'.
-        $result = \core_calendar\local\api::get_action_events_by_timesort(0, 8, null, 20, false, null, 'Event 1');
+        $result = \core_calendar\local\api::get_action_events_by_timesort(0, 10, null, 20, false, null, 'Event 1');
         $this->assertCount(1, $result);
         $this->assertEquals('Event 1', $result[0]->get_name());
 
+        // Search for event name called 'Assign with advanced name'.
+        $result = \core_calendar\local\api::get_action_events_by_timesort(
+            0, 10, null, 20, false, null, 'Assign with advanced name');
+        $this->assertCount(1, $result);
+        $this->assertEquals('Assign with advanced name', $result[0]->get_name());
+
+        // Search for event name contains 'Assign advanced'.
+        $result = \core_calendar\local\api::get_action_events_by_timesort(
+            0, 10, null, 20, false, null, 'Assign advanced');
+        $this->assertCount(1, $result);
+        $this->assertEquals('Assign with advanced name', $result[0]->get_name());
+
         // Search for activity type called 'assign'.
-        $result = \core_calendar\local\api::get_action_events_by_timesort(0, 8, null, 20, false, null, 'assign');
-        $this->assertCount(8, $result);
+        $result = \core_calendar\local\api::get_action_events_by_timesort(0, 10, null, 20, false, null, 'assign');
+        $this->assertCount(9, $result);
         $this->assertEquals('Event 1', $result[0]->get_name());
         $this->assertEquals('Event 2', $result[1]->get_name());
         $this->assertEquals('Event 3', $result[2]->get_name());
@@ -346,6 +356,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
         $this->assertEquals('Event 6', $result[5]->get_name());
         $this->assertEquals('Event 7', $result[6]->get_name());
         $this->assertEquals('Event 8', $result[7]->get_name());
+        $this->assertEquals('Assign with advanced name', $result[8]->get_name());
     }
 
     /**
@@ -356,7 +367,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * If there are no events on or after the given time then an empty result set should
      * be returned.
      */
-    public function test_get_calendar_action_events_by_course_after_time() {
+    public function test_get_calendar_action_events_by_course_after_time(): void {
         $user = $this->getDataGenerator()->create_user();
         $course1 = $this->getDataGenerator()->create_course();
         $course2 = $this->getDataGenerator()->create_course();
@@ -421,7 +432,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * If there are no events before the given time then an empty result set should be
      * returned.
      */
-    public function test_get_calendar_action_events_by_course_before_time() {
+    public function test_get_calendar_action_events_by_course_before_time(): void {
         $user = $this->getDataGenerator()->create_user();
         $course1 = $this->getDataGenerator()->create_course();
         $course2 = $this->getDataGenerator()->create_course();
@@ -486,7 +497,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * If there are no events in the given time range then an empty result set should be
      * returned.
      */
-    public function test_get_calendar_action_events_by_course_time_range() {
+    public function test_get_calendar_action_events_by_course_time_range(): void {
         $user = $this->getDataGenerator()->create_user();
         $course1 = $this->getDataGenerator()->create_course();
         $course2 = $this->getDataGenerator()->create_course();
@@ -552,7 +563,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * If there are no events in the given time range then an empty result set should be
      * returned.
      */
-    public function test_get_calendar_action_events_by_course_time_limit_offset() {
+    public function test_get_calendar_action_events_by_course_time_limit_offset(): void {
         $user = $this->getDataGenerator()->create_user();
         $course1 = $this->getDataGenerator()->create_course();
         $course2 = $this->getDataGenerator()->create_course();
@@ -617,7 +628,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Test that get_action_events_by_courses will return a list of events for each
      * course you provided as long as the user is enrolled in the course.
      */
-    public function test_get_action_events_by_courses() {
+    public function test_get_action_events_by_courses(): void {
         $user = $this->getDataGenerator()->create_user();
         $course1 = $this->getDataGenerator()->create_course();
         $course2 = $this->getDataGenerator()->create_course();
@@ -703,9 +714,81 @@ class core_calendar_local_api_testcase extends advanced_testcase {
     }
 
     /**
+     * Test get_action_events_by_courses with search feature.
+     * @covers ::get_action_events_by_courses
+     */
+    public function test_get_action_events_by_courses_with_search(): void {
+        // Generate data.
+        $user = $this->getDataGenerator()->create_user();
+        $course1 = $this->getDataGenerator()->create_course(['fullname' => 'Course with advanced name']);
+        $course2 = $this->getDataGenerator()->create_course(['fullname' => 'Another name']);
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_assign');
+        $moduleinstance1 = $generator->create_instance(['course' => $course1->id]);
+        $moduleinstance2 = $generator->create_instance(['course' => $course2->id]);
+
+        $this->getDataGenerator()->enrol_user($user->id, $course1->id);
+        $this->getDataGenerator()->enrol_user($user->id, $course2->id);
+        $this->resetAfterTest(true);
+        $this->setUser($user);
+
+        $params = [
+            'type' => CALENDAR_EVENT_TYPE_ACTION,
+            'modulename' => 'assign',
+            'instance' => $moduleinstance1->id,
+            'userid' => $user->id,
+            'courseid' => $course1->id,
+            'eventtype' => 'user',
+            'repeats' => 0,
+            'timestart' => 1,
+        ];
+
+        $event1 = create_event(array_merge($params, ['name' => 'Event 1', 'timesort' => 1]));
+        $event2 = create_event(array_merge($params, ['name' => 'Event 2', 'timesort' => 2]));
+
+        $params['courseid'] = $course2->id;
+        $params['instance'] = $moduleinstance2->id;
+        $event3 = create_event(array_merge($params, ['name' => 'Event 3', 'timesort' => 3]));
+        $event4 = create_event(array_merge($params, ['name' => 'Event 4', 'timesort' => 4]));
+        $event5 = create_event(array_merge($params, ['name' => 'Event 5', 'timesort' => 5]));
+
+        // No result found for fake search.
+        $result = \core_calendar\local\api::get_action_events_by_courses(
+            [$course1, $course2], 1, null, '6', 'Fake search');
+        $this->assertEmpty($result[$course1->id]);
+        $this->assertEmpty($result[$course2->id]);
+
+        // Search for course name called 'Course with advanced name'.
+        $result = \core_calendar\local\api::get_action_events_by_courses(
+            [$course1, $course2], 1, null, '6', 'Course with advanced name');
+        $this->assertNotEmpty($result[$course1->id]);
+        $this->assertEmpty($result[$course2->id]);
+        $this->assertEquals('Event 1', $result[$course1->id][0]->get_name());
+        $this->assertEquals('Event 2', $result[$course1->id][1]->get_name());
+
+        // Search for course name contains 'Course advanced'.
+        $result = \core_calendar\local\api::get_action_events_by_courses(
+            [$course1, $course2], 1, null, '6', 'Course advanced');
+        $this->assertNotEmpty($result[$course1->id]);
+        $this->assertEmpty($result[$course2->id]);
+        $this->assertEquals('Event 1', $result[$course1->id][0]->get_name());
+        $this->assertEquals('Event 2', $result[$course1->id][1]->get_name());
+
+        // Search for course name contains 'name'.
+        $result = \core_calendar\local\api::get_action_events_by_courses(
+            [$course1, $course2], 1, null, '6', 'name');
+        $this->assertNotEmpty($result[$course1->id]);
+        $this->assertNotEmpty($result[$course2->id]);
+        $this->assertEquals('Event 1', $result[$course1->id][0]->get_name());
+        $this->assertEquals('Event 2', $result[$course1->id][1]->get_name());
+        $this->assertEquals('Event 3', $result[$course2->id][0]->get_name());
+        $this->assertEquals('Event 4', $result[$course2->id][1]->get_name());
+        $this->assertEquals('Event 5', $result[$course2->id][2]->get_name());
+    }
+
+    /**
      * Test that the get_legacy_events() function only returns activity events that are enabled.
      */
-    public function test_get_legacy_events_with_disabled_module() {
+    public function test_get_legacy_events_with_disabled_module(): void {
         global $DB;
 
         $this->setAdminUser();
@@ -752,7 +835,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
             ]
         ];
         foreach ($events as $event) {
-            calendar_event::create($event, false);
+            \calendar_event::create($event, false);
         }
         $timestart = time() - 60;
         $timeend = time() + 60;
@@ -776,7 +859,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
     /**
      * Test for \core_calendar\local\api::get_legacy_events() when there are user and group overrides.
      */
-    public function test_get_legacy_events_with_overrides() {
+    public function test_get_legacy_events_with_overrides(): void {
         $generator = $this->getDataGenerator();
 
         $course = $generator->create_course();
@@ -878,7 +961,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
         ];
 
         foreach ($events as $event) {
-            calendar_event::create($event, false);
+            \calendar_event::create($event, false);
         }
 
         $timestart = $now - 100;
@@ -954,7 +1037,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
         ];
 
         foreach ($repeatingevents as $event) {
-            calendar_event::create($event, false);
+            \calendar_event::create($event, false);
         }
 
         // Make sure repeating events are not filtered out.
@@ -966,14 +1049,14 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Setting the start date on the calendar event should update the date
      * of the event but should leave the time of day unchanged.
      */
-    public function test_update_event_start_day_updates_date() {
+    public function test_update_event_start_day_updates_date(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $roleid = $generator->create_role();
         $context = \context_system::instance();
-        $originalstarttime = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2018-02-2T10:00:00+08:00');
-        $expected = new DateTimeImmutable('2018-02-2T15:00:00+08:00');
+        $originalstarttime = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2018-02-2T10:00:00+08:00');
+        $expected = new \DateTimeImmutable('2018-02-2T15:00:00+08:00');
         $mapper = container::get_event_mapper();
 
         $generator->role_assign($roleid, $user->id, $context->id);
@@ -1001,14 +1084,14 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * A user should not be able to update the start date of the event
      * that they don't have the capabilities to modify.
      */
-    public function test_update_event_start_day_no_permission() {
+    public function test_update_event_start_day_no_permission(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $roleid = $generator->create_role();
         $context = \context_system::instance();
-        $originalstarttime = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2018-02-2T10:00:00+08:00');
-        $expected = new DateTimeImmutable('2018-02-2T15:00:00+08:00');
+        $originalstarttime = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2018-02-2T10:00:00+08:00');
+        $expected = new \DateTimeImmutable('2018-02-2T15:00:00+08:00');
         $mapper = container::get_event_mapper();
 
         $generator->role_assign($roleid, $user->id, $context->id);
@@ -1037,15 +1120,15 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Note: This test uses the feedback activity because it requires
      * module callbacks to be in place to test.
      */
-    public function test_update_event_start_day_activity_event_no_max() {
+    public function test_update_event_start_day_activity_event_no_max(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/mod/feedback/lib.php');
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $timeopen = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2018-02-2T10:00:00+08:00');
-        $expected = new DateTimeImmutable('2018-02-2T15:00:00+08:00');
+        $timeopen = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2018-02-2T10:00:00+08:00');
+        $expected = new \DateTimeImmutable('2018-02-2T15:00:00+08:00');
         list($feedback, $event) = $this->create_feedback_activity_and_event(
             [
                 'timeopen' => $timeopen->getTimestamp(),
@@ -1072,16 +1155,16 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Note: This test uses the feedback activity because it requires
      * module callbacks to be in place to test.
      */
-    public function test_update_event_start_day_activity_event_less_than_max() {
+    public function test_update_event_start_day_activity_event_less_than_max(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/mod/feedback/lib.php');
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $timeopen = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $timeclose = new DateTimeImmutable('2019-01-1T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2018-02-2T10:00:00+08:00');
-        $expected = new DateTimeImmutable('2018-02-2T15:00:00+08:00');
+        $timeopen = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $timeclose = new \DateTimeImmutable('2019-01-1T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2018-02-2T10:00:00+08:00');
+        $expected = new \DateTimeImmutable('2018-02-2T15:00:00+08:00');
         list($feedback, $event) = $this->create_feedback_activity_and_event(
             [
                 'timeopen' => $timeopen->getTimestamp(),
@@ -1109,15 +1192,15 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Note: This test uses the feedback activity because it requires
      * module callbacks to be in place to test.
      */
-    public function test_update_event_start_day_activity_event_equal_to_max() {
+    public function test_update_event_start_day_activity_event_equal_to_max(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/mod/feedback/lib.php');
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $timeopen = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $timeclose = new DateTimeImmutable('2018-02-2T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2018-02-2T10:00:00+08:00');
+        $timeopen = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $timeclose = new \DateTimeImmutable('2018-02-2T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2018-02-2T10:00:00+08:00');
         list($feedback, $event) = $this->create_feedback_activity_and_event(
             [
                 'timeopen' => $timeopen->getTimestamp(),
@@ -1145,15 +1228,15 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Note: This test uses the feedback activity because it requires
      * module callbacks to be in place to test.
      */
-    public function test_update_event_start_day_activity_event_after_max() {
+    public function test_update_event_start_day_activity_event_after_max(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/mod/feedback/lib.php');
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $timeopen = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $timeclose = new DateTimeImmutable('2017-02-2T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2018-02-2T10:00:00+08:00');
+        $timeopen = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $timeclose = new \DateTimeImmutable('2017-02-2T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2018-02-2T10:00:00+08:00');
         list($feedback, $event) = $this->create_feedback_activity_and_event(
             [
                 'timeopen' => $timeopen->getTimestamp(),
@@ -1176,15 +1259,15 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Note: This test uses the feedback activity because it requires
      * module callbacks to be in place to test.
      */
-    public function test_update_event_start_day_activity_event_no_min() {
+    public function test_update_event_start_day_activity_event_no_min(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/mod/feedback/lib.php');
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $timeclose = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2016-02-2T10:00:00+08:00');
-        $expected = new DateTimeImmutable('2016-02-2T15:00:00+08:00');
+        $timeclose = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2016-02-2T10:00:00+08:00');
+        $expected = new \DateTimeImmutable('2016-02-2T15:00:00+08:00');
         list($feedback, $event) = $this->create_feedback_activity_and_event(
             [
                 'timeopen' => 0,
@@ -1212,16 +1295,16 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Note: This test uses the feedback activity because it requires
      * module callbacks to be in place to test.
      */
-    public function test_update_event_start_day_activity_event_greater_than_min() {
+    public function test_update_event_start_day_activity_event_greater_than_min(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/mod/feedback/lib.php');
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $timeopen = new DateTimeImmutable('2016-01-1T15:00:00+08:00');
-        $timeclose = new DateTimeImmutable('2019-01-1T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2018-02-2T10:00:00+08:00');
-        $expected = new DateTimeImmutable('2018-02-2T15:00:00+08:00');
+        $timeopen = new \DateTimeImmutable('2016-01-1T15:00:00+08:00');
+        $timeclose = new \DateTimeImmutable('2019-01-1T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2018-02-2T10:00:00+08:00');
+        $expected = new \DateTimeImmutable('2018-02-2T15:00:00+08:00');
         list($feedback, $event) = $this->create_feedback_activity_and_event(
             [
                 'timeopen' => $timeopen->getTimestamp(),
@@ -1249,16 +1332,16 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Note: This test uses the feedback activity because it requires
      * module callbacks to be in place to test.
      */
-    public function test_update_event_start_day_activity_event_equal_to_min() {
+    public function test_update_event_start_day_activity_event_equal_to_min(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/mod/feedback/lib.php');
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $timeopen = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $timeclose = new DateTimeImmutable('2018-02-2T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2017-01-1T10:00:00+08:00');
-        $expected = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $timeopen = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $timeclose = new \DateTimeImmutable('2018-02-2T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2017-01-1T10:00:00+08:00');
+        $expected = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
         list($feedback, $event) = $this->create_feedback_activity_and_event(
             [
                 'timeopen' => $timeopen->getTimestamp(),
@@ -1286,15 +1369,15 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Note: This test uses the feedback activity because it requires
      * module callbacks to be in place to test.
      */
-    public function test_update_event_start_day_activity_event_before_min() {
+    public function test_update_event_start_day_activity_event_before_min(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/mod/feedback/lib.php');
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $timeopen = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $timeclose = new DateTimeImmutable('2017-02-2T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2016-02-2T10:00:00+08:00');
+        $timeopen = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $timeclose = new \DateTimeImmutable('2017-02-2T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2016-02-2T10:00:00+08:00');
         list($feedback, $event) = $this->create_feedback_activity_and_event(
             [
                 'timeopen' => $timeopen->getTimestamp(),
@@ -1318,7 +1401,7 @@ class core_calendar_local_api_testcase extends advanced_testcase {
      * Note: This test uses the quiz activity because it requires
      * module callbacks to be in place and override event support to test.
      */
-    public function test_update_event_start_day_activity_event_override() {
+    public function test_update_event_start_day_activity_event_override(): void {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/calendar/lib.php');
         require_once($CFG->dirroot . '/mod/quiz/lib.php');
@@ -1326,8 +1409,8 @@ class core_calendar_local_api_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         $this->setAdminUser();
         $mapper = container::get_event_mapper();
-        $timeopen = new DateTimeImmutable('2017-01-1T15:00:00+08:00');
-        $newstartdate = new DateTimeImmutable('2016-02-2T10:00:00+08:00');
+        $timeopen = new \DateTimeImmutable('2017-01-1T15:00:00+08:00');
+        $newstartdate = new \DateTimeImmutable('2016-02-2T10:00:00+08:00');
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course = $generator->create_course();

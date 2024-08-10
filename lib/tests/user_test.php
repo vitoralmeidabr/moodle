@@ -14,81 +14,77 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Tests core_user class.
- *
- * @package    core
- * @copyright  2013 Rajesh Taneja <rajesh@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core;
 
 /**
  * Test core_user class.
  *
+ * @covers \core_user
  * @package    core
  * @copyright  2013 Rajesh Taneja <rajesh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_user_testcase extends advanced_testcase {
+class user_test extends \advanced_testcase {
 
     /**
      * Setup test data.
      */
     protected function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest(true);
     }
 
-    public function test_get_user() {
+    public function test_get_user(): void {
         global $CFG;
 
 
         // Create user and try fetach it with api.
         $user = $this->getDataGenerator()->create_user();
-        $this->assertEquals($user, core_user::get_user($user->id, '*', MUST_EXIST));
+        $this->assertEquals($user, \core_user::get_user($user->id, '*', MUST_EXIST));
 
         // Test noreply user.
         $CFG->noreplyuserid = null;
-        $noreplyuser = core_user::get_noreply_user();
+        $noreplyuser = \core_user::get_noreply_user();
         $this->assertEquals(1, $noreplyuser->emailstop);
-        $this->assertFalse(core_user::is_real_user($noreplyuser->id));
+        $this->assertFalse(\core_user::is_real_user($noreplyuser->id));
         $this->assertEquals($CFG->noreplyaddress, $noreplyuser->email);
         $this->assertEquals(get_string('noreplyname'), $noreplyuser->firstname);
 
         // Set user as noreply user and make sure noreply propery is set.
-        core_user::reset_internal_users();
+        \core_user::reset_internal_users();
         $CFG->noreplyuserid = $user->id;
-        $noreplyuser = core_user::get_noreply_user();
+        $noreplyuser = \core_user::get_noreply_user();
         $this->assertEquals(1, $noreplyuser->emailstop);
-        $this->assertTrue(core_user::is_real_user($noreplyuser->id));
+        $this->assertTrue(\core_user::is_real_user($noreplyuser->id));
 
         // Test support user.
-        core_user::reset_internal_users();
+        \core_user::reset_internal_users();
         $CFG->supportemail = null;
         $CFG->noreplyuserid = null;
-        $supportuser = core_user::get_support_user();
+        $supportuser = \core_user::get_support_user();
         $adminuser = get_admin();
         $this->assertEquals($adminuser, $supportuser);
-        $this->assertTrue(core_user::is_real_user($supportuser->id));
+        $this->assertTrue(\core_user::is_real_user($supportuser->id));
 
         // When supportemail is set.
-        core_user::reset_internal_users();
+        \core_user::reset_internal_users();
         $CFG->supportemail = 'test@example.com';
-        $supportuser = core_user::get_support_user();
-        $this->assertEquals(core_user::SUPPORT_USER, $supportuser->id);
-        $this->assertFalse(core_user::is_real_user($supportuser->id));
+        $supportuser = \core_user::get_support_user();
+        $this->assertEquals(\core_user::SUPPORT_USER, $supportuser->id);
+        $this->assertFalse(\core_user::is_real_user($supportuser->id));
 
         // Set user as support user and make sure noreply propery is set.
-        core_user::reset_internal_users();
+        \core_user::reset_internal_users();
         $CFG->supportuserid = $user->id;
-        $supportuser = core_user::get_support_user();
+        $supportuser = \core_user::get_support_user();
         $this->assertEquals($user, $supportuser);
-        $this->assertTrue(core_user::is_real_user($supportuser->id));
+        $this->assertTrue(\core_user::is_real_user($supportuser->id));
     }
 
     /**
      * Test get_user_by_username method.
      */
-    public function test_get_user_by_username() {
+    public function test_get_user_by_username(): void {
         $record = array();
         $record['username'] = 'johndoe';
         $record['email'] = 'johndoe@example.com';
@@ -98,26 +94,26 @@ class core_user_testcase extends advanced_testcase {
         $userexpected = $this->getDataGenerator()->create_user($record);
 
         // Assert that the returned user is the espected one.
-        $this->assertEquals($userexpected, core_user::get_user_by_username('johndoe'));
+        $this->assertEquals($userexpected, \core_user::get_user_by_username('johndoe'));
 
         // Assert that a subset of fields is correctly returned.
-        $this->assertEquals((object) $record, core_user::get_user_by_username('johndoe', 'username,email,timecreated'));
+        $this->assertEquals((object) $record, \core_user::get_user_by_username('johndoe', 'username,email,timecreated'));
 
         // Assert that a user with a different mnethostid will no be returned.
-        $this->assertFalse(core_user::get_user_by_username('johndoe', 'username,email,timecreated', 2));
+        $this->assertFalse(\core_user::get_user_by_username('johndoe', 'username,email,timecreated', 2));
 
         // Create a new user from a different host.
         $record['mnethostid'] = 2;
         $userexpected2 = $this->getDataGenerator()->create_user($record);
 
         // Assert that the new user is returned when specified the correct mnethostid.
-        $this->assertEquals($userexpected2, core_user::get_user_by_username('johndoe', '*', 2));
+        $this->assertEquals($userexpected2, \core_user::get_user_by_username('johndoe', '*', 2));
 
         // Assert that a user not in the db return false.
-        $this->assertFalse(core_user::get_user_by_username('janedoe'));
+        $this->assertFalse(\core_user::get_user_by_username('janedoe'));
     }
 
-    public function test_search() {
+    public function test_search(): void {
         global $DB;
 
         self::init_search_tests();
@@ -174,7 +170,7 @@ class core_user_testcase extends advanced_testcase {
         // As admin user, try searching for somebody at system level by first name, checking the
         // results.
         $this->setAdminUser();
-        $result = core_user::search('Amelia');
+        $result = \core_user::search('Amelia');
         $this->assertCount(1, $result);
 
         // Check some basic fields, and test other fields are present.
@@ -183,30 +179,30 @@ class core_user_testcase extends advanced_testcase {
         $this->assertEquals('House', $result[0]->lastname);
         $this->assertEquals('house@x.x', $result[0]->email);
         $this->assertEquals(0, $result[0]->deleted);
-        $this->assertObjectHasAttribute('firstnamephonetic', $result[0]);
-        $this->assertObjectHasAttribute('lastnamephonetic', $result[0]);
-        $this->assertObjectHasAttribute('middlename', $result[0]);
-        $this->assertObjectHasAttribute('alternatename', $result[0]);
-        $this->assertObjectHasAttribute('imagealt', $result[0]);
-        $this->assertObjectHasAttribute('username', $result[0]);
+        $this->assertObjectHasProperty('firstnamephonetic', $result[0]);
+        $this->assertObjectHasProperty('lastnamephonetic', $result[0]);
+        $this->assertObjectHasProperty('middlename', $result[0]);
+        $this->assertObjectHasProperty('alternatename', $result[0]);
+        $this->assertObjectHasProperty('imagealt', $result[0]);
+        $this->assertObjectHasProperty('username', $result[0]);
 
         // Now search by lastname, both names, and partials, case-insensitive.
-        $this->assertEquals($result, core_user::search('House'));
-        $this->assertEquals($result, core_user::search('Amelia house'));
-        $this->assertEquals($result, core_user::search('amelI'));
-        $this->assertEquals($result, core_user::search('hoUs'));
-        $this->assertEquals($result, core_user::search('Amelia H'));
+        $this->assertEquals($result, \core_user::search('House'));
+        $this->assertEquals($result, \core_user::search('Amelia house'));
+        $this->assertEquals($result, \core_user::search('amelI'));
+        $this->assertEquals($result, \core_user::search('hoUs'));
+        $this->assertEquals($result, \core_user::search('Amelia H'));
 
         // Admin user can also search by email (full or partial).
-        $this->assertEquals($result, core_user::search('house@x.x'));
-        $this->assertEquals($result, core_user::search('hOuse@'));
+        $this->assertEquals($result, \core_user::search('house@x.x'));
+        $this->assertEquals($result, \core_user::search('hOuse@'));
 
         // What if we just search for A? (They all begin with A except the manager.)
-        $result = core_user::search('a');
+        $result = \core_user::search('a');
         $this->assertCount(7, $result);
 
         // Au gets us Audrey, Austin, and Augustus - in alphabetical order by surname.
-        $result = core_user::search('au');
+        $result = \core_user::search('au');
         $this->assertCount(3, $result);
         $this->assertEquals('Austin', $result[0]->firstname);
         $this->assertEquals('Audrey', $result[1]->firstname);
@@ -214,7 +210,7 @@ class core_user_testcase extends advanced_testcase {
 
         // But if we search within course 2 we'll get Audrey and Augustus first.
         $course2context = \context_course::instance($course2->id);
-        $result = core_user::search('au', $course2context);
+        $result = \core_user::search('au', $course2context);
         $this->assertCount(3, $result);
         $this->assertEquals('Audrey', $result[0]->firstname);
         $this->assertEquals('Augustus', $result[1]->firstname);
@@ -223,76 +219,106 @@ class core_user_testcase extends advanced_testcase {
         // Try doing a few searches as manager - we should get the same results and can still
         // search by email too.
         $this->setUser($manager);
-        $result = core_user::search('a');
+        $result = \core_user::search('a');
         $this->assertCount(7, $result);
-        $result = core_user::search('au', $course2context);
+        $result = \core_user::search('au', $course2context);
         $this->assertCount(3, $result);
-        $result = core_user::search('house@x.x');
+        $result = \core_user::search('house@x.x');
         $this->assertCount(1, $result);
 
         // Teacher 1. No site-level permission so can't see users outside the enrolled course.
         $this->setUser($teacher1);
-        $result = core_user::search('au');
+        $result = \core_user::search('au');
         $this->assertCount(1, $result);
         $this->assertEquals('Augustus', $result[0]->firstname);
 
         // Can still search by email for that user.
-        $result = core_user::search('random@x.x');
+        $result = \core_user::search('random@x.x');
         $this->assertCount(1, $result);
 
         // Search everyone - teacher can only see four users (including themself).
-        $result = core_user::search('a');
+        $result = \core_user::search('a');
         $this->assertCount(4, $result);
 
         // Search within course 2 - you get the same four users (which doesn't include
         // everyone on that course) but the two on course 2 should be first.
-        $result = core_user::search('a', $course2context);
+        $result = \core_user::search('a', $course2context);
         $this->assertCount(4, $result);
         $this->assertEquals('Amelia', $result[0]->firstname);
         $this->assertEquals('Augustus', $result[1]->firstname);
 
         // Other teacher.
         $this->setUser($teacher2and3);
-        $result = core_user::search('au');
+        $result = \core_user::search('au');
         $this->assertCount(3, $result);
 
-        $result = core_user::search('a');
+        $result = \core_user::search('a');
         $this->assertCount(5, $result);
 
         // Student can only see users on course 3.
         $this->setUser($student3);
-        $result = core_user::search('a');
+        $result = \core_user::search('a');
         $this->assertCount(3, $result);
 
-        $result = core_user::search('au');
+        $result = \core_user::search('au');
         $this->assertCount(1, $result);
         $this->assertEquals('Austin', $result[0]->firstname);
 
         // Student cannot search by email.
-        $result = core_user::search('a.bloomsbury@x.x');
+        $result = \core_user::search('a.bloomsbury@x.x');
         $this->assertCount(0, $result);
 
         // Student on all courses can see all the A users.
         $this->setUser($studentall);
-        $result = core_user::search('a');
+        $result = \core_user::search('a');
         $this->assertCount(7, $result);
 
         // Mixed user can see users on courses 1 and 3.
         $this->setUser($mixed);
-        $result = core_user::search('a');
+        $result = \core_user::search('a');
         $this->assertCount(6, $result);
 
         // Mixed user can search by email for students on course 3 but not on course 1.
-        $result = core_user::search('hodder_a@x.x');
+        $result = \core_user::search('hodder_a@x.x');
         $this->assertCount(0, $result);
-        $result = core_user::search('house@x.x');
+        $result = \core_user::search('house@x.x');
         $this->assertCount(1, $result);
+    }
+
+    /**
+     * The search function had a bug where it failed if you have no identify fields (or only custom
+     * ones).
+     */
+    public function test_search_no_identity_fields(): void {
+        self::init_search_tests();
+
+        // Set no user identity fields.
+        set_config('showuseridentity', '');
+
+        // Set up course for test with teacher in.
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $teacher = $generator->create_user(['firstname' => 'Alberto', 'lastname' => 'Unwin',
+            'email' => 'a.unwin@x.x']);
+        $generator->enrol_user($teacher->id, $course->id, 'teacher');
+
+        // Admin user has site-wide permissions, this uses one variant of the query.
+        $this->setAdminUser();
+        $result = \core_user::search('Al');
+        $this->assertCount(1, $result);
+        $this->assertEquals('Alberto', $result[0]->firstname);
+
+        // Teacher has course-wide permissions, this uses another variant.
+        $this->setUser($teacher);
+        $result = \core_user::search('Al');
+        $this->assertCount(1, $result);
+        $this->assertEquals('Alberto', $result[0]->firstname);
     }
 
     /**
      * Tests the search() function with limits on the number to return.
      */
-    public function test_search_with_count() {
+    public function test_search_with_count(): void {
         self::init_search_tests();
         $generator = $this->getDataGenerator();
         $course = $generator->create_course();
@@ -304,15 +330,15 @@ class core_user_testcase extends advanced_testcase {
             $generator->enrol_user($student->id, $course->id, 'student');
         }
         $this->setAdminUser();
-        $result = core_user::search('Guy');
+        $result = \core_user::search('Guy');
         $this->assertCount(30, $result);
 
         // Check a small limit.
-        $result = core_user::search('Guy', null, 10);
+        $result = \core_user::search('Guy', null, 10);
         $this->assertCount(10, $result);
 
         // Check no limit.
-        $result = core_user::search('Guy', null, 0);
+        $result = \core_user::search('Guy', null, 0);
         $this->assertCount(31, $result);
     }
 
@@ -321,7 +347,7 @@ class core_user_testcase extends advanced_testcase {
      * are not in the same group. This is checked by the user profile permission thing and not
      * currently by the original query.
      */
-    public function test_search_group_permissions() {
+    public function test_search_group_permissions(): void {
         global $DB;
 
         self::init_search_tests();
@@ -350,12 +376,12 @@ class core_user_testcase extends advanced_testcase {
 
         // As searcher, we only find the 2 in the same group.
         $this->setUser($searcher);
-        $result = core_user::search('Guy');
+        $result = \core_user::search('Guy');
         $this->assertCount(2, $result);
 
         // If we change the course to visible groups though, we get the max number.
         $DB->set_field('course', 'groupmode', VISIBLEGROUPS, ['id' => $course->id]);
-        $result = core_user::search('Guy');
+        $result = \core_user::search('Guy');
         $this->assertCount(30, $result);
     }
 
@@ -364,7 +390,7 @@ class core_user_testcase extends advanced_testcase {
      * are not in the same group. This is checked by the user profile permission thing and not
      * currently by the original query.
      */
-    public function test_search_deleted_users() {
+    public function test_search_deleted_users(): void {
         self::init_search_tests();
 
         // Create one user to do the searching.
@@ -382,18 +408,18 @@ class core_user_testcase extends advanced_testcase {
 
         // As searcher, we find both users.
         $this->setUser($searcher);
-        $result = core_user::search('Amelia');
+        $result = \core_user::search('Amelia');
         $this->assertCount(2, $result);
 
         // What if one is deleted?
         delete_user($student1);
-        $result = core_user::search('Amelia');
+        $result = \core_user::search('Amelia');
         $this->assertCount(1, $result);
         $this->assertEquals('Beetle', $result[0]->lastname);
 
         // Delete the other, for good measure.
         delete_user($student2);
-        $result = core_user::search('Amelia');
+        $result = \core_user::search('Amelia');
         $this->assertCount(0, $result);
     }
 
@@ -418,20 +444,20 @@ class core_user_testcase extends advanced_testcase {
     /**
      * Test require_active_user
      */
-    public function test_require_active_user() {
+    public function test_require_active_user(): void {
         global $DB;
 
         // Create a default user for the test.
         $userexpected = $this->getDataGenerator()->create_user();
 
         // Simple case, all good.
-        core_user::require_active_user($userexpected, true, true);
+        \core_user::require_active_user($userexpected, true, true);
 
         // Set user not confirmed.
         $DB->set_field('user', 'confirmed', 0, array('id' => $userexpected->id));
         try {
-            core_user::require_active_user($userexpected);
-        } catch (moodle_exception $e) {
+            \core_user::require_active_user($userexpected);
+        } catch (\moodle_exception $e) {
             $this->assertEquals('usernotconfirmed', $e->errorcode);
         }
         $DB->set_field('user', 'confirmed', 1, array('id' => $userexpected->id));
@@ -439,45 +465,45 @@ class core_user_testcase extends advanced_testcase {
         // Set nologin auth method.
         $DB->set_field('user', 'auth', 'nologin', array('id' => $userexpected->id));
         try {
-            core_user::require_active_user($userexpected, false, true);
-        } catch (moodle_exception $e) {
+            \core_user::require_active_user($userexpected, false, true);
+        } catch (\moodle_exception $e) {
             $this->assertEquals('suspended', $e->errorcode);
         }
         // Check no exceptions are thrown if we don't specify to check suspended.
-        core_user::require_active_user($userexpected);
+        \core_user::require_active_user($userexpected);
         $DB->set_field('user', 'auth', 'manual', array('id' => $userexpected->id));
 
         // Set user suspended.
         $DB->set_field('user', 'suspended', 1, array('id' => $userexpected->id));
         try {
-            core_user::require_active_user($userexpected, true);
-        } catch (moodle_exception $e) {
+            \core_user::require_active_user($userexpected, true);
+        } catch (\moodle_exception $e) {
             $this->assertEquals('suspended', $e->errorcode);
         }
         // Check no exceptions are thrown if we don't specify to check suspended.
-        core_user::require_active_user($userexpected);
+        \core_user::require_active_user($userexpected);
 
         // Delete user.
         delete_user($userexpected);
         try {
-            core_user::require_active_user($userexpected);
-        } catch (moodle_exception $e) {
+            \core_user::require_active_user($userexpected);
+        } catch (\moodle_exception $e) {
             $this->assertEquals('userdeleted', $e->errorcode);
         }
 
         // Use a not real user.
-        $noreplyuser = core_user::get_noreply_user();
+        $noreplyuser = \core_user::get_noreply_user();
         try {
-            core_user::require_active_user($noreplyuser, true);
-        } catch (moodle_exception $e) {
+            \core_user::require_active_user($noreplyuser, true);
+        } catch (\moodle_exception $e) {
             $this->assertEquals('invaliduser', $e->errorcode);
         }
 
         // Get the guest user.
         $guestuser = $DB->get_record('user', array('username' => 'guest'));
         try {
-            core_user::require_active_user($guestuser, true);
-        } catch (moodle_exception $e) {
+            \core_user::require_active_user($guestuser, true);
+        } catch (\moodle_exception $e) {
             $this->assertEquals('guestsarenotallowed', $e->errorcode);
         }
 
@@ -486,24 +512,24 @@ class core_user_testcase extends advanced_testcase {
     /**
      * Test get_property_definition() method.
      */
-    public function test_get_property_definition() {
+    public function test_get_property_definition(): void {
         // Try to get a existing property.
-        $properties = core_user::get_property_definition('id');
+        $properties = \core_user::get_property_definition('id');
         $this->assertEquals($properties['type'], PARAM_INT);
-        $properties = core_user::get_property_definition('username');
+        $properties = \core_user::get_property_definition('username');
         $this->assertEquals($properties['type'], PARAM_USERNAME);
 
         // Invalid property.
         try {
-            core_user::get_property_definition('fullname');
-        } catch (coding_exception $e) {
+            \core_user::get_property_definition('fullname');
+        } catch (\coding_exception $e) {
             $this->assertMatchesRegularExpression('/Invalid property requested./', $e->getMessage());
         }
 
         // Empty parameter.
         try {
-            core_user::get_property_definition('');
-        } catch (coding_exception $e) {
+            \core_user::get_property_definition('');
+        } catch (\coding_exception $e) {
             $this->assertMatchesRegularExpression('/Invalid property requested./', $e->getMessage());
         }
     }
@@ -511,11 +537,11 @@ class core_user_testcase extends advanced_testcase {
     /**
      * Test validate() method.
      */
-    public function test_validate() {
+    public function test_validate(): void {
 
         // Create user with just with username and firstname.
         $record = array('username' => 's10', 'firstname' => 'Bebe Stevens');
-        $validation = core_user::validate((object)$record);
+        $validation = \core_user::validate((object)$record);
 
         // Validate the user, should return true as the user data is correct.
         $this->assertTrue($validation);
@@ -524,7 +550,7 @@ class core_user_testcase extends advanced_testcase {
         $record = array('username' => 's1', 'firstname' => 'Eric Cartman', 'country' => 'UU', 'theme' => 'beise');
 
         // Should return an array with 2 errors.
-        $validation = core_user::validate((object)$record);
+        $validation = \core_user::validate((object)$record);
         $this->assertArrayHasKey('country', $validation);
         $this->assertArrayHasKey('theme', $validation);
         $this->assertCount(2, $validation);
@@ -533,7 +559,7 @@ class core_user_testcase extends advanced_testcase {
         $record = array('username' => 's3', 'firstname' => 'Kyle<script>alert(1);<script> Broflovski');
 
         // Should return an array with 1 error.
-        $validation = core_user::validate((object)$record);
+        $validation = \core_user::validate((object)$record);
         $this->assertCount(1, $validation);
         $this->assertArrayHasKey('firstname', $validation);
     }
@@ -541,16 +567,16 @@ class core_user_testcase extends advanced_testcase {
     /**
      * Test clean_data() method.
      */
-    public function test_clean_data() {
+    public function test_clean_data(): void {
         $this->resetAfterTest(false);
 
-        $user = new stdClass();
+        $user = new \stdClass();
         $user->firstname = 'John <script>alert(1)</script> Doe';
         $user->username = 'john%#&~%*_doe';
         $user->email = ' john@testing.com ';
         $user->deleted = 'no';
         $user->description = '<b>A description <script>alert(123);</script>about myself.</b>';
-        $usercleaned = core_user::clean_data($user);
+        $usercleaned = \core_user::clean_data($user);
 
         // Expected results.
         $this->assertEquals('John alert(1) Doe', $usercleaned->firstname);
@@ -561,17 +587,17 @@ class core_user_testcase extends advanced_testcase {
 
         // Try to clean an invalid property (userfullname).
         $user->userfullname = 'John Doe';
-        core_user::clean_data($user);
+        \core_user::clean_data($user);
         $this->assertDebuggingCalled("The property 'userfullname' could not be cleaned.");
     }
 
     /**
      * Test clean_field() method.
      */
-    public function test_clean_field() {
+    public function test_clean_field(): void {
 
         // Create a 'malicious' user object/
-        $user = new stdClass();
+        $user = new \stdClass();
         $user->firstname = 'John <script>alert(1)</script> Doe';
         $user->username = 'john%#&~%*_doe';
         $user->email = ' john@testing.com ';
@@ -580,84 +606,84 @@ class core_user_testcase extends advanced_testcase {
         $user->userfullname = 'John Doe';
 
         // Expected results.
-        $this->assertEquals('John alert(1) Doe', core_user::clean_field($user->firstname, 'firstname'));
-        $this->assertEquals('john_doe', core_user::clean_field($user->username, 'username'));
-        $this->assertEquals('john@testing.com', core_user::clean_field($user->email, 'email'));
-        $this->assertEquals(0, core_user::clean_field($user->deleted, 'deleted'));
-        $this->assertEquals('<b>A description <script>alert(123);</script>about myself.</b>', core_user::clean_field($user->description, 'description'));
+        $this->assertEquals('John alert(1) Doe', \core_user::clean_field($user->firstname, 'firstname'));
+        $this->assertEquals('john_doe', \core_user::clean_field($user->username, 'username'));
+        $this->assertEquals('john@testing.com', \core_user::clean_field($user->email, 'email'));
+        $this->assertEquals(0, \core_user::clean_field($user->deleted, 'deleted'));
+        $this->assertEquals('<b>A description <script>alert(123);</script>about myself.</b>', \core_user::clean_field($user->description, 'description'));
 
         // Try to clean an invalid property (fullname).
-        core_user::clean_field($user->userfullname, 'fullname');
+        \core_user::clean_field($user->userfullname, 'fullname');
         $this->assertDebuggingCalled("The property 'fullname' could not be cleaned.");
     }
 
     /**
      * Test get_property_type() method.
      */
-    public function test_get_property_type() {
+    public function test_get_property_type(): void {
 
         // Fetch valid properties and verify if the type is correct.
-        $type = core_user::get_property_type('username');
+        $type = \core_user::get_property_type('username');
         $this->assertEquals(PARAM_USERNAME, $type);
-        $type = core_user::get_property_type('email');
+        $type = \core_user::get_property_type('email');
         $this->assertEquals(PARAM_RAW_TRIMMED, $type);
-        $type = core_user::get_property_type('timezone');
+        $type = \core_user::get_property_type('timezone');
         $this->assertEquals(PARAM_TIMEZONE, $type);
 
         // Try to fetch type of a non-existent properties.
         $nonexistingproperty = 'userfullname';
         $this->expectException('coding_exception');
         $this->expectExceptionMessage('Invalid property requested: ' . $nonexistingproperty);
-        core_user::get_property_type($nonexistingproperty);
+        \core_user::get_property_type($nonexistingproperty);
         $nonexistingproperty = 'mobilenumber';
         $this->expectExceptionMessage('Invalid property requested: ' . $nonexistingproperty);
-        core_user::get_property_type($nonexistingproperty);
+        \core_user::get_property_type($nonexistingproperty);
     }
 
     /**
      * Test get_property_null() method.
      */
-    public function test_get_property_null() {
+    public function test_get_property_null(): void {
         // Fetch valid properties and verify if it is NULL_ALLOWED or NULL_NOT_ALLOWED.
-        $property = core_user::get_property_null('username');
+        $property = \core_user::get_property_null('username');
         $this->assertEquals(NULL_NOT_ALLOWED, $property);
-        $property = core_user::get_property_null('password');
+        $property = \core_user::get_property_null('password');
         $this->assertEquals(NULL_NOT_ALLOWED, $property);
-        $property = core_user::get_property_null('imagealt');
+        $property = \core_user::get_property_null('imagealt');
         $this->assertEquals(NULL_ALLOWED, $property);
-        $property = core_user::get_property_null('middlename');
+        $property = \core_user::get_property_null('middlename');
         $this->assertEquals(NULL_ALLOWED, $property);
 
         // Try to fetch type of a non-existent properties.
         $nonexistingproperty = 'lastnamefonetic';
         $this->expectException('coding_exception');
         $this->expectExceptionMessage('Invalid property requested: ' . $nonexistingproperty);
-        core_user::get_property_null($nonexistingproperty);
+        \core_user::get_property_null($nonexistingproperty);
         $nonexistingproperty = 'midlename';
         $this->expectExceptionMessage('Invalid property requested: ' . $nonexistingproperty);
-        core_user::get_property_null($nonexistingproperty);
+        \core_user::get_property_null($nonexistingproperty);
     }
 
     /**
      * Test get_property_choices() method.
      */
-    public function test_get_property_choices() {
+    public function test_get_property_choices(): void {
 
         // Test against country property choices.
-        $choices = core_user::get_property_choices('country');
+        $choices = \core_user::get_property_choices('country');
         $this->assertArrayHasKey('AU', $choices);
         $this->assertArrayHasKey('BR', $choices);
         $this->assertArrayNotHasKey('WW', $choices);
         $this->assertArrayNotHasKey('TX', $choices);
 
         // Test against lang property choices.
-        $choices = core_user::get_property_choices('lang');
+        $choices = \core_user::get_property_choices('lang');
         $this->assertArrayHasKey('en', $choices);
         $this->assertArrayNotHasKey('ww', $choices);
         $this->assertArrayNotHasKey('yy', $choices);
 
         // Test against theme property choices.
-        $choices = core_user::get_property_choices('theme');
+        $choices = \core_user::get_property_choices('theme');
         $this->assertArrayHasKey('boost', $choices);
         $this->assertArrayHasKey('classic', $choices);
         $this->assertArrayNotHasKey('unknowntheme', $choices);
@@ -667,50 +693,50 @@ class core_user_testcase extends advanced_testcase {
         $nonexistingproperty = 'language';
         $this->expectException('coding_exception');
         $this->expectExceptionMessage('Invalid property requested: ' . $nonexistingproperty);
-        core_user::get_property_null($nonexistingproperty);
+        \core_user::get_property_null($nonexistingproperty);
         $nonexistingproperty = 'coutries';
         $this->expectExceptionMessage('Invalid property requested: ' . $nonexistingproperty);
-        core_user::get_property_null($nonexistingproperty);
+        \core_user::get_property_null($nonexistingproperty);
     }
 
     /**
      * Test get_property_default().
      */
-    public function test_get_property_default() {
+    public function test_get_property_default(): void {
         global $CFG;
         $this->resetAfterTest();
 
-        $country = core_user::get_property_default('country');
+        $country = \core_user::get_property_default('country');
         $this->assertEquals($CFG->country, $country);
         set_config('country', 'AU');
-        core_user::reset_caches();
-        $country = core_user::get_property_default('country');
+        \core_user::reset_caches();
+        $country = \core_user::get_property_default('country');
         $this->assertEquals($CFG->country, $country);
 
-        $lang = core_user::get_property_default('lang');
+        $lang = \core_user::get_property_default('lang');
         $this->assertEquals($CFG->lang, $lang);
         set_config('lang', 'en');
-        $lang = core_user::get_property_default('lang');
+        $lang = \core_user::get_property_default('lang');
         $this->assertEquals($CFG->lang, $lang);
 
         $this->setTimezone('Europe/London', 'Pacific/Auckland');
-        core_user::reset_caches();
-        $timezone = core_user::get_property_default('timezone');
+        \core_user::reset_caches();
+        $timezone = \core_user::get_property_default('timezone');
         $this->assertEquals('Europe/London', $timezone);
         $this->setTimezone('99', 'Pacific/Auckland');
-        core_user::reset_caches();
-        $timezone = core_user::get_property_default('timezone');
+        \core_user::reset_caches();
+        $timezone = \core_user::get_property_default('timezone');
         $this->assertEquals('Pacific/Auckland', $timezone);
 
-        $this->expectException(coding_exception::class);
+        $this->expectException(\coding_exception::class);
         $this->expectExceptionMessage('Invalid property requested, or the property does not has a default value.');
-        core_user::get_property_default('firstname');
+        \core_user::get_property_default('firstname');
     }
 
     /**
      * Ensure that the noreply user is not cached.
      */
-    public function test_get_noreply_user() {
+    public function test_get_noreply_user(): void {
         global $CFG;
 
         // Create a new fake language 'xx' with the 'noreplyname'.
@@ -733,7 +759,7 @@ class core_user_testcase extends advanced_testcase {
     /**
      * Test is_real_user method.
      */
-    public function test_is_real_user() {
+    public function test_is_real_user(): void {
         global $CFG, $USER;
 
         // Real users are real users.
@@ -762,18 +788,18 @@ class core_user_testcase extends advanced_testcase {
 
         // Fake accounts are not real users.
         $CFG->noreplyuserid = null;
-        $this->assertFalse(\core_user::is_real_user(core_user::get_noreply_user()->id));
-        $this->assertFalse(\core_user::is_real_user(core_user::get_noreply_user()->id, true));
+        $this->assertFalse(\core_user::is_real_user(\core_user::get_noreply_user()->id));
+        $this->assertFalse(\core_user::is_real_user(\core_user::get_noreply_user()->id, true));
         $CFG->supportuserid = null;
         $CFG->supportemail = 'test@example.com';
-        $this->assertFalse(\core_user::is_real_user(core_user::get_support_user()->id));
-        $this->assertFalse(\core_user::is_real_user(core_user::get_support_user()->id, true));
+        $this->assertFalse(\core_user::is_real_user(\core_user::get_support_user()->id));
+        $this->assertFalse(\core_user::is_real_user(\core_user::get_support_user()->id, true));
     }
 
     /**
      * Tests for the {@see \core_user::awaiting_action()} method.
      */
-    public function test_awaiting_action() {
+    public function test_awaiting_action(): void {
         global $CFG, $DB, $USER;
 
         $guest = \core_user::get_user($CFG->siteguest);
@@ -818,5 +844,168 @@ class core_user_testcase extends advanced_testcase {
         $CFG->sitepolicy = 'https://example.com';
         $this->assertFalse(\core_user::awaiting_action($admin));
         $this->assertTrue(\core_user::awaiting_action($manager));
+    }
+
+    /**
+     * Test for function to get user details.
+     *
+     * @covers \core_user::get_fullname
+     */
+    public function test_display_name(): void {
+        $this->resetAfterTest();
+
+        $user = $this->getDataGenerator()->create_user(['firstname' => 'John', 'lastname' => 'Doe']);
+        $context = \context_system::instance();
+
+        // Show real name as the force names config are not set.
+        $this->assertEquals('John Doe', \core_user::get_fullname($user, $context));
+
+        // With override, still show real name.
+        $options = ['override' => true];
+        $this->assertEquals('John Doe', \core_user::get_fullname($user, $context, $options));
+
+        // Set the force names config.
+        set_config('forcefirstname', 'Bruce');
+        set_config('forcelastname', 'Simpson');
+
+        // Show forced names.
+        $this->assertEquals('Bruce Simpson', \core_user::get_fullname($user, $context));
+
+        // With override, show real name.
+        $options = ['override' => true];
+        $this->assertEquals('John Doe', \core_user::get_fullname($user, $context, $options));
+    }
+
+    /**
+     * Test for function to get user details.
+     *
+     * @covers \core_user::get_profile_url
+     */
+    public function test_display_profile_url(): void {
+        $this->resetAfterTest();
+
+        $user = $this->getDataGenerator()->create_user(['firstname' => 'John', 'lastname' => 'Doe']);
+
+        // Display profile url at site context.
+        $this->assertEquals("https://www.example.com/moodle/user/profile.php?id={$user->id}",
+            \core_user::get_profile_url($user)->out());
+
+        // Display profile url at course context.
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = \context_course::instance($course->id);
+        $this->assertEquals("https://www.example.com/moodle/user/view.php?id={$user->id}&amp;course={$course->id}",
+            \core_user::get_profile_url($user, $coursecontext));
+
+        // Throw error if userid is invalid.
+        unset($user->id);
+        $this->expectException(\coding_exception::class);
+        $this->expectExceptionMessage('User id is required when displaying profile url.');
+        \core_user::get_profile_url($user, $coursecontext);
+    }
+
+    /**
+     * Test for function to get user details.
+     *
+     * @covers \core_user::get_profile_picture
+     */
+    public function test_display_profile_picture(): void {
+        global $OUTPUT, $CFG;
+        $this->resetAfterTest();
+
+        $user1 = $this->getDataGenerator()->create_user(['firstname' => 'John', 'lastname' => 'Doe']);
+        $user2 = $this->getDataGenerator()->create_user(['picture' => 1]);
+
+        // Display profile picture.
+        $context = \context_system::instance();
+        // No image, show initials.
+        $this->assertStringContainsString(
+            "<span class=\"userinitials size-35\" title=\"John Doe\" aria-label=\"John Doe\" role=\"img\">JD</span></a>",
+            $OUTPUT->render(\core_user::get_profile_picture($user1, $context)));
+        // With Image.
+        $expectedimagesrc = $CFG->wwwroot . '/pluginfile.php/' . \context_user::instance($user2->id)->id .
+            '/user/icon/boost/f2?rev=1';
+        $this->assertStringContainsString($expectedimagesrc,
+            $OUTPUT->render(\core_user::get_profile_picture($user2, $context)));
+
+        // Display profile picture with options.
+        $options = ['size' => 50, 'includefullname' => true];
+        $this->assertStringContainsString(
+            "<span class=\"userinitials size-50\" title=\"John Doe\" aria-label=\"John Doe\" role=\"img\">JD</span>John Doe</a>",
+            $OUTPUT->render(\core_user::get_profile_picture($user1, $context, $options)));
+
+        // Display profile picture with options, no link.
+        $options = ['link' => false];
+        $this->assertEquals(
+            "<span class=\"userinitials size-35\" title=\"John Doe\" aria-label=\"John Doe\" role=\"img\">JD</span>",
+            $OUTPUT->render(\core_user::get_profile_picture($user1, $context, $options)));
+    }
+
+    /**
+     * Test that user with Letter avatar respect language preference.
+     *
+     * @param array $userdata
+     * @param string $fullnameconfig
+     * @param string $expected
+     * @return void
+     * @covers       \core_user::get_initials
+     * @dataProvider user_name_provider
+     */
+    public function test_get_initials(array $userdata, string $fullnameconfig, string $expected): void {
+        $this->resetAfterTest();
+        // Create a user.
+        $page = new \moodle_page();
+        $page->set_url('/user/profile.php');
+        $page->set_context(\context_system::instance());
+        $renderer = $page->get_renderer('core');
+        $user1 =
+            $this->getDataGenerator()->create_user(
+                array_merge(
+                    ['picture' => 0, 'email' => 'user1@example.com'],
+                    $userdata
+                )
+            );
+        set_config('fullnamedisplay', $fullnameconfig);
+        $initials = \core_user::get_initials($user1);
+        $this->assertEquals($expected, $initials);
+    }
+
+    /**
+     * Provider of user configuration for testing initials rendering
+     *
+     * @return array[]
+     */
+    public static function user_name_provider(): array {
+        return [
+            'simple user' => [
+                'user' => ['firstname' => 'first', 'lastname' => 'last'],
+                'fullnamedisplay' => 'language',
+                'expected' => 'fl',
+            ],
+            'simple user with lastname firstname in language settings' => [
+                'user' => ['firstname' => 'first', 'lastname' => 'last'],
+                'fullnamedisplay' => 'lastname firstname',
+                'expected' => 'lf',
+            ],
+            'simple user with no surname' => [
+                'user' => ['firstname' => '', 'lastname' => 'L'],
+                'fullnamedisplay' => 'language',
+                'expected' => 'L',
+            ],
+            'simple user with a middle name' => [
+                'user' => ['firstname' => 'f', 'lastname' => 'l', 'middlename' => 'm'],
+                'fullnamedisplay' => 'middlename lastname',
+                'expected' => 'ml',
+            ],
+            'user with a middle name & fullnamedisplay contains 3 names' => [
+                'user' => ['firstname' => 'first', 'lastname' => 'last', 'middlename' => 'middle'],
+                'fullnamedisplay' => 'firstname middlename lastname',
+                'expected' => 'fl',
+            ],
+            'simple user with a namefield consisting of one element' => [
+                'user' => ['firstname' => 'first', 'lastname' => 'last'],
+                'fullnamedisplay' => 'lastname',
+                'expected' => 'l',
+            ],
+        ];
     }
 }

@@ -18,14 +18,14 @@ Feature: Settings form fields disabled if not required
       | teacher  | C1     | editingteacher |
       | student1 | C1     | student        |
       | student2 | C1     | student        |
+    And the following "activities" exist:
+      | activity | course | section | name        |
+      | quiz     | C1     | 1       | Test quiz 1 |
 
   @javascript
   Scenario: Depending on the number of attempts, different form fields are disabled.
-    When I log in as "teacher"
-    And I am on "Course 1" course homepage with editing mode on
-    And I add a "Quiz" to section "1"
+    When I am on the "Test quiz 1" "quiz activity editing" page logged in as teacher
     And I expand all fieldsets
-    And I set the field "Name" to "Test quiz"
     And I set the field "Attempts allowed" to "1"
     Then the "Grading method" "field" should be disabled
     And the "Each attempt builds on the last" "field" should be disabled
@@ -96,12 +96,12 @@ Feature: Settings form fields disabled if not required
   @javascript
   Scenario: Depending on whether there is a close date, some review options are disabled.
     When I log in as "teacher"
-    And I am on "Course 1" course homepage with editing mode on
-    And I add a "Quiz" to section "1"
+    And I add a quiz activity to course "Course 1" section "1"
     And I expand all fieldsets
     And I set the field "Name" to "Test quiz"
     Then the "id_attemptclosed" "checkbox" should be disabled
     And the "id_correctnessclosed" "checkbox" should be disabled
+    And the "id_maxmarksclosed" "checkbox" should be disabled
     And the "id_marksclosed" "checkbox" should be disabled
     And the "id_specificfeedbackclosed" "checkbox" should be disabled
     And the "id_generalfeedbackclosed" "checkbox" should be disabled
@@ -110,11 +110,16 @@ Feature: Settings form fields disabled if not required
     And I set the field "id_timeclose_enabled" to "1"
     And the "id_attemptclosed" "checkbox" should be enabled
     And the "id_correctnessclosed" "checkbox" should be enabled
+    And the "id_maxmarksclosed" "checkbox" should be enabled
     And the "id_marksclosed" "checkbox" should be enabled
+    And I set the field "id_maxmarksclosed" to "0"
+    And the "id_marksclosed" "checkbox" should be disabled
     And the "id_specificfeedbackclosed" "checkbox" should be enabled
     And the "id_generalfeedbackclosed" "checkbox" should be enabled
     And the "id_rightanswerclosed" "checkbox" should be enabled
     And the "id_overallfeedbackclosed" "checkbox" should be enabled
+    And I set the field "id_maxmarksduring" to "0"
+    And the "id_marksduring" "checkbox" should be disabled
     And I should not see "Repaginate now"
 
   @javascript

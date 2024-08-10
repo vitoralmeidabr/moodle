@@ -32,6 +32,7 @@ class language_menu_test extends \advanced_testcase {
      */
     public function setUp(): void {
         global $PAGE;
+        parent::setUp();
         $this->resetAfterTest();
         $PAGE->set_url('/');
     }
@@ -43,7 +44,7 @@ class language_menu_test extends \advanced_testcase {
      * @param string $language
      * @param array $expected
      */
-    public function test_get_lang_menu(bool $withadditionallangs, string $language, array $expected) {
+    public function test_get_lang_menu(bool $withadditionallangs, string $language, array $expected): void {
         global $CFG, $PAGE;
 
         // Mimic multiple langs installed. To trigger responses 'get_list_of_translations'.
@@ -61,7 +62,6 @@ class language_menu_test extends \advanced_testcase {
 
         $output = new language_menu($PAGE);
         $method = new ReflectionMethod('\core\output\language_menu', 'export_for_template');
-        $method->setAccessible(true);
         $renderer = $PAGE->get_renderer('core');
 
         $response = $method->invoke($output, $renderer);
@@ -72,10 +72,19 @@ class language_menu_test extends \advanced_testcase {
             // Assert that the number of language menu items matches the number of the expected items.
             $this->assertEquals(count($expected['items']), count($response['items']));
             foreach ($expected['items'] as $expecteditem) {
+                $lang = $expecteditem['lang'];
                 // We need to manually generate the url key and its value in the expected item array as this cannot
                 // be done in the data provider due to the change of the state of $PAGE.
-                $expecteditem['url'] = $expecteditem['isactive'] ? new \moodle_url('#') :
-                    new \moodle_url($PAGE->url, ['lang' => $expecteditem['lang']]);
+                if ($expecteditem['isactive']) {
+                    $expecteditem['url'] = new \moodle_url('#');
+                } else {
+                    $expecteditem['url'] = new \moodle_url($PAGE->url, ['lang' => $lang]);
+                    // When the language menu item is not the current language, it will contain the lang attribute.
+                    $expecteditem['attributes'][] = [
+                        'key' => 'lang',
+                        'value' => $lang
+                    ];
+                }
                 // The lang value is only used to generate the url, so this key can be removed.
                 unset($expecteditem['lang']);
 

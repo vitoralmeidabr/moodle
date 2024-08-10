@@ -25,7 +25,7 @@
 $string['accountexists'] = 'A user already exists on this site with this username. If this is your account, log in by entering your username and password and add it as a linked login via your preferences page.';
 $string['auth_oauth2description'] = 'OAuth 2 standards based authentication';
 $string['auth_oauth2settings'] = 'OAuth 2 authentication settings.';
-$string['confirmaccountemail'] = 'Hi {$a->fullname},
+$string['confirmaccountemail'] = 'Hi {$a->firstname},
 
 A new account has been requested at \'{$a->sitename}\'
 using your email address.
@@ -47,7 +47,7 @@ Please contact the site administrator immediately.';
 $string['confirmaccountemailsubject'] = '{$a}: account confirmation';
 $string['confirmationinvalid'] = 'The confirmation link is either invalid, or has expired. Please start the login process again to generate a new confirmation email.';
 $string['confirmationpending'] = 'This account is pending email confirmation.';
-$string['confirmlinkedloginemail'] = 'Hi {$a->fullname},
+$string['confirmlinkedloginemail'] = 'Hi {$a->firstname},
 
 A request has been made to link the {$a->issuername} login
 {$a->linkedemail} to your account at \'{$a->sitename}\'
@@ -86,16 +86,19 @@ Please log in as before, using the link on the login page.
 {$a->admin}';
 $string['emailpasswordchangeinfosubject'] = '{$a}: Change password information';
 $string['info'] = 'External account';
-$string['issuer'] = 'OAuth 2 Service';
+$string['issuer'] = 'OAuth 2 service';
 $string['issuernologin'] = 'This issuer can not be used to login';
+$string['key'] = 'Key';
 $string['linkedlogins'] = 'Linked logins';
 $string['linkedloginshelp'] = 'Help with linked logins';
+$string['loggedin'] = 'User successfully authenticated with provider.';
 $string['loginerror_userincomplete'] = 'The user information returned did not contain a username and email address. The OAuth 2 service may be configured incorrectly.';
 $string['loginerror_nouserinfo'] = 'No user information was returned. The OAuth 2 service may be configured incorrectly.';
 $string['loginerror_invaliddomain'] = 'The email address is not allowed at this site.';
 $string['loginerror_authenticationfailed'] = 'The authentication process failed.';
 $string['loginerror_cannotcreateaccounts'] = 'An account with your email address could not be found.';
-$string['noissuersavailable'] = 'None of the configured OAuth2 services allow you to link login accounts';
+$string['noconfiguredidps'] = 'There are no configured OAuth2 providers.';
+$string['noissuersavailable'] = 'None of the configured OAuth 2 services allow you to link login accounts.';
 $string['notloggedindebug'] = 'The login attempt failed. Reason: {$a}';
 $string['notwhileloggedinas'] = 'Linked logins cannot be managed while logged in as another user.';
 $string['oauth2:managelinkedlogins'] = 'Manage own linked login accounts';
@@ -115,3 +118,6 @@ $string['privacy:metadata:auth_oauth2:timemodified'] = 'The timestamp when this 
 $string['privacy:metadata:auth_oauth2:userid'] = 'The ID of the user account which the OAuth 2 login is linked to.';
 $string['privacy:metadata:auth_oauth2:usermodified'] = 'The ID of the user who modified this account.';
 $string['privacy:metadata:auth_oauth2:username'] = 'The external username that maps to this account.';
+$string['testidplogin'] = 'Test login with:';
+$string['userinfo'] = 'User data from provider:';
+$string['value'] = 'Value';

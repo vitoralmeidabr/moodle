@@ -8,12 +8,14 @@ Feature: Feature: Students can use the recent blog entries block to view recent 
     Given the following "users" exist:
       | username | firstname | lastname | email | idnumber |
       | student1 | Student | 1 | student1@example.com | S1 |
+    And the following "blocks" exist:
+      | blockname   | contextlevel | reference | pagetypepattern | defaultregion |
+      | blog_recent | System       | 1         | site-index      | side-pre      |
+    And the following config values are set as admin:
+      | unaddableblocks | | theme_boost|
     And I log in as "admin"
     And I am on site homepage
     And I turn editing mode on
-    And I add the "Recent blog entries" block
-    And the following config values are set as admin:
-      | unaddableblocks | | theme_boost|
     # TODO MDL-57120 site "Blogs" link not accessible without navigation block.
     And I add the "Navigation" block if not present
     And I log out
@@ -94,7 +96,7 @@ Feature: Feature: Students can use the recent blog entries block to view recent 
     And I turn editing mode on
     And I configure the "Recent blog entries" block
     And I set the following fields to these values:
-      | id_config_numberofrecentblogentries | 2 |
+      | config_numberofrecentblogentries | 2 |
     And I press "Save changes"
     And I should see "S1 Fourth Blog"
     And I should see "S1 Fifth Blog"

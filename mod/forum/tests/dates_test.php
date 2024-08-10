@@ -54,12 +54,12 @@ class dates_test extends advanced_testcase {
             ],
             'future due date' => [
                 $after, [
-                    ['label' => 'Due:', 'timestamp' => $after],
+                    ['label' => 'Due:', 'timestamp' => $after, 'dataid' => 'duedate'],
                 ]
             ],
             'due date is past' => [
                 $before, [
-                    ['label' => 'Due:', 'timestamp' => $before],
+                    ['label' => 'Due:', 'timestamp' => $before, 'dataid' => 'duedate'],
                 ]
             ],
         ];
@@ -72,7 +72,7 @@ class dates_test extends advanced_testcase {
      * @param int|null $duedate Forum's due date.
      * @param array $expected The expected value of calling get_dates_for_module()
      */
-    public function test_get_dates_for_module(?int $duedate, array $expected) {
+    public function test_get_dates_for_module(?int $duedate, array $expected): void {
         $this->resetAfterTest();
 
         $course = $this->getDataGenerator()->create_course();

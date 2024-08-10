@@ -154,6 +154,16 @@ if (defined('BEHAT_SITE_RUNNING')) {
     }
 }
 
+// Set default warn runtime.
+if (!isset($CFG->taskruntimewarn)) {
+    $CFG->taskruntimewarn = 12 * 60 * 60;
+}
+
+// Set default error runtime.
+if (!isset($CFG->taskruntimeerror)) {
+    $CFG->taskruntimeerror = 24 * 60 * 60;
+}
+
 // Normalise dataroot - we do not want any symbolic links, trailing / or any other weirdness there
 if (!isset($CFG->dataroot)) {
     if (isset($_SERVER['REMOTE_ADDR'])) {
@@ -186,6 +196,9 @@ if (!isset($CFG->wwwroot) or $CFG->wwwroot === 'http://example.com/moodle') {
     exit(1);
 }
 
+// The router configuration is mandatory.
+$CFG->routerconfigured = !empty($CFG->routerconfigured);
+
 // Make sure there is some database table prefix.
 if (!isset($CFG->prefix)) {
     $CFG->prefix = '';
@@ -201,7 +214,7 @@ $CFG->libdir = $CFG->dirroot .'/lib';
 
 // Allow overriding of tempdir but be backwards compatible
 if (!isset($CFG->tempdir)) {
-    $CFG->tempdir = "$CFG->dataroot/temp";
+    $CFG->tempdir = $CFG->dataroot . DIRECTORY_SEPARATOR . "temp";
 }
 
 // Allow overriding of backuptempdir but be backwards compatible
@@ -246,7 +259,7 @@ if (!isset($_SERVER['REMOTE_ADDR']) && isset($_SERVER['argv'][0])) {
 
 // sometimes default PHP settings are borked on shared hosting servers, I wonder why they have to do that??
 ini_set('precision', 14); // needed for upgrades and gradebook
-ini_set('serialize_precision', 17); // Make float serialization consistent on all systems.
+ini_set('serialize_precision', -1); // Make float serialization consistent on all systems.
 
 // Scripts may request no debug and error messages in output
 // please note it must be defined before including the config.php script
@@ -271,21 +284,25 @@ if (!defined('PHPUNIT_TEST')) {
     define('PHPUNIT_TEST', false);
 }
 
-// Performance tests needs to always display performance info, even in redirections.
+// Performance tests needs to always display performance info, even in redirections;
+// MDL_PERF_TEST is used in https://github.com/moodlehq/moodle-performance-comparison scripts.
 if (!defined('MDL_PERF_TEST')) {
     define('MDL_PERF_TEST', false);
-} else {
-    // We force the ones we need.
-    if (!defined('MDL_PERF')) {
-        define('MDL_PERF', true);
-    }
-    if (!defined('MDL_PERFDB')) {
-        define('MDL_PERFDB', true);
-    }
-    if (!defined('MDL_PERFTOFOOT')) {
-        define('MDL_PERFTOFOOT', true);
-    }
 }
+// Make sure all MDL_PERF* constants are always defined.
+if (!defined('MDL_PERF')) {
+    define('MDL_PERF', MDL_PERF_TEST);
+}
+if (!defined('MDL_PERFTOFOOT')) {
+    define('MDL_PERFTOFOOT', MDL_PERF_TEST);
+}
+if (!defined('MDL_PERFTOLOG')) {
+    define('MDL_PERFTOLOG', false);
+}
+if (!defined('MDL_PERFINC')) {
+    define('MDL_PERFINC', false);
+}
+// Note that PHPUnit and Behat tests should pass with both MDL_PERF true and false.
 
 // When set to true MUC (Moodle caching) will be disabled as much as possible.
 // A special cache factory will be used to handle this situation and will use special "disabled" equivalents objects.
@@ -362,11 +379,16 @@ if (file_exists("$CFG->dataroot/climaintenance.html")) {
     }
 }
 
-// Sometimes people use different PHP binary for web and CLI, make 100% sure they have the supported PHP version.
-if (version_compare(PHP_VERSION, '5.6.5') < 0) {
+// Some core parts of Moodle may make use of language features not available in older PHP versions.s
+// When this happens as part of our core bootstrap, we can end up having confusing and spurious error
+// messages which are hard to diagnose.
+// This check allows us to insert a very basic check for the absolute minimum version of PHP for the
+// Moodle core to be able to load the environment and error pages.
+// It should only be updated in these circumstances, not with every PHP version.
+if (version_compare(PHP_VERSION, '8.1.0') < 0) {
     $phpversion = PHP_VERSION;
     // Do NOT localise - lang strings would not work here and we CAN NOT move it to later place.
-    echo "Moodle 3.2 or later requires at least PHP 5.6.5 (currently using version $phpversion).\n";
+    echo "Moodle 4.4 or later requires at least PHP 8.1 (currently using version $phpversion).\n";
     echo "Some servers may have multiple PHP versions installed, are you using the correct executable?\n";
     exit(1);
 }
@@ -378,10 +400,9 @@ if (!defined('AJAX_SCRIPT')) {
 
 // Exact version of currently used yui2 and 3 library.
 $CFG->yui2version = '2.9.0';
-$CFG->yui3version = '3.17.2';
+$CFG->yui3version = '3.18.1';
 
 // Patching the upstream YUI release.
-// For important information on patching YUI modules, please see http://docs.moodle.org/dev/YUI/Patching.
 // If we need to patch a YUI modules between official YUI releases, the yuipatchlevel will need to be manually
 // incremented here. The module will also need to be listed in the yuipatchedmodules.
 // When upgrading to a subsequent version of YUI, these should be reset back to 0 and an empty array.
@@ -416,31 +437,11 @@ if (!defined('MOODLE_INTERNAL')) { // Necessary because cli installer has to def
     define('MOODLE_INTERNAL', true);
 }
 
-// core_component can be used in any scripts, it does not need anything else.
+// The core_component class can be used in any scripts, it does not need anything else.
 require_once($CFG->libdir .'/classes/component.php');
 
-// special support for highly optimised scripts that do not need libraries and DB connection
-if (defined('ABORT_AFTER_CONFIG')) {
-    if (!defined('ABORT_AFTER_CONFIG_CANCEL')) {
-        // hide debugging if not enabled in config.php - we do not want to disclose sensitive info
-        error_reporting($CFG->debug);
-        if (NO_DEBUG_DISPLAY) {
-            // Some parts of Moodle cannot display errors and debug at all.
-            ini_set('display_errors', '0');
-            ini_set('log_errors', '1');
-        } else if (empty($CFG->debugdisplay)) {
-            ini_set('display_errors', '0');
-            ini_set('log_errors', '1');
-        } else {
-            ini_set('display_errors', '1');
-        }
-        require_once("$CFG->dirroot/lib/configonlylib.php");
-        return;
-    }
-}
-
 // Early profiling start, based exclusively on config.php $CFG settings
-if (!empty($CFG->earlyprofilingenabled)) {
+if (!empty($CFG->earlyprofilingenabled) && !defined('ABORT_AFTER_CONFIG_CANCEL')) {
     require_once($CFG->libdir . '/xhprof/xhprof_moodle.php');
     profiling_start();
 }
@@ -553,14 +554,97 @@ global $SCRIPT;
 // The httpswwwroot has been deprecated, we keep it as an alias for backwards compatibility with plugins only.
 $CFG->httpswwwroot = $CFG->wwwroot;
 
-require_once($CFG->libdir .'/setuplib.php');        // Functions that MUST be loaded first
-
+// We have to call this always before starting session because it discards headers!
 if (NO_OUTPUT_BUFFERING) {
-    // we have to call this always before starting session because it discards headers!
-    disable_output_buffering();
+    // Try to disable all output buffering and purge all headers.
+    $olddebug = error_reporting(0);
+
+    // Disable compression, it would prevent closing of buffers.
+    if ($outputcompression = ini_get('zlib.output_compression')) {
+        switch(strtolower($outputcompression)) {
+            case 'on':
+            case '1':
+                ini_set('zlib.output_compression', 'Off');
+                break;
+        }
+    }
+
+    // Try to flush everything all the time.
+    ob_implicit_flush(true);
+
+    // Close all buffers if possible and discard any existing output.
+    // This can actually work around some whitespace problems in config.php.
+    while (ob_get_level()) {
+        if (!ob_end_clean()) {
+            // Prevent infinite loop when buffer can not be closed.
+            break;
+        }
+    }
+
+    // Disable any other output handlers.
+    ini_set('output_handler', '');
+
+    error_reporting($olddebug);
+
+    // Disable buffering in nginx.
+    header('X-Accel-Buffering: no');
 }
 
-// Increase memory limits if possible
+// Point pear include path to moodles lib/pear so that includes and requires will search there for files before anywhere else
+// the problem is that we need specific version of quickforms and hacked excel files :-(.
+ini_set('include_path', $CFG->libdir . '/pear' . PATH_SEPARATOR . ini_get('include_path'));
+
+// Register our classloader, in theory somebody might want to replace it to load other hacked core classes.
+if (defined('COMPONENT_CLASSLOADER')) {
+    spl_autoload_register(COMPONENT_CLASSLOADER);
+} else {
+    spl_autoload_register([\core_component::class, 'classloader']);
+}
+
+// Special support for highly optimised scripts that do not need libraries and DB connection.
+if (defined('ABORT_AFTER_CONFIG')) {
+    if (!defined('ABORT_AFTER_CONFIG_CANCEL')) {
+        // Hide debugging if not enabled in config.php - we do not want to disclose sensitive info.
+        error_reporting($CFG->debug);
+        if (NO_DEBUG_DISPLAY) {
+            // Some parts of Moodle cannot display errors and debug at all.
+            ini_set('display_errors', '0');
+            ini_set('log_errors', '1');
+        } else if (empty($CFG->debugdisplay)) {
+            ini_set('display_errors', '0');
+            ini_set('log_errors', '1');
+        } else {
+            ini_set('display_errors', '1');
+        }
+        require_once("$CFG->dirroot/lib/configonlylib.php");
+        return;
+    }
+}
+
+require_once($CFG->libdir .'/setuplib.php');        // Functions that MUST be loaded first.
+
+// Load up standard libraries.
+require_once($CFG->libdir .'/filterlib.php');       // Functions for filtering test as it is output.
+require_once($CFG->libdir .'/ajax/ajaxlib.php');    // Functions for managing our use of JavaScript and YUI.
+require_once($CFG->libdir .'/weblib.php');          // Functions relating to HTTP and content.
+require_once($CFG->libdir .'/outputlib.php');       // Functions for generating output.
+require_once($CFG->libdir .'/navigationlib.php');   // Class for generating Navigation structure.
+require_once($CFG->libdir .'/dmllib.php');          // Database access.
+require_once($CFG->libdir .'/datalib.php');         // Legacy lib with a big-mix of functions..
+require_once($CFG->libdir .'/accesslib.php');       // Access control functions.
+require_once($CFG->libdir .'/deprecatedlib.php');   // Deprecated functions included for backward compatibility.
+require_once($CFG->libdir .'/moodlelib.php');       // Other general-purpose functions.
+require_once($CFG->libdir .'/enrollib.php');        // Enrolment related functions.
+require_once($CFG->libdir .'/pagelib.php');         // Library that defines the moodle_page class, used for $PAGE.
+require_once($CFG->libdir .'/blocklib.php');        // Library for controlling blocks.
+require_once($CFG->libdir .'/grouplib.php');        // Groups functions.
+require_once($CFG->libdir .'/sessionlib.php');      // All session and cookie related stuff.
+require_once($CFG->libdir .'/editorlib.php');       // All text editor related functions and classes.
+require_once($CFG->libdir .'/messagelib.php');      // Messagelib functions.
+require_once($CFG->libdir .'/modinfolib.php');      // Cached information on course-module instances.
+require_once($CFG->dirroot.'/cache/lib.php');       // Cache API.
+
+// Increase memory limits if possible.
 raise_memory_limit(MEMORY_STANDARD);
 
 // Time to start counting
@@ -569,7 +653,7 @@ init_performance_info();
 // Put $OUTPUT in place, so errors can be displayed.
 $OUTPUT = new bootstrap_renderer();
 
-// set handler for uncaught exceptions - equivalent to print_error() call
+// Set handler for uncaught exceptions - equivalent to throw new \moodle_exception() call.
 if (!PHPUNIT_TEST or PHPUNIT_UTIL) {
     set_exception_handler('default_exception_handler');
     set_error_handler('default_error_handler', E_ALL | E_STRICT);
@@ -598,40 +682,8 @@ if (!empty($_SERVER['HTTP_X_moz']) && $_SERVER['HTTP_X_moz'] === 'prefetch'){
     exit(1);
 }
 
-//point pear include path to moodles lib/pear so that includes and requires will search there for files before anywhere else
-//the problem is that we need specific version of quickforms and hacked excel files :-(
-ini_set('include_path', $CFG->libdir.'/pear' . PATH_SEPARATOR . ini_get('include_path'));
-
-// Register our classloader, in theory somebody might want to replace it to load other hacked core classes.
-if (defined('COMPONENT_CLASSLOADER')) {
-    spl_autoload_register(COMPONENT_CLASSLOADER);
-} else {
-    spl_autoload_register('core_component::classloader');
-}
-
 // Remember the default PHP timezone, we will need it later.
 core_date::store_default_php_timezone();
-
-// Load up standard libraries
-require_once($CFG->libdir .'/filterlib.php');       // Functions for filtering test as it is output
-require_once($CFG->libdir .'/ajax/ajaxlib.php');    // Functions for managing our use of JavaScript and YUI
-require_once($CFG->libdir .'/weblib.php');          // Functions relating to HTTP and content
-require_once($CFG->libdir .'/outputlib.php');       // Functions for generating output
-require_once($CFG->libdir .'/navigationlib.php');   // Class for generating Navigation structure
-require_once($CFG->libdir .'/dmllib.php');          // Database access
-require_once($CFG->libdir .'/datalib.php');         // Legacy lib with a big-mix of functions.
-require_once($CFG->libdir .'/accesslib.php');       // Access control functions
-require_once($CFG->libdir .'/deprecatedlib.php');   // Deprecated functions included for backward compatibility
-require_once($CFG->libdir .'/moodlelib.php');       // Other general-purpose functions
-require_once($CFG->libdir .'/enrollib.php');        // Enrolment related functions
-require_once($CFG->libdir .'/pagelib.php');         // Library that defines the moodle_page class, used for $PAGE
-require_once($CFG->libdir .'/blocklib.php');        // Library for controlling blocks
-require_once($CFG->libdir .'/grouplib.php');        // Groups functions
-require_once($CFG->libdir .'/sessionlib.php');      // All session and cookie related stuff
-require_once($CFG->libdir .'/editorlib.php');       // All text editor related functions and classes
-require_once($CFG->libdir .'/messagelib.php');      // Messagelib functions
-require_once($CFG->libdir .'/modinfolib.php');      // Cached information on course-module instances
-require_once($CFG->dirroot.'/cache/lib.php');       // Cache API
 
 // make sure PHP is not severly misconfigured
 setup_validate_php_configuration();
@@ -662,19 +714,29 @@ if (PHPUNIT_TEST and !PHPUNIT_UTIL) {
 }
 
 // Load any immutable bootstrap config from local cache.
-$bootstrapcachefile = $CFG->localcachedir . '/bootstrap.php';
-if (is_readable($bootstrapcachefile)) {
+$bootstraplocalfile = $CFG->localcachedir . '/bootstrap.php';
+$bootstrapsharedfile = $CFG->cachedir . '/bootstrap.php';
+
+if (!is_readable($bootstraplocalfile) && is_readable($bootstrapsharedfile)) {
+    // If we don't have a local cache but do have a shared cache then clone it,
+    // for example when scaling up new front ends.
+    make_localcache_directory('', true);
+    copy($bootstrapsharedfile, $bootstraplocalfile);
+}
+if (is_readable($bootstraplocalfile)) {
     try {
-        require_once($bootstrapcachefile);
+        require_once($bootstraplocalfile);
         // Verify the file is not stale.
         if (!isset($CFG->bootstraphash) || $CFG->bootstraphash !== hash_local_config_cache()) {
             // Something has changed, the bootstrap.php file is stale.
             unset($CFG->siteidentifier);
-            @unlink($bootstrapcachefile);
+            @unlink($bootstraplocalfile);
+            @unlink($bootstrapsharedfile);
         }
     } catch (Throwable $e) {
         // If it is corrupted then attempt to delete it and it will be rebuilt.
-        @unlink($bootstrapcachefile);
+        @unlink($bootstraplocalfile);
+        @unlink($bootstrapsharedfile);
     }
 }
 
@@ -692,6 +754,12 @@ if (isset($CFG->debug)) {
     $CFG->debug = 0;
 }
 $CFG->debugdeveloper = (($CFG->debug & DEBUG_DEVELOPER) === DEBUG_DEVELOPER);
+
+// Set a default value for whether to show exceptions in a pretty format.
+if (!property_exists($CFG, 'debug_developer_use_pretty_exceptions')) {
+    $CFG->debug_developer_use_pretty_exceptions = true;
+
+}
 
 // Find out if PHP configured to display warnings,
 // this is a security problem because some moodle scripts may
@@ -722,7 +790,7 @@ if (!defined('NO_UPGRADE_CHECK') and isset($CFG->upgraderunning)) {
     if ($CFG->upgraderunning < time()) {
         unset_config('upgraderunning');
     } else {
-        print_error('upgraderunning');
+        throw new \moodle_exception('upgraderunning');
     }
 }
 
@@ -734,7 +802,7 @@ if (function_exists('gc_enable')) {
 
 // detect unsupported upgrade jump as soon as possible - do not change anything, do not use system functions
 if (!empty($CFG->version) and $CFG->version < 2007101509) {
-    print_error('upgraderequires19', 'error');
+    throw new \moodle_exception('upgraderequires19', 'error');
     die;
 }
 
@@ -826,7 +894,51 @@ if (empty($CFG->sessiontimeout)) {
 if (empty($CFG->sessiontimeoutwarning)) {
     $CFG->sessiontimeoutwarning = 20 * 60;
 }
+
+// Allow plugins to callback just before the session is started.
+$pluginswithfunction = get_plugins_with_function('before_session_start', 'lib.php');
+foreach ($pluginswithfunction as $plugins) {
+    foreach ($plugins as $function) {
+        try {
+            $function();
+        } catch (Throwable $e) {
+            debugging("Exception calling '$function'", DEBUG_DEVELOPER, $e->getTrace());
+        }
+    }
+}
+
 \core\session\manager::start();
+// Prevent ignoresesskey hack from getting carried over to a next page.
+unset($USER->ignoresesskey);
+
+if (!empty($CFG->proxylogunsafe) || !empty($CFG->proxyfixunsafe)) {
+    if (!empty($CFG->proxyfixunsafe)) {
+        require_once($CFG->libdir.'/filelib.php');
+
+        $proxyurl = get_moodle_proxy_url();
+        // This fixes stream handlers inside php.
+        $defaults = stream_context_set_default([
+            'http' => [
+                'user_agent' => \core_useragent::get_moodlebot_useragent(),
+                'proxy' => $proxyurl
+            ],
+        ]);
+
+        // Attempt to tell other web clients to use the proxy too. This only
+        // works for clients written in php in the same process, it will not
+        // work for with requests done in another process from an exec call.
+        putenv('http_proxy=' . $proxyurl);
+        putenv('https_proxy=' . $proxyurl);
+        putenv('HTTPS_PROXY=' . $proxyurl);
+    } else {
+        $defaults = stream_context_get_default();
+    }
+
+    if (!empty($CFG->proxylogunsafe)) {
+        stream_context_set_params($defaults, ['notification' => 'proxy_log_callback']);
+    }
+
+}
 
 // Set default content type and encoding, developers are still required to use
 // echo $OUTPUT->header() everywhere, anything that gets set later should override these headers.
@@ -895,6 +1007,7 @@ if (!isset($CFG->theme)) {
 if (isset($_GET['lang']) and ($lang = optional_param('lang', '', PARAM_SAFEDIR))) {
     if (get_string_manager()->translation_exists($lang, false)) {
         $SESSION->lang = $lang;
+        \core_courseformat\base::session_cache_reset_all();
     }
 }
 unset($lang);
@@ -963,6 +1076,11 @@ if (!empty($CFG->debugvalidators) and !empty($CFG->guestloginbutton)) {
 // can be using in the logfile and stripped out if needed.
 set_access_log_user();
 
+if (CLI_SCRIPT && !empty($CFG->version)) {
+    // Allow auth plugins to optionally authenticate users on the CLI.
+    require_once($CFG->libdir. '/authlib.php');
+    auth_plugin_base::login_cli_admin_user();
+}
 
 // Ensure the urlrewriteclass is setup correctly (to avoid crippling site).
 if (isset($CFG->urlrewriteclass)) {

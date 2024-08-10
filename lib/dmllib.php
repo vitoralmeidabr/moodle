@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+use core\exception\response_aware_exception;
+use core\router\response\not_found_response;
 
 /**
  * This library contains all the Data Manipulation Language (DML) functions
@@ -52,7 +54,7 @@ define('IGNORE_MULTIPLE', 1);
 define('MUST_EXIST', 2);
 
 /**
- * DML exception class, use instead of print_error() in dml code.
+ * DML exception class, use instead of throw new \moodle_exception() in dml code.
  *
  * @package    core
  * @category   dml
@@ -63,7 +65,7 @@ define('MUST_EXIST', 2);
 class dml_exception extends moodle_exception {
     /**
      * @param string $errorcode The name of the string from error.php to print.
-     * @param string $a Extra words and phrases that might be required in the error string.
+     * @param mixed  $a Extra words and phrases that might be required in the error string.
      * @param string $debuginfo Optional debugging information.
      */
     function __construct($errorcode, $a=NULL, $debuginfo=null) {
@@ -176,9 +178,9 @@ class dml_multiple_records_exception extends dml_exception {
  * @copyright  2008 Petr Skoda (http://skodak.org)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class dml_missing_record_exception extends dml_exception {
+class dml_missing_record_exception extends dml_exception implements response_aware_exception {
     /** @var string A table's name.*/
-    public $table;
+    public $tablename;
     /** @var string An SQL query.*/
     public $sql;
     /** @var array The SQL's parameters.*/
@@ -217,6 +219,11 @@ class dml_missing_record_exception extends dml_exception {
         }
         $errorinfo = $sql."\n[".var_export($params, true).']';
         parent::__construct($errcode, $tablename, $errorinfo);
+    }
+
+    #[\Override]
+    public function get_response_classname(): string {
+        return not_found_response::class;
     }
 }
 
@@ -269,8 +276,8 @@ class dml_transaction_exception extends dml_exception {
 
     /**
      * Constructor
-     * @param array $debuginfo Optional debugging information.
-     * @param moodle_transaction $transaction The instance of the transaction.(Optional)
+     * @param ?string $debuginfo Optional debugging information.
+     * @param ?moodle_transaction $transaction The instance of the transaction.(Optional)
      */
     function __construct($debuginfo=null, $transaction=null) {
         $this->transaction = $transaction; // TODO: MDL-20625 use the info from $transaction for debugging purposes

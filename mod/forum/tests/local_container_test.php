@@ -14,30 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace mod_forum;
+
 /**
  * Tests for the local\container class.
  *
  * @package    mod_forum
  * @copyright  2019 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-/**
- * Tests for the local\container class.
- *
- * @copyright  2019 Andrew Nicols <andrew@nicols.co.uk>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @coversDefaultClass \mod_forum\local\container
  */
-class mod_forum_local_container_testcase extends advanced_testcase {
+class local_container_test extends \advanced_testcase {
     /**
      * Ensure that a renderer factory is returned.
      *
      * @covers ::get_renderer_factory
      */
-    public function test_get_renderer_factory() {
+    public function test_get_renderer_factory(): void {
         $this->assertInstanceOf(\mod_forum\local\factories\renderer::class, \mod_forum\local\container::get_renderer_factory());
     }
 
@@ -46,7 +39,7 @@ class mod_forum_local_container_testcase extends advanced_testcase {
      *
      * @covers ::get_legacy_data_mapper_factory
      */
-    public function test_get_legacy_data_mapper_factory() {
+    public function test_get_legacy_data_mapper_factory(): void {
         $this->assertInstanceOf(
             \mod_forum\local\factories\legacy_data_mapper::class,
             \mod_forum\local\container::get_legacy_data_mapper_factory()
@@ -58,7 +51,7 @@ class mod_forum_local_container_testcase extends advanced_testcase {
      *
      * @covers ::get_exporter_factory
      */
-    public function test_get_exporter_factory() {
+    public function test_get_exporter_factory(): void {
         $this->assertInstanceOf(\mod_forum\local\factories\exporter::class, \mod_forum\local\container::get_exporter_factory());
     }
 
@@ -67,7 +60,7 @@ class mod_forum_local_container_testcase extends advanced_testcase {
      *
      * @covers ::get_vault_factory
      */
-    public function test_get_vault_factory() {
+    public function test_get_vault_factory(): void {
         $this->assertInstanceOf(\mod_forum\local\factories\vault::class, \mod_forum\local\container::get_vault_factory());
     }
 
@@ -76,7 +69,7 @@ class mod_forum_local_container_testcase extends advanced_testcase {
      *
      * @covers ::get_manager_factory
      */
-    public function test_get_manager_factory() {
+    public function test_get_manager_factory(): void {
         $this->assertInstanceOf(\mod_forum\local\factories\manager::class, \mod_forum\local\container::get_manager_factory());
     }
 
@@ -85,7 +78,7 @@ class mod_forum_local_container_testcase extends advanced_testcase {
      *
      * @covers ::get_entity_factory
      */
-    public function test_get_entity_factory() {
+    public function test_get_entity_factory(): void {
         $this->assertInstanceOf(\mod_forum\local\factories\entity::class, \mod_forum\local\container::get_entity_factory());
     }
 
@@ -94,7 +87,7 @@ class mod_forum_local_container_testcase extends advanced_testcase {
      *
      * @covers ::get_builder_factory
      */
-    public function test_get_builder_factory() {
+    public function test_get_builder_factory(): void {
         $this->assertInstanceOf(\mod_forum\local\factories\builder::class, \mod_forum\local\container::get_builder_factory());
     }
 
@@ -103,7 +96,7 @@ class mod_forum_local_container_testcase extends advanced_testcase {
      *
      * @covers ::get_url_factory
      */
-    public function test_get_url_factory() {
+    public function test_get_url_factory(): void {
         $this->assertInstanceOf(\mod_forum\local\factories\url::class, \mod_forum\local\container::get_url_factory());
     }
 }

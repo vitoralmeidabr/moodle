@@ -86,7 +86,7 @@ if (isguestuser()) {  // Force them to see system default, no editing allowed
 
 // Get the My Moodle page info.  Should always return something unless the database is broken.
 if (!$currentpage = my_get_page($userid, MY_PAGE_PRIVATE)) {
-    print_error('mymoodlesetup');
+    throw new \moodle_exception('mymoodlesetup');
 }
 
 // Start setting up the page
@@ -100,7 +100,6 @@ $PAGE->blocks->add_region('content');
 $PAGE->set_subpage($currentpage->id);
 $PAGE->set_title($pagetitle);
 $PAGE->set_heading($pagetitle);
-$PAGE->set_secondary_navigation(false);
 
 if (!isguestuser()) {   // Skip default home page for guests
     if (get_home_page() != HOMEPAGE_MY) {
@@ -121,7 +120,7 @@ if (empty($CFG->forcedefaultmymoodle) && $PAGE->user_allowed_editing()) {
         if (!is_null($userid)) {
             require_sesskey();
             if (!$currentpage = my_reset_page($userid, MY_PAGE_PRIVATE)) {
-                print_error('reseterror', 'my');
+                throw new \moodle_exception('reseterror', 'my');
             }
             redirect(new moodle_url('/my'));
         }
@@ -138,7 +137,7 @@ if (empty($CFG->forcedefaultmymoodle) && $PAGE->user_allowed_editing()) {
             // For the page to display properly with the user context header the page blocks need to
             // be copied over to the user context.
             if (!$currentpage = my_copy_page($USER->id, MY_PAGE_PRIVATE)) {
-                print_error('mymoodlesetup');
+                throw new \moodle_exception('mymoodlesetup');
             }
             $context = context_user::instance($USER->id);
             $PAGE->set_context($context);

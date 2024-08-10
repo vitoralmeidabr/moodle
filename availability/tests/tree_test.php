@@ -14,18 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for the condition tree class and related logic.
- *
- * @package core_availability
- * @copyright 2014 The Open University
- * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-use core_availability\capability_checker;
-use \core_availability\tree;
-
-defined('MOODLE_INTERNAL') || die();
+namespace core_availability;
 
 /**
  * Unit tests for the condition tree class and related logic.
@@ -34,97 +23,98 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright 2014 The Open University
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class tree_testcase extends \advanced_testcase {
+class tree_test extends \advanced_testcase {
     public function setUp(): void {
         // Load the mock classes so they can be used.
         require_once(__DIR__ . '/fixtures/mock_condition.php');
         require_once(__DIR__ . '/fixtures/mock_info.php');
+        parent::setUp();
     }
 
     /**
      * Tests constructing a tree with errors.
      */
-    public function test_construct_errors() {
+    public function test_construct_errors(): void {
         try {
             new tree('frog');
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('not object', $e->getMessage());
         }
         try {
             new tree((object)array());
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('missing ->op', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '*'));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('unknown ->op', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '|'));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('missing ->show', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '|', 'show' => 0));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('->show not bool', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '&'));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('missing ->showc', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '&', 'showc' => 0));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('->showc not array', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '&', 'showc' => array(0)));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('->showc value not bool', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '|', 'show' => true));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('missing ->c', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '|', 'show' => true,
                     'c' => 'side'));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('->c not array', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '|', 'show' => true,
                     'c' => array(3)));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('child not object', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '|', 'show' => true,
                     'c' => array((object)array('type' => 'doesnotexist'))));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('Unknown condition type: doesnotexist', $e->getMessage());
         }
         try {
             new tree((object)array('op' => '|', 'show' => true,
                     'c' => array((object)array())));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('missing ->op', $e->getMessage());
         }
         try {
@@ -133,7 +123,7 @@ class tree_testcase extends \advanced_testcase {
                     'showc' => array(true, true)
                     ));
             $this->fail();
-        } catch (coding_exception $e) {
+        } catch (\coding_exception $e) {
             $this->assertStringContainsString('->c, ->showc mismatch', $e->getMessage());
         }
     }
@@ -141,7 +131,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests constructing a tree with plugin that does not exist (ignored).
      */
-    public function test_construct_ignore_missing_plugin() {
+    public function test_construct_ignore_missing_plugin(): void {
         // Construct a tree with & combination of one condition that doesn't exist.
         $tree = new tree(tree::get_root_json(array(
                 (object)array('type' => 'doesnotexist')), tree::OP_OR), true);
@@ -152,7 +142,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests constructing a tree with subtrees using all available operators.
      */
-    public function test_construct_just_trees() {
+    public function test_construct_just_trees(): void {
         $structure = tree::get_root_json(array(
                 tree::get_nested_json(array(), tree::OP_OR),
                 tree::get_nested_json(array(
@@ -165,7 +155,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests constructing tree using the mock plugin.
      */
-    public function test_construct_with_mock_plugin() {
+    public function test_construct_with_mock_plugin(): void {
         $structure = tree::get_root_json(array(
                 self::mock(array('a' => true, 'm' => ''))), tree::OP_OR);
         $tree = new tree($structure);
@@ -175,7 +165,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests the check_available and get_result_information functions.
      */
-    public function test_check_available() {
+    public function test_check_available(): void {
         global $USER;
 
         // Setup.
@@ -336,7 +326,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Shortcut function to check availability and also get information.
      *
-     * @param stdClass $structure Tree structure
+     * @param \stdClass $structure Tree structure
      * @param \core_availability\info $info Location info
      * @param int $userid User id
      */
@@ -355,7 +345,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Shortcut function to render the full availability information.
      *
-     * @param stdClass $structure Tree structure
+     * @param \stdClass $structure Tree structure
      * @param \core_availability\info $info Location info
      */
     protected function render_full_information($structure, \core_availability\info $info) {
@@ -370,7 +360,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests the is_available_for_all() function.
      */
-    public function test_is_available_for_all() {
+    public function test_is_available_for_all(): void {
         // Empty tree is always available.
         $structure = tree::get_root_json(array(), tree::OP_OR);
         $tree = new tree($structure);
@@ -409,7 +399,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests the get_full_information() function.
      */
-    public function test_get_full_information() {
+    public function test_get_full_information(): void {
         global $PAGE;
         // Setup.
         $info = new \core_availability\mock_info();
@@ -508,7 +498,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests the is_empty() function.
      */
-    public function test_is_empty() {
+    public function test_is_empty(): void {
         // Tree with nothing in should be empty.
         $structure = tree::get_root_json(array(), tree::OP_OR);
         $tree = new tree($structure);
@@ -523,7 +513,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests the get_all_children() function.
      */
-    public function test_get_all_children() {
+    public function test_get_all_children(): void {
         // Create a tree with nothing in.
         $structure = tree::get_root_json(array(), tree::OP_OR);
         $tree1 = new tree($structure);
@@ -553,7 +543,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests the update_dependency_id() function.
      */
-    public function test_update_dependency_id() {
+    public function test_update_dependency_id(): void {
         // Create tree with structure of 3 mocks.
         $structure = tree::get_root_json(array(
                 tree::get_nested_json(array(
@@ -586,7 +576,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests the filter_users function.
      */
-    public function test_filter_users() {
+    public function test_filter_users(): void {
         $info = new \core_availability\mock_info();
         $checker = new capability_checker($info->get_context());
 
@@ -648,7 +638,7 @@ class tree_testcase extends \advanced_testcase {
      * Tests the get_json methods in tree (which are mainly for use in testing
      * but might be used elsewhere).
      */
-    public function test_get_json() {
+    public function test_get_json(): void {
         // Create a simple child object (fake).
         $child = (object)array('type' => 'fake');
         $childstr = json_encode($child);
@@ -696,7 +686,7 @@ class tree_testcase extends \advanced_testcase {
      * used. We also use higher number of condition instances to increase the
      * risk of the counter collision, should there remain a problem.
      */
-    public function test_unique_sql_parameter_behaviour() {
+    public function test_unique_sql_parameter_behaviour(): void {
         global $DB;
         $this->resetAfterTest();
         $generator = $this->getDataGenerator();
@@ -743,7 +733,7 @@ class tree_testcase extends \advanced_testcase {
     /**
      * Tests get_user_list_sql.
      */
-    public function test_get_user_list_sql() {
+    public function test_get_user_list_sql(): void {
         global $DB;
         $this->resetAfterTest();
         $generator = $this->getDataGenerator();

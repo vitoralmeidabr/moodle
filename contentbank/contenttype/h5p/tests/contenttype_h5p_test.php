@@ -14,14 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Test for H5P content bank plugin.
- *
- * @package    contenttype_h5p
- * @category   test
- * @copyright  2020 Amaia Anabitarte <amaia@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace contenttype_h5p;
 
 /**
  * Test for H5P content bank plugin.
@@ -32,16 +25,16 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @coversDefaultClass \contenttype_h5p\contenttype
  */
-class contenttype_h5p_contenttype_plugin_testcase extends advanced_testcase {
+class contenttype_h5p_test extends \advanced_testcase {
 
     /**
      * Test the behaviour of delete_content().
      */
-    public function test_delete_content() {
+    public function test_delete_content(): void {
         global $CFG, $USER, $DB;
 
         $this->resetAfterTest();
-        $systemcontext = context_system::instance();
+        $systemcontext = \context_system::instance();
 
         // Create users.
         $roleid = $DB->get_field('role', 'id', array('shortname' => 'manager'));
@@ -80,7 +73,7 @@ class contenttype_h5p_contenttype_plugin_testcase extends advanced_testcase {
      *
      * @covers ::can_upload
      */
-    public function test_can_upload() {
+    public function test_can_upload(): void {
         $this->resetAfterTest();
 
         $systemcontext = \context_system::instance();
@@ -111,13 +104,13 @@ class contenttype_h5p_contenttype_plugin_testcase extends advanced_testcase {
      *
      * @covers ::get_icon
      */
-    public function test_get_icon() {
+    public function test_get_icon(): void {
         global $CFG;
 
         $this->resetAfterTest();
-        $systemcontext = context_system::instance();
+        $systemcontext = \context_system::instance();
         $this->setAdminUser();
-        $contenttype = new contenttype_h5p\contenttype($systemcontext);
+        $contenttype = new contenttype($systemcontext);
 
         // Add an H5P fill the blanks file to the content bank.
         $filepath = $CFG->dirroot . '/h5p/tests/fixtures/filltheblanks.h5p';
@@ -153,13 +146,13 @@ class contenttype_h5p_contenttype_plugin_testcase extends advanced_testcase {
      *
      * @covers ::get_download_url
      */
-    public function test_get_download_url() {
+    public function test_get_download_url(): void {
         global $CFG;
 
         $this->resetAfterTest();
-        $systemcontext = context_system::instance();
+        $systemcontext = \context_system::instance();
         $this->setAdminUser();
-        $contenttype = new contenttype_h5p\contenttype($systemcontext);
+        $contenttype = new contenttype($systemcontext);
 
         // Add an H5P fill the blanks file to the content bank.
         $filename = 'filltheblanks.h5p';

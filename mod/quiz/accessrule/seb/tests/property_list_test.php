@@ -14,31 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * PHPUnit for property_list class.
- *
- * @package    quizaccess_seb
- * @author     Andrew Madden <andrewmadden@catalyst-au.net>
- * @copyright  2019 Catalyst IT
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-use quizaccess_seb\property_list;
-
-defined('MOODLE_INTERNAL') || die();
+namespace quizaccess_seb;
 
 /**
  * PHPUnit for property_list class.
  *
- * @copyright  2020 Catalyst IT
+ * @package   quizaccess_seb
+ * @author    Andrew Madden <andrewmadden@catalyst-au.net>
+ * @copyright 2020 Catalyst IT
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class quizaccess_seb_property_list_testcase extends advanced_testcase {
+class property_list_test extends \advanced_testcase {
 
     /**
      * Test that an empty PList with a root dictionary is created.
      */
-    public function test_create_empty_plist() {
+    public function test_create_empty_plist(): void {
         $emptyplist = new property_list();
         $xml = trim($emptyplist->to_xml());
         $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>
@@ -49,7 +40,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test that a Plist is constructed from an XML string.
      */
-    public function test_construct_plist_from_xml() {
+    public function test_construct_plist_from_xml(): void {
         $xml = $this->get_plist_xml_header()
             . "<key>testKey</key>"
             . "<string>testValue</string>"
@@ -64,7 +55,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test that an element can be added to the root dictionary.
      */
-    public function test_add_element_to_root() {
+    public function test_add_element_to_root(): void {
         $plist = new property_list();
         $newelement = new \CFPropertyList\CFString('testValue');
         $plist->add_element_to_root('testKey', $newelement);
@@ -77,7 +68,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test that an element's value can be retrieved.
      */
-    public function test_get_element_value() {
+    public function test_get_element_value(): void {
         $xml = $this->get_plist_xml_header()
                 . "<key>testKey</key>"
                 . "<string>testValue</string>"
@@ -89,7 +80,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test that an element's value can be retrieved.
      */
-    public function test_get_element_value_if_not_exists() {
+    public function test_get_element_value_if_not_exists(): void {
         $plist = new property_list();
         $this->assertEmpty($plist->get_element_value('testKey'));
     }
@@ -97,7 +88,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test an element's value can be retrieved if it is an array.
      */
-    public function test_get_element_value_if_array() {
+    public function test_get_element_value_if_array(): void {
         $xml = $this->get_plist_xml_header()
             . "<key>testDict</key>"
             . "<dict>"
@@ -118,7 +109,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
      *
      * @dataProvider good_update_data_provider
      */
-    public function test_updating_element_value($xml, $key, $value) {
+    public function test_updating_element_value($xml, $key, $value): void {
         $xml = $this->get_plist_xml_header()
             . $xml
             . $this->get_plist_xml_footer();
@@ -138,13 +129,13 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
 
      * @dataProvider bad_update_data_provider
      */
-    public function test_updating_element_value_with_bad_data(string $xml, string $key, $value, $expected, $exceptionmessage) {
+    public function test_updating_element_value_with_bad_data(string $xml, string $key, $value, $expected, $exceptionmessage): void {
         $xml = $this->get_plist_xml_header()
             . $xml
             . $this->get_plist_xml_footer();
         $plist = new property_list($xml);
 
-        $this->expectException(invalid_parameter_exception::class);
+        $this->expectException(\invalid_parameter_exception::class);
         $this->expectExceptionMessage($exceptionmessage);
 
         $plist->update_element_value($key, $value);
@@ -155,7 +146,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test that a dictionary can have it's value (array) updated.
      */
-    public function test_updating_element_array_if_dictionary() {
+    public function test_updating_element_array_if_dictionary(): void {
         $xml = $this->get_plist_xml_header()
             . "<key>testDict</key>"
             . "<dict>"
@@ -171,7 +162,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test that a dictionary can have it's value (array) updated.
      */
-    public function test_updating_element_array_if_dictionary_with_bad_data() {
+    public function test_updating_element_array_if_dictionary_with_bad_data(): void {
         $xml = $this->get_plist_xml_header()
             . "<key>testDict</key>"
             . "<dict>"
@@ -181,7 +172,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
             . $this->get_plist_xml_footer();
         $plist = new property_list($xml);
 
-        $this->expectException(invalid_parameter_exception::class);
+        $this->expectException(\invalid_parameter_exception::class);
         $this->expectExceptionMessage('New array must only contain CFType objects.');
 
         $plist->update_element_array('testDict', [false]);
@@ -193,7 +184,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test that an element can be deleted.
      */
-    public function test_delete_element() {
+    public function test_delete_element(): void {
         $xml = $this->get_plist_xml_header()
             . "<key>testKey</key>"
             . "<string>testValue</string>"
@@ -209,7 +200,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test that an element can be deleted.
      */
-    public function test_delete_element_if_not_exists() {
+    public function test_delete_element_if_not_exists(): void {
         $xml = $this->get_plist_xml_header()
             . "<key>testKey</key>"
             . "<string>testValue</string>"
@@ -231,7 +222,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
      *
      * @dataProvider json_data_provider
      */
-    public function test_export_to_json($xml, $expectedjson) {
+    public function test_export_to_json($xml, $expectedjson): void {
         $xml = $this->get_plist_xml_header()
             . $xml
             . $this->get_plist_xml_footer();
@@ -243,7 +234,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test that the xml is exported to JSON from a real SEB config file. Expected JSON extracted from SEB logs.
      */
-    public function test_export_to_json_full_file() {
+    public function test_export_to_json_full_file(): void {
         $xml = file_get_contents(__DIR__ . '/fixtures/unencrypted_mac_001.seb');
         $plist = new property_list($xml);
         $plist->delete_element('originatorVersion'); // JSON should not contain originatorVersion key.
@@ -255,7 +246,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
     /**
      * Test the set_or_update_value function.
      */
-    public function test_set_or_update_value() {
+    public function test_set_or_update_value(): void {
         $plist = new property_list();
 
         $this->assertEmpty($plist->get_element_value('string'));
@@ -281,7 +272,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
         $this->assertEquals(42, $plist->get_element_value('number'));
 
         // Type exception.
-        $this->expectException(TypeError::class);
+        $this->expectException(\TypeError::class);
         $plist->set_or_update_value('someKey', 'We really need to pass in CFTypes here');
     }
 
@@ -290,7 +281,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
      *
      * @return string
      */
-    private function get_plist_xml_header() : string {
+    private function get_plist_xml_header(): string {
         return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 . "<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" "
                 . "\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
@@ -303,7 +294,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
      *
      * @return string
      */
-    private function get_plist_xml_footer() : string {
+    private function get_plist_xml_footer(): string {
         return "  </dict>\n"
                 . "</plist>";
     }
@@ -313,7 +304,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
      *
      * @return array Array with test data.
      */
-    public function good_update_data_provider() : array {
+    public function good_update_data_provider(): array {
         return [
             'Update string' => ['<key>testKey</key><string>testValue</string>', 'testKey', 'newValue'],
             'Update bool' => ['<key>testKey</key><true/>', 'testKey', false],
@@ -326,7 +317,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
      *
      * @return array Array with test data.
      */
-    public function bad_update_data_provider() : array {
+    public function bad_update_data_provider(): array {
 
         return [
             'Update string with bool' => ['<key>testKey</key><string>testValue</string>', 'testKey', true, 'testValue',
@@ -388,7 +379,7 @@ class quizaccess_seb_property_list_testcase extends advanced_testcase {
      *
      * @return array
      */
-    public function json_data_provider() : array {
+    public function json_data_provider(): array {
         $data = "blahblah";
         $base64data = base64_encode($data);
 

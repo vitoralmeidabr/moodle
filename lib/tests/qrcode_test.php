@@ -14,16 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Test QR code functionality.
- *
- * @package    core
- * @copyright  Moodle Pty Ltd
- * @author     <juan@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core;
 
-defined('MOODLE_INTERNAL') || die();
+use core_qrcode;
 
 /**
  * A set of tests for some of the QR code functionality within Moodle.
@@ -33,12 +26,12 @@ defined('MOODLE_INTERNAL') || die();
  * @author     <juan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_qrcode_testcase extends basic_testcase {
+class qrcode_test extends \basic_testcase {
 
     /**
      * Basic test to generate a QR code and check that the library is not broken.
      */
-    public function test_generate_basic_qr() {
+    public function test_generate_basic_qr(): void {
         // The QR code generator library apply masks by random order, this is why everytime a QR code is generated the resultant
         // binary file can be different. This is why tests are limited.
 

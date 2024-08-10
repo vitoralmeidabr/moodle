@@ -25,6 +25,8 @@
 
 namespace core;
 
+use ReflectionProperty;
+
 /**
  * Read slave helper that exposes selected moodle_read_slave_trait metods
  *
@@ -48,7 +50,11 @@ trait test_moodle_read_slave_trait {
         $ro = fopen("php://memory", 'r+');
         fputs($ro, 'ro');
 
-        $this->wantreadslave = true;
+        $this->prefix = 'test_'; // Default, not to leave empty.
+
+        $rcp = new ReflectionProperty(parent::class, 'wantreadslave');
+        $rcp->setValue($this, true);
+
         $this->dbhwrite = $rw;
         $this->dbhreadonly = $ro;
         $this->set_db_handle($this->dbhwrite);
@@ -94,11 +100,11 @@ trait test_moodle_read_slave_trait {
     /**
      * Upgrade to public
      * @param string $sql
-     * @param array $params
+     * @param array|null $params
      * @param int $type
      * @param array $extrainfo
      */
-    public function query_start($sql, array $params = null, $type, $extrainfo = null) {
+    public function query_start($sql, ?array $params, $type, $extrainfo = null) {
         return parent::query_start($sql, $params, $type);
     }
 
@@ -107,6 +113,7 @@ trait test_moodle_read_slave_trait {
      * @param mixed $result
      */
     public function query_end($result) {
+        parent::query_end($result);
         $this->set_db_handle($this->dbhwrite);
     }
 

@@ -105,26 +105,43 @@ class participants_search {
             'params' => $params,
         ] = $this->get_participants_sql($additionalwhere, $additionalparams);
 
-        $sql = "{$outerselect}
-                          FROM ({$innerselect}
-                                          FROM {$innerjoins}
-                                 {$innerwhere}
-                               ) {$subqueryalias}
-                 {$outerjoins}
-                 {$outerwhere}
-                       {$sort}";
-
-        return $DB->get_recordset_sql($sql, $params, $limitfrom, $limitnum);
+        $select = "{$outerselect}
+                        FROM ({$innerselect}
+                                FROM {$innerjoins}
+                              {$innerwhere}
+                        ) {$subqueryalias}
+                   {$outerjoins}
+                   {$outerwhere}";
+        return $DB->get_counted_recordset_sql(
+            sql: $select,
+            fullcountcolumn: 'fullcount',
+            sort: $sort,
+            params: $params,
+            limitfrom: $limitfrom,
+            limitnum: $limitnum,
+        );
     }
 
     /**
      * Returns the total number of participants for a given course.
      *
+     * @deprecated Moodle 4.5 MDL-78030 - No longer used since the total count can be obtained from {@see ::get_participants()}.
+     * @todo Final deprecation on Moodle 6.0 MDL-82441.
+     *
      * @param string $additionalwhere Any additional SQL to add to where.
      * @param array $additionalparams The additional params used by $additionalwhere.
      * @return int
      */
+    #[\core\attribute\deprecated(
+        'participants_search::get_participants()',
+        since: '4.5',
+        mdl: 'MDL-78030',
+        reason: 'No longer used since the total count can be obtained from {@see ::get_participants()}',
+    )]
     public function get_total_participants_count(string $additionalwhere = '', array $additionalparams = []): int {
+
+        \core\deprecation::emit_deprecation_if_present([$this, __FUNCTION__]);
+
         global $DB;
 
         [
@@ -156,6 +173,8 @@ class participants_search {
      * @return array
      */
     protected function get_participants_sql(string $additionalwhere, array $additionalparams): array {
+        global $CFG;
+
         $isfrontpage = ($this->course->id == SITEID);
         $accesssince = 0;
         // Whether to match on users who HAVE accessed since the given time (ie false is 'inactive for more than x').
@@ -169,7 +188,8 @@ class participants_search {
         // Note: This ensures the outer (filtering) query joins on distinct users, avoiding the need for GROUP BY.
         $innerselect = "SELECT DISTINCT {$inneruseralias}.id";
         $innerjoins = ["{user} {$inneruseralias}"];
-        $innerwhere = "WHERE {$inneruseralias}.deleted = 0";
+        $innerwhere = "WHERE {$inneruseralias}.deleted = 0 AND {$inneruseralias}.id <> :siteguest";
+        $params = ['siteguest' => $CFG->siteguest];
 
         $outerjoins = ["JOIN {user} u ON u.id = {$usersubqueryalias}.id"];
         $wheres = [];
@@ -189,8 +209,9 @@ class participants_search {
             'sql' => $esql,
             // SQL for enrolment filtering that must always be applied (eg due to capability restrictions).
             'forcedsql' => $esqlforced,
-            'params' => $params,
+            'params' => $eparams,
         ] = $this->get_enrolled_sql();
+        $params = array_merge($params, $eparams);
 
         // Get the fields for all contexts because there is a special case later where it allows
         // matches of fields you can't access if they are on your own account.
@@ -281,7 +302,7 @@ class participants_search {
             ] = $this->get_keywords_search_sql($mappings);
 
             if (!empty($keywordswhere)) {
-                $wheres[] = $keywordswhere;
+                $wheres[] = "({$keywordswhere})";
             }
 
             if (!empty($keywordsparams)) {

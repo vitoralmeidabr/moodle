@@ -38,6 +38,7 @@ $string['clivalidationerror'] = 'Validation error:';
 $string['csvdelimiter'] = 'CSV separator';
 $string['defaultvalues'] = 'Default values';
 $string['deleteerrors'] = 'Delete errors';
+$string['duplicateemail'] = 'Multiple users with email {$a} detected';
 $string['encoding'] = 'Encoding';
 $string['errormnetadd'] = 'Can not add remote users';
 $string['errorprefix'] = 'Error:';
@@ -48,9 +49,10 @@ $string['examplecsv_help'] = 'To use the example text file, download it then ope
 The example text file may also be used for testing, as you are able to preview user data and can choose to cancel the action before user accounts are created.';
 $string['infoprefix'] = 'Info:';
 $string['invalidupdatetype'] = 'This option cannot be selected with the chosen upload type.';
-$string['invaliduserdata'] = 'Invalid data detected for user {$a} and it has been automatically cleaned.';
+$string['invaliduserdatavalues'] = 'Incorrect data ({$a->values}) found for user {$a->username}. This data has been corrected or deleted.';
 $string['invalidtheme'] = 'Theme "{$a}" is not installed and will be ignored.';
 $string['linex'] = 'Line {$a}';
+$string['matchemail'] = 'Match on email address';
 $string['nochanges'] = 'No changes';
 $string['notheme'] = 'No theme is defined for this user.';
 $string['pluginname'] = 'User upload';
@@ -118,3 +120,6 @@ $string['uuupdatetype'] = 'Existing user details';
 $string['uuusernametemplate'] = 'Username template';
 $string['privacy:metadata'] = 'The User upload plugin does not store any personal data.';
 $string['warningprefix'] = 'Warning:';
+
+// Deprecated since Moodle 4.4.
+$string['invaliduserdata'] = 'Invalid data detected for user {$a} and it has been automatically cleaned.';

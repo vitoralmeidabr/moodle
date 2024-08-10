@@ -14,13 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * The forum module mail generation tests for groups.
- *
- * @package    mod_forum
- * @copyright  2013 Andrew Nicols
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace mod_forum;
+
+use mod_forum_tests_cron_trait;
+use mod_forum_tests_generator_trait;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -35,7 +32,7 @@ require_once(__DIR__ . '/generator_trait.php');
  * @copyright  2013 Andrew Nicols
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mod_forum_mail_group_testcase extends advanced_testcase {
+class mail_group_test extends \advanced_testcase {
     // Make use of the cron tester trait.
     use mod_forum_tests_cron_trait;
 
@@ -54,6 +51,7 @@ class mod_forum_mail_group_testcase extends advanced_testcase {
 
     public function setUp(): void {
         global $CFG;
+        parent::setUp();
 
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
@@ -84,13 +82,14 @@ class mod_forum_mail_group_testcase extends advanced_testcase {
         $this->mailsink->clear();
         $this->mailsink->close();
         unset($this->mailsink);
+        parent::tearDown();
     }
 
     /**
      * Ensure that posts written in a forum marked for separate groups includes notifications for the members of that
      * group, and any user with accessallgroups.
      */
-    public function test_separate_group() {
+    public function test_separate_group(): void {
         global $CFG, $DB;
 
         $this->resetAfterTest(true);
@@ -169,7 +168,7 @@ class mod_forum_mail_group_testcase extends advanced_testcase {
      * Ensure that posts written in a forum marked for visible groups includes notifications for the members of that
      * group, and any user with accessallgroups.
      */
-    public function test_visible_group() {
+    public function test_visible_group(): void {
         global $CFG, $DB;
 
         $this->resetAfterTest(true);

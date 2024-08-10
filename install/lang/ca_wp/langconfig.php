@@ -29,6 +29,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['parentlanguage'] = '';
+$string['parentlanguage'] = 'ca';
 $string['thisdirection'] = 'ltr';
-$string['thislanguage'] = 'Català per a Workplace';
+$string['thislanguage'] = 'Català';

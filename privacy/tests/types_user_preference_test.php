@@ -14,29 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace core_privacy;
+
+use core_privacy\local\metadata\types\user_preference;
+
 /**
- * Types unit tests for the Subsystem Link.
+ * Tests for the \core_privacy API's types\user_preference functionality.
  *
  * @package     core_privacy
  * @category    test
  * @copyright   2018 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-
-use \core_privacy\local\metadata\types\user_preference;
-
-/**
- * Tests for the \core_privacy API's types\user_preference functionality.
- *
- * @copyright   2018 Andrew Nicols <andrew@nicols.co.uk>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @coversDefaultClass \core_privacy\local\metadata\types\user_preference
  */
-class core_privacy_metadata_types_user_preference extends advanced_testcase {
+class types_user_preference_test extends \advanced_testcase {
 
     /**
      * Ensure that warnings are thrown if string identifiers contain invalid characters.
@@ -46,7 +37,7 @@ class core_privacy_metadata_types_user_preference extends advanced_testcase {
      * @param   string  $summary Summary
      * @covers ::__construct
      */
-    public function test_invalid_configs($name, $summary) {
+    public function test_invalid_configs($name, $summary): void {
         $record = new user_preference($name, $summary);
         $this->assertDebuggingCalled();
     }
@@ -59,7 +50,7 @@ class core_privacy_metadata_types_user_preference extends advanced_testcase {
      * @param   string  $summary Summary
      * @covers ::__construct
      */
-    public function test_invalid_configs_debug_normal($name, $summary) {
+    public function test_invalid_configs_debug_normal($name, $summary): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -76,7 +67,7 @@ class core_privacy_metadata_types_user_preference extends advanced_testcase {
      * @param   string  $summary Summary
      * @covers ::__construct
      */
-    public function test_valid_configs($name, $summary) {
+    public function test_valid_configs($name, $summary): void {
         $record = new user_preference($name, $summary);
         $this->assertDebuggingNotCalled();
     }

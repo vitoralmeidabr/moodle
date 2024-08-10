@@ -14,6 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace mod_quiz;
+
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/mod/quiz/lib.php');
+
 /**
  * Unit tests for the calendar event modification callbacks used
  * for dragging and dropping quiz calendar events in the calendar
@@ -24,17 +31,7 @@
  * @copyright  2017 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU Public License
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/mod/quiz/lib.php');
-
-/**
- * @copyright  2017 Ryan Wyllie <ryan@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU Public License
- */
-class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
+class calendar_event_modified_test extends \advanced_testcase {
 
     /**
      * Create an instance of the quiz activity.
@@ -71,7 +68,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
     /**
      * Create a calendar event for a quiz activity instance.
      *
-     * @param stdClass $quiz The activity instance
+     * @param \stdClass $quiz The activity instance
      * @param array $eventproperties Properties to set on the calendar event
      * @return calendar_event
      */
@@ -97,7 +94,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
     /**
      * An unkown event type should not change the quiz instance.
      */
-    public function test_mod_quiz_core_calendar_event_timestart_updated_unknown_event() {
+    public function test_mod_quiz_core_calendar_event_timestart_updated_unknown_event(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -121,7 +118,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
      * A QUIZ_EVENT_TYPE_OPEN event should update the timeopen property of
      * the quiz activity.
      */
-    public function test_mod_quiz_core_calendar_event_timestart_updated_open_event() {
+    public function test_mod_quiz_core_calendar_event_timestart_updated_open_event(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -155,7 +152,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
      * A QUIZ_EVENT_TYPE_CLOSE event should update the timeclose property of
      * the quiz activity.
      */
-    public function test_mod_quiz_core_calendar_event_timestart_updated_close_event() {
+    public function test_mod_quiz_core_calendar_event_timestart_updated_close_event(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -189,7 +186,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
      * A QUIZ_EVENT_TYPE_OPEN event should not update the timeopen property of
      * the quiz activity if it's an override.
      */
-    public function test_mod_quiz_core_calendar_event_timestart_updated_open_event_override() {
+    public function test_mod_quiz_core_calendar_event_timestart_updated_open_event_override(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -232,7 +229,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
      * then the callback should not update the quiz activity otherwise that
      * would be a security issue.
      */
-    public function test_student_role_cant_update_quiz_activity() {
+    public function test_student_role_cant_update_quiz_activity(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -241,11 +238,11 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course = $generator->create_course();
-        $context = context_course::instance($course->id);
+        $context = \context_course::instance($course->id);
         $roleid = $generator->create_role();
         $now = time();
-        $timeopen = (new DateTime())->setTimestamp($now);
-        $newtimeopen = (new DateTime())->setTimestamp($now)->modify('+1 day');
+        $timeopen = (new \DateTime())->setTimestamp($now);
+        $newtimeopen = (new \DateTime())->setTimestamp($now)->modify('+1 day');
         $quiz = $this->create_quiz_instance([
             'course' => $course->id,
             'timeopen' => $timeopen->getTimestamp()
@@ -276,7 +273,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
      * able to update the quiz activity dates by changing the calendar
      * event.
      */
-    public function test_teacher_role_can_update_quiz_activity() {
+    public function test_teacher_role_can_update_quiz_activity(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -285,11 +282,11 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course = $generator->create_course();
-        $context = context_course::instance($course->id);
+        $context = \context_course::instance($course->id);
         $roleid = $generator->create_role();
         $now = time();
-        $timeopen = (new DateTime())->setTimestamp($now);
-        $newtimeopen = (new DateTime())->setTimestamp($now)->modify('+1 day');
+        $timeopen = (new \DateTime())->setTimestamp($now);
+        $newtimeopen = (new \DateTime())->setTimestamp($now)->modify('+1 day');
         $quiz = $this->create_quiz_instance([
             'course' => $course->id,
             'timeopen' => $timeopen->getTimestamp()
@@ -330,7 +327,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
     /**
      * An unkown event type should not have any limits
      */
-    public function test_mod_quiz_core_calendar_get_valid_event_timestart_range_unknown_event() {
+    public function test_mod_quiz_core_calendar_get_valid_event_timestart_range_unknown_event(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -354,7 +351,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
     /**
      * The open event should be limited by the quiz's timeclose property, if it's set.
      */
-    public function test_mod_quiz_core_calendar_get_valid_event_timestart_range_open_event() {
+    public function test_mod_quiz_core_calendar_get_valid_event_timestart_range_open_event(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -387,7 +384,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
     /**
      * An override event should not have any limits.
      */
-    public function test_mod_quiz_core_calendar_get_valid_event_timestart_range_override_event() {
+    public function test_mod_quiz_core_calendar_get_valid_event_timestart_range_override_event(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -423,7 +420,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
     /**
      * The close event should be limited by the quiz's timeopen property, if it's set.
      */
-    public function test_mod_quiz_core_calendar_get_valid_event_timestart_range_close_event() {
+    public function test_mod_quiz_core_calendar_get_valid_event_timestart_range_close_event(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -457,7 +454,7 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
      * When the close date event is changed and it results in the time close value of
      * the quiz being updated then the open quiz attempts should also be updated.
      */
-    public function test_core_calendar_event_timestart_updated_update_quiz_attempt() {
+    public function test_core_calendar_event_timestart_updated_update_quiz_attempt(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -467,12 +464,12 @@ class mod_quiz_calendar_event_modified_testcase extends advanced_testcase {
         $teacher = $generator->create_user();
         $student = $generator->create_user();
         $course = $generator->create_course();
-        $context = context_course::instance($course->id);
+        $context = \context_course::instance($course->id);
         $roleid = $generator->create_role();
         $now = time();
         $timelimit = 600;
-        $timeopen = (new DateTime())->setTimestamp($now);
-        $timeclose = (new DateTime())->setTimestamp($now)->modify('+1 day');
+        $timeopen = (new \DateTime())->setTimestamp($now);
+        $timeclose = (new \DateTime())->setTimestamp($now)->modify('+1 day');
         // The new close time being earlier than the time open + time limit should
         // result in an update to the quiz attempts.
         $newtimeclose = $timeopen->getTimestamp() + $timelimit - 10;

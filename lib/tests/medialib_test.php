@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace core;
+
+use core_media_manager;
+use media_test_plugin;
+
+defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/fixtures/testable_core_media_player.php');
+
 /**
  * Test classes for handling embedded media (audio/video).
  *
@@ -22,14 +30,7 @@
  * @copyright 2012 The Open University
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-require_once(__DIR__ . '/fixtures/testable_core_media_player.php');
-
-/**
- * Test script for media embedding.
- */
-class core_medialib_testcase extends advanced_testcase {
+class medialib_test extends \advanced_testcase {
 
     /**
      * Pre-test setup. Preserves $CFG.
@@ -55,7 +56,7 @@ class core_medialib_testcase extends advanced_testcase {
      */
     private function pretend_to_be_safari() {
         // Pretend to be using Safari browser (must support mp4 for tests to work).
-        core_useragent::instance(true, 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) ' .
+        \core_useragent::instance(true, 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) ' .
                 'AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1');
     }
 
@@ -64,49 +65,49 @@ class core_medialib_testcase extends advanced_testcase {
      */
     private function pretend_to_be_firefox() {
         // Pretend to be using Firefox browser (must support ogg for tests to work).
-        core_useragent::instance(true, 'Mozilla/5.0 (X11; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0 ');
+        \core_useragent::instance(true, 'Mozilla/5.0 (X11; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0 ');
     }
 
     /**
      * Test for core_media::get_filename.
      */
-    public function test_get_filename() {
+    public function test_get_filename(): void {
         $manager = core_media_manager::instance();
 
-        $this->assertSame('frog.mp4', $manager->get_filename(new moodle_url(
+        $this->assertSame('frog.mp4', $manager->get_filename(new \moodle_url(
                 '/pluginfile.php/312/mod_page/content/7/frog.mp4')));
         // This should work even though slasharguments is true, because we want
         // it to support 'legacy' links if somebody toggles the option later.
-        $this->assertSame('frog.mp4', $manager->get_filename(new moodle_url(
+        $this->assertSame('frog.mp4', $manager->get_filename(new \moodle_url(
                 '/pluginfile.php?file=/312/mod_page/content/7/frog.mp4')));
     }
 
     /**
      * Test for core_media::get_extension.
      */
-    public function test_get_extension() {
+    public function test_get_extension(): void {
         $manager = core_media_manager::instance();
 
-        $this->assertSame('mp4', $manager->get_extension(new moodle_url(
+        $this->assertSame('mp4', $manager->get_extension(new \moodle_url(
                 '/pluginfile.php/312/mod_page/content/7/frog.mp4')));
-        $this->assertSame('', $manager->get_extension(new moodle_url(
+        $this->assertSame('', $manager->get_extension(new \moodle_url(
                 '/pluginfile.php/312/mod_page/content/7/frog')));
-        $this->assertSame('mp4', $manager->get_extension(new moodle_url(
+        $this->assertSame('mp4', $manager->get_extension(new \moodle_url(
                 '/pluginfile.php?file=/312/mod_page/content/7/frog.mp4')));
-        $this->assertSame('', $manager->get_extension(new moodle_url(
+        $this->assertSame('', $manager->get_extension(new \moodle_url(
                 '/pluginfile.php?file=/312/mod_page/content/7/frog')));
     }
 
     /**
      * Test for the core_media_player list_supported_urls.
      */
-    public function test_list_supported_urls() {
+    public function test_list_supported_urls(): void {
         $test = new media_test_plugin(1, 13, ['tst', 'test']);
 
         // Some example URLs.
-        $supported1 = new moodle_url('http://example.org/1.test');
-        $supported2 = new moodle_url('http://example.org/2.TST');
-        $unsupported = new moodle_url('http://example.org/2.jpg');
+        $supported1 = new \moodle_url('http://example.org/1.test');
+        $supported2 = new \moodle_url('http://example.org/2.TST');
+        $unsupported = new \moodle_url('http://example.org/2.jpg');
 
         // No URLs => none.
         $result = $test->list_supported_urls(array());
@@ -132,7 +133,7 @@ class core_medialib_testcase extends advanced_testcase {
     /**
      * Test for get_players
      */
-    public function test_get_players() {
+    public function test_get_players(): void {
         // All players are initially disabled (except link, which you can't).
         $manager = core_media_manager::instance();
         $this->assertEmpty($this->get_players_test($manager));
@@ -161,9 +162,9 @@ class core_medialib_testcase extends advanced_testcase {
     /**
      * Test for can_embed_url
      */
-    public function test_can_embed_url() {
+    public function test_can_embed_url(): void {
         // All players are initially disabled, so mp4 cannot be rendered.
-        $url = new moodle_url('http://example.org/test.mp4');
+        $url = new \moodle_url('http://example.org/test.mp4');
         $manager = core_media_manager::instance();
         $this->assertFalse($manager->can_embed_url($url));
 
@@ -187,7 +188,7 @@ class core_medialib_testcase extends advanced_testcase {
      * Test for embed_url.
      * Checks multiple format/fallback support.
      */
-    public function test_embed_url_fallbacks() {
+    public function test_embed_url_fallbacks(): void {
 
         // Key strings in the embed code that identify with the media formats being tested.
         $html5video = '</video>';
@@ -195,7 +196,7 @@ class core_medialib_testcase extends advanced_testcase {
         $link = 'mediafallbacklink';
         $test = 'mediaplugin_test';
 
-        $url = new moodle_url('http://example.org/test.mp4');
+        $url = new \moodle_url('http://example.org/test.mp4');
 
         // All plugins disabled, NOLINK option.
         \core\plugininfo\media::set_enabled_plugins('');
@@ -219,7 +220,7 @@ class core_medialib_testcase extends advanced_testcase {
         $mediaformats = array('mp3', 'mp4');
 
         foreach ($mediaformats as $format) {
-            $url = new moodle_url('http://example.org/test.' . $format);
+            $url = new \moodle_url('http://example.org/test.' . $format);
             $textwithlink = $manager->embed_url($url);
             $textwithoutlink = $manager->embed_url($url, 0, 0, '', array(core_media_manager::OPTION_NO_LINK => true));
 
@@ -258,16 +259,16 @@ class core_medialib_testcase extends advanced_testcase {
      * Test for embed_url.
      * SWF shouldn't be converted to objects because media_swf has been removed.
      */
-    public function test_embed_url_swf() {
+    public function test_embed_url_swf(): void {
         $manager = core_media_manager::instance();
 
         // Without any options...
-        $url = new moodle_url('http://example.org/test.swf');
+        $url = new \moodle_url('http://example.org/test.swf');
         $t = $manager->embed_url($url);
         $this->assertStringNotContainsString('</object>', $t);
 
         // ...and with the 'no it's safe, I checked it' option.
-        $url = new moodle_url('http://example.org/test.swf');
+        $url = new \moodle_url('http://example.org/test.swf');
         $t = $manager->embed_url($url, '', 0, 0, array(core_media_manager::OPTION_TRUSTED => true));
         $this->assertStringNotContainsString('</object>', $t);
     }
@@ -275,7 +276,7 @@ class core_medialib_testcase extends advanced_testcase {
     /**
      * Same as test_embed_url MP3 test, but for slash arguments.
      */
-    public function test_slash_arguments() {
+    public function test_slash_arguments(): void {
 
         // Again we do not turn slasharguments actually on, because it has to
         // work regardless of the setting of that variable in case of handling
@@ -286,7 +287,7 @@ class core_medialib_testcase extends advanced_testcase {
         $manager = core_media_manager::instance();
 
         // Format: mp3.
-        $url = new moodle_url('http://example.org/pluginfile.php?file=x/y/z/test.mp3');
+        $url = new \moodle_url('http://example.org/pluginfile.php?file=x/y/z/test.mp3');
         $t = $manager->embed_url($url);
         $this->assertStringContainsString('</audio>', $t);
     }
@@ -295,7 +296,7 @@ class core_medialib_testcase extends advanced_testcase {
      * Test for embed_url.
      * Checks the EMBED_OR_BLANK option.
      */
-    public function test_embed_or_blank() {
+    public function test_embed_or_blank(): void {
         \core\plugininfo\media::set_enabled_plugins('html5audio');
         $manager = core_media_manager::instance();
         $this->pretend_to_be_firefox();
@@ -303,13 +304,13 @@ class core_medialib_testcase extends advanced_testcase {
         $options = array(core_media_manager::OPTION_FALLBACK_TO_BLANK => true);
 
         // Embed that does match something should still include the link too.
-        $url = new moodle_url('http://example.org/test.ogg');
+        $url = new \moodle_url('http://example.org/test.ogg');
         $t = $manager->embed_url($url, '', 0, 0, $options);
         $this->assertStringContainsString('</audio>', $t);
         $this->assertStringContainsString('mediafallbacklink', $t);
 
         // Embed that doesn't match something should be totally blank.
-        $url = new moodle_url('http://example.org/test.mp4');
+        $url = new \moodle_url('http://example.org/test.mp4');
         $t = $manager->embed_url($url, '', 0, 0, $options);
         $this->assertSame('', $t);
     }
@@ -319,7 +320,7 @@ class core_medialib_testcase extends advanced_testcase {
      * Checks that size is passed through correctly to player objects and tests
      * size support in html5video output.
      */
-    public function test_embed_url_size() {
+    public function test_embed_url_size(): void {
         global $CFG;
 
         // Technically this could break in every format and they handle size
@@ -328,7 +329,7 @@ class core_medialib_testcase extends advanced_testcase {
         // through.
         \core\plugininfo\media::set_enabled_plugins('html5video');
         $manager = core_media_manager::instance();
-        $url = new moodle_url('http://example.org/test.mp4');
+        $url = new \moodle_url('http://example.org/test.mp4');
 
         // HTML5 default size - specifies core width and does not specify height.
         $t = $manager->embed_url($url);
@@ -341,7 +342,7 @@ class core_medialib_testcase extends advanced_testcase {
         $this->assertStringContainsString('height="101"', $t);
 
         // HTML5 size specified in url, overrides call.
-        $url = new moodle_url('http://example.org/test.mp4?d=123x456');
+        $url = new \moodle_url('http://example.org/test.mp4?d=123x456');
         $t = $manager->embed_url($url, '', '666', '101');
         $this->assertStringContainsString('width="123"', $t);
         $this->assertStringContainsString('height="456"', $t);
@@ -352,12 +353,12 @@ class core_medialib_testcase extends advanced_testcase {
      * Checks that name is passed through correctly to player objects and tests
      * name support in html5video output.
      */
-    public function test_embed_url_name() {
+    public function test_embed_url_name(): void {
         // As for size this could break in every format but I'm only testing
         // html5video.
         \core\plugininfo\media::set_enabled_plugins('html5video');
         $manager = core_media_manager::instance();
-        $url = new moodle_url('http://example.org/test.mp4');
+        $url = new \moodle_url('http://example.org/test.mp4');
 
         // HTML5 default name - use filename.
         $t = $manager->embed_url($url);
@@ -371,7 +372,7 @@ class core_medialib_testcase extends advanced_testcase {
     /**
      * Test for split_alternatives.
      */
-    public function test_split_alternatives() {
+    public function test_split_alternatives(): void {
         $mediamanager = core_media_manager::instance();
 
         // Single URL - identical moodle_url.
@@ -408,16 +409,16 @@ class core_medialib_testcase extends advanced_testcase {
     /**
      * Test for embed_alternatives (with multiple urls)
      */
-    public function test_embed_alternatives() {
+    public function test_embed_alternatives(): void {
         // Most aspects of this are same as single player so let's just try
         // a single typical / complicated scenario.
 
         // MP4, OGV, WebM and FLV.
         $urls = array(
-            new moodle_url('http://example.org/test.mp4'),
-            new moodle_url('http://example.org/test.ogv'),
-            new moodle_url('http://example.org/test.webm'),
-            new moodle_url('http://example.org/test.flv'),
+            new \moodle_url('http://example.org/test.mp4'),
+            new \moodle_url('http://example.org/test.ogv'),
+            new \moodle_url('http://example.org/test.webm'),
+            new \moodle_url('http://example.org/test.flv'),
         );
 
         // Enable html5 and "test" ("test" first).
@@ -451,15 +452,15 @@ class core_medialib_testcase extends advanced_testcase {
     /**
      * Make sure the instance() method returns singleton for the same page and different object for another page
      */
-    public function test_initialise() {
-        $moodlepage1 = new moodle_page();
+    public function test_initialise(): void {
+        $moodlepage1 = new \moodle_page();
 
         $mediamanager1 = core_media_manager::instance($moodlepage1);
         $mediamanager2 = core_media_manager::instance($moodlepage1);
 
         $this->assertSame($mediamanager1, $mediamanager2);
 
-        $moodlepage3 = new moodle_page();
+        $moodlepage3 = new \moodle_page();
         $mediamanager3 = core_media_manager::instance($moodlepage3);
 
         $this->assertNotSame($mediamanager1, $mediamanager3);
@@ -473,8 +474,7 @@ class core_medialib_testcase extends advanced_testcase {
      * @return string Comma-separated list of players
      */
     public function get_players_test($manager) {
-        $method = new ReflectionMethod("core_media_manager", "get_players");
-        $method->setAccessible(true);
+        $method = new \ReflectionMethod("core_media_manager", "get_players");
         $players = $method->invoke($manager);
         $out = '';
         foreach ($players as $player) {

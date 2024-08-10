@@ -19,13 +19,10 @@ declare(strict_types=1);
 namespace core_reportbuilder\form;
 
 use context;
-use context_system;
 use core_form\dynamic_form;
 use core_reportbuilder\local\audiences\base;
 use core_reportbuilder\output\audience_heading_editable;
-use core_reportbuilder\manager;
 use core_reportbuilder\permission;
-use moodle_exception;
 use moodle_url;
 use stdClass;
 
@@ -37,6 +34,7 @@ use stdClass;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class audience extends dynamic_form {
+
     /**
      * Audience we work with
      *
@@ -95,16 +93,19 @@ class audience extends dynamic_form {
      * @return context
      */
     protected function get_context_for_dynamic_submission(): context {
-        return context_system::instance();
+        return $this->get_audience()->get_persistent()->get_report()->get_context();
     }
 
     /**
-     * Checks if current user has access to this form, otherwise throws exception
+     * Ensure current user is able to use this form
      *
-     * @throws moodle_exception
+     * A {@see \core_reportbuilder\exception\report_access_exception} will be thrown if they can't
      */
     protected function check_access_for_dynamic_submission(): void {
         $audience = $this->get_audience();
+
+        $report = $audience->get_persistent()->get_report();
+        permission::require_can_edit_report($report);
 
         // Check whether we are able to add/edit the current audience.
         $audience->get_persistent()->get('id') === 0
@@ -120,10 +121,6 @@ class audience extends dynamic_form {
 
         $formdata = $this->get_data();
         $audience = $this->get_audience();
-
-        // Check permissions.
-        $report = manager::get_report_from_id($formdata->reportid);
-        permission::require_can_edit_report($report->get_report_persistent());
 
         $configdata = $audience::retrieve_configdata($formdata);
         if (!$formdata->id) {

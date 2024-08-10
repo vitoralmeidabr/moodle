@@ -15,19 +15,12 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Renderer for core_admin subsystem
+ * Standard HTML output renderer for core_admin subsystem.
  *
  * @package    core
  * @subpackage admin
  * @copyright  2011 David Mudrak <david@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-
-/**
- * Standard HTML output renderer for core_admin subsystem
  */
 class core_admin_renderer extends plugin_renderer_base {
 
@@ -51,7 +44,7 @@ class core_admin_renderer extends plugin_renderer_base {
         $output .= $this->heading(get_string('copyrightnotice'));
         $output .= $this->box($copyrightnotice, 'copyrightnotice');
         $output .= html_writer::empty_tag('br');
-        $output .= $this->confirm(get_string('doyouagree'), $continue, "http://docs.moodle.org/dev/License");
+        $output .= $this->confirm(get_string('doyouagree'), $continue, "https://moodledev.io/general/license");
         $output .= $this->footer();
 
         return $output;
@@ -220,7 +213,7 @@ class core_admin_renderer extends plugin_renderer_base {
             $output .= $this->container_end();
         }
 
-        $button = new single_button($continueurl, get_string('upgradestart', 'admin'), 'get', true);
+        $button = new single_button($continueurl, get_string('upgradestart', 'admin'), 'get', single_button::BUTTON_PRIMARY);
         $button->class = 'continuebutton';
         $output .= $this->render($button);
         $output .= $this->footer();
@@ -301,8 +294,8 @@ class core_admin_renderer extends plugin_renderer_base {
         $output = '';
 
         $output .= $this->header();
+        $output .= $this->output->heading(get_string('notifications', 'admin'));
         $output .= $this->maturity_info($maturity);
-        $output .= $this->legacy_log_store_writing_error();
         $output .= empty($CFG->disableupdatenotifications) ? $this->available_updates($availableupdates, $availableupdatesfetch) : '';
         $output .= $this->insecure_dataroot_warning($insecuredataroot);
         $output .= $this->development_libs_directories_warning($devlibdir);
@@ -624,7 +617,7 @@ class core_admin_renderer extends plugin_renderer_base {
      * @param bool $croninfrequent
      * @return string HTML to output.
      */
-    public function cron_infrequent_warning(bool $croninfrequent) : string {
+    public function cron_infrequent_warning(bool $croninfrequent): string {
         global $CFG;
 
         if (!$croninfrequent) {
@@ -752,10 +745,10 @@ class core_admin_renderer extends plugin_renderer_base {
         //////////////////////////////////////////////////////////////////////////////////////////////////
         ////  IT IS ILLEGAL AND A VIOLATION OF THE GPL TO HIDE, REMOVE OR MODIFY THIS COPYRIGHT NOTICE ///
         $copyrighttext = '<a href="http://moodle.org/">Moodle</a> '.
-                         '<a href="http://docs.moodle.org/dev/Releases" title="'.$CFG->version.'">'.$CFG->release.'</a><br />'.
+                         '<a href="https://moodledev.io/general/releases" title="'.$CFG->version.'">'.$CFG->release.'</a><br />'.
                          'Copyright &copy; 1999 onwards, Martin Dougiamas<br />'.
                          'and <a href="http://moodle.org/dev">many other contributors</a>.<br />'.
-                         '<a href="http://docs.moodle.org/dev/License">GNU Public License</a>';
+                         '<a href="https://moodledev.io/general/license">GNU Public License</a>';
         //////////////////////////////////////////////////////////////////////////////////////////////////
 
         return $this->box($copyrighttext, 'copyright');
@@ -904,7 +897,8 @@ class core_admin_renderer extends plugin_renderer_base {
         $url = "https://campaign.moodle.org/current/lms/{$lang}/install/";
         $params = [
             'url' => $url,
-            'iframeid' => 'campaign-content'
+            'iframeid' => 'campaign-content',
+            'title' => get_string('campaign', 'admin'),
         ];
 
         return $this->render_from_template('core/external_content_banner', $params);
@@ -925,7 +919,8 @@ class core_admin_renderer extends plugin_renderer_base {
         $url = "https://campaign.moodle.org/current/lms/{$lang}/servicesandsupport/";
         $params = [
             'url' => $url,
-            'iframeid' => 'services-support-content'
+            'iframeid' => 'services-support-content',
+            'title' => get_string('supportandservices', 'admin'),
         ];
 
         return $this->render_from_template('core/external_content_banner', $params);
@@ -997,7 +992,7 @@ class core_admin_renderer extends plugin_renderer_base {
      * @return string HTML to output.
      */
     protected function release_notes_link() {
-        $releasenoteslink = get_string('releasenoteslink', 'admin', 'http://docs.moodle.org/dev/Releases');
+        $releasenoteslink = get_string('releasenoteslink', 'admin', 'https://moodledev.io/general/releases');
         $releasenoteslink = str_replace('target="_blank"', 'onclick="this.target=\'_blank\'"', $releasenoteslink); // extremely ugly validation hack
         return $this->box($releasenoteslink, 'generalbox alert alert-info');
     }
@@ -1009,7 +1004,7 @@ class core_admin_renderer extends plugin_renderer_base {
     function upgrade_reload($url) {
         return html_writer::empty_tag('br') .
                 html_writer::tag('div',
-                    html_writer::link($url, $this->pix_icon('i/reload', '', '', array('class' => 'icon icon-pre')) .
+                    html_writer::link($url, $this->pix_icon('i/reload', '', '', ['class' => 'icon']) .
                             get_string('reload'), array('title' => get_string('reload'))),
                 array('class' => 'continuebutton')) . html_writer::empty_tag('br');
     }
@@ -1086,12 +1081,21 @@ class core_admin_renderer extends plugin_renderer_base {
             $plugintyperows = array();
 
             foreach ($plugins as $name => $plugin) {
+                $component = "{$plugin->type}_{$plugin->name}";
+
                 $sumtotal++;
                 $row = new html_table_row();
-                $row->attributes['class'] = 'type-' . $plugin->type . ' name-' . $plugin->type . '_' . $plugin->name;
+                $row->attributes['class'] = "type-{$plugin->type} name-{$component}";
 
-                if ($this->page->theme->resolve_image_location('icon', $plugin->type . '_' . $plugin->name, null)) {
-                    $icon = $this->output->pix_icon('icon', '', $plugin->type . '_' . $plugin->name, array('class' => 'smallicon pluginicon'));
+                $iconidentifier = 'icon';
+                if ($plugin->type === 'mod') {
+                    $iconidentifier = 'monologo';
+                }
+
+                if ($this->page->theme->resolve_image_location($iconidentifier, $component, null)) {
+                    $icon = $this->output->pix_icon($iconidentifier, '', $component, [
+                        'class' => 'smallicon pluginicon',
+                    ]);
                 } else {
                     $icon = '';
                 }
@@ -1107,10 +1111,11 @@ class core_admin_renderer extends plugin_renderer_base {
 
                 if ($isstandard = $plugin->is_standard()) {
                     $row->attributes['class'] .= ' standard';
-                    $sourcelabel = html_writer::span(get_string('sourcestd', 'core_plugin'), 'sourcetext badge badge-secondary');
+                    $sourcelabel = html_writer::span(get_string('sourcestd', 'core_plugin'),
+                        'sourcetext badge bg-secondary text-dark');
                 } else {
                     $row->attributes['class'] .= ' extension';
-                    $sourcelabel = html_writer::span(get_string('sourceext', 'core_plugin'), 'sourcetext badge badge-info');
+                    $sourcelabel = html_writer::span(get_string('sourceext', 'core_plugin'), 'sourcetext badge bg-info text-white');
                 }
 
                 $coredependency = $plugin->is_core_dependency_satisfied($version);
@@ -1124,19 +1129,19 @@ class core_admin_renderer extends plugin_renderer_base {
                 $statusclass = 'statustext badge ';
                 switch ($statuscode) {
                     case core_plugin_manager::PLUGIN_STATUS_NEW:
-                        $statusclass .= $dependenciesok ? 'badge-success' : 'badge-warning';
+                        $statusclass .= $dependenciesok ? 'bg-success text-white' : 'bg-warning text-dark';
                         break;
                     case core_plugin_manager::PLUGIN_STATUS_UPGRADE:
-                        $statusclass .= $dependenciesok ? 'badge-info' : 'badge-warning';
+                        $statusclass .= $dependenciesok ? 'bg-info text-white' : 'bg-warning text-dark';
                         break;
                     case core_plugin_manager::PLUGIN_STATUS_MISSING:
                     case core_plugin_manager::PLUGIN_STATUS_DOWNGRADE:
                     case core_plugin_manager::PLUGIN_STATUS_DELETE:
-                        $statusclass .= 'badge-danger';
+                        $statusclass .= 'bg-danger text-white';
                         break;
                     case core_plugin_manager::PLUGIN_STATUS_NODB:
                     case core_plugin_manager::PLUGIN_STATUS_UPTODATE:
-                        $statusclass .= $dependenciesok ? 'badge-light' : 'badge-warning';
+                        $statusclass .= $dependenciesok ? 'bg-light text-dark' : 'bg-warning text-dark';
                         break;
                 }
                 $status = html_writer::span(get_string('status_' . $statuscode, 'core_plugin'), $statusclass);
@@ -1259,11 +1264,11 @@ class core_admin_renderer extends plugin_renderer_base {
         }
 
         $out .= html_writer::div(html_writer::link(new moodle_url($this->page->url, array('showallplugins' => 0)),
-            get_string('plugincheckattention', 'core_plugin')).' '.html_writer::span($sumattention, 'badge badge-light'),
+            get_string('plugincheckattention', 'core_plugin')).' '.html_writer::span($sumattention, 'badge bg-light text-dark'),
             'btn btn-link mr-1');
 
         $out .= html_writer::div(html_writer::link(new moodle_url($this->page->url, array('showallplugins' => 1)),
-            get_string('plugincheckall', 'core_plugin')).' '.html_writer::span($sumtotal, 'badge badge-light'),
+            get_string('plugincheckall', 'core_plugin')).' '.html_writer::span($sumtotal, 'badge bg-light text-dark'),
             'btn btn-link mr-1');
 
         $out .= $this->output->container_end(); // End of .actions container.
@@ -1416,9 +1421,9 @@ class core_admin_renderer extends plugin_renderer_base {
             $supportedmoodles = array();
             foreach ($plugin->version->supportedmoodles as $moodle) {
                 if ($CFG->branch == str_replace('.', '', $moodle->release)) {
-                    $supportedmoodles[] = html_writer::span($moodle->release, 'badge badge-success');
+                    $supportedmoodles[] = html_writer::span($moodle->release, 'badge bg-success text-white');
                 } else {
-                    $supportedmoodles[] = html_writer::span($moodle->release, 'badge badge-light');
+                    $supportedmoodles[] = html_writer::span($moodle->release, 'badge bg-light text-dark');
                 }
             }
 
@@ -1524,7 +1529,7 @@ class core_admin_renderer extends plugin_renderer_base {
                     $label = '';
                 } else {
                     $class = 'requires-failed';
-                    $label = html_writer::span(get_string('dependencyfails', 'core_plugin'), 'badge badge-danger');
+                    $label = html_writer::span(get_string('dependencyfails', 'core_plugin'), 'badge bg-danger text-white');
                 }
 
                 if ($branch != null && !$plugin->is_core_compatible_satisfied($branch)) {
@@ -1553,8 +1558,10 @@ class core_admin_renderer extends plugin_renderer_base {
 
                 } else if ($reqinfo->status == $pluginman::REQUIREMENT_STATUS_MISSING) {
                     if ($reqinfo->availability == $pluginman::REQUIREMENT_AVAILABLE) {
-                        $label = html_writer::span(get_string('dependencymissing', 'core_plugin'), 'badge badge-warning');
-                        $label .= ' '.html_writer::span(get_string('dependencyavailable', 'core_plugin'), 'badge badge-warning');
+                        $label = html_writer::span(get_string('dependencymissing', 'core_plugin'),
+                            'badge bg-warning text-dark');
+                        $label .= ' '.html_writer::span(get_string('dependencyavailable', 'core_plugin'),
+                            'badge bg-warning text-dark');
                         $class = 'requires-failed requires-missing requires-available';
                         $actions[] = html_writer::link(
                             new moodle_url('https://moodle.org/plugins/view.php', array('plugin' => $reqname)),
@@ -1562,24 +1569,25 @@ class core_admin_renderer extends plugin_renderer_base {
                         );
 
                     } else {
-                        $label = html_writer::span(get_string('dependencymissing', 'core_plugin'), 'badge badge-danger');
+                        $label = html_writer::span(get_string('dependencymissing', 'core_plugin'), 'badge bg-danger text-white');
                         $label .= ' '.html_writer::span(get_string('dependencyunavailable', 'core_plugin'),
-                            'badge badge-danger');
+                            'badge bg-danger text-white');
                         $class = 'requires-failed requires-missing requires-unavailable';
                     }
                     $displayuploadlink = true;
 
                 } else if ($reqinfo->status == $pluginman::REQUIREMENT_STATUS_OUTDATED) {
                     if ($reqinfo->availability == $pluginman::REQUIREMENT_AVAILABLE) {
-                        $label = html_writer::span(get_string('dependencyfails', 'core_plugin'), 'badge badge-warning');
-                        $label .= ' '.html_writer::span(get_string('dependencyavailable', 'core_plugin'), 'badge badge-warning');
+                        $label = html_writer::span(get_string('dependencyfails', 'core_plugin'), 'badge bg-warning text-dark');
+                        $label .= ' '.html_writer::span(get_string('dependencyavailable', 'core_plugin'),
+                            'badge bg-warning text-dark');
                         $class = 'requires-failed requires-outdated requires-available';
                         $displayupdateslink = true;
 
                     } else {
-                        $label = html_writer::span(get_string('dependencyfails', 'core_plugin'), 'badge badge-danger');
+                        $label = html_writer::span(get_string('dependencyfails', 'core_plugin'), 'badge bg-danger text-white');
                         $label .= ' '.html_writer::span(get_string('dependencyunavailable', 'core_plugin'),
-                            'badge badge-danger');
+                            'badge bg-danger text-white');
                         $class = 'requires-failed requires-outdated requires-unavailable';
                     }
                     $displayuploadlink = true;
@@ -1689,7 +1697,7 @@ class core_admin_renderer extends plugin_renderer_base {
                 new moodle_url($this->page->url, array('contribonly' => 0, 'updatesonly' => 1)),
                 get_string('overviewupdatable', 'core_plugin'),
                 array('title' => get_string('filterupdatesonly', 'core_plugin'))
-            ).' '.html_writer::span($numupdatable, 'badge badge-info number number-updatable');
+            ).' '.html_writer::span($numupdatable, 'badge bg-info text-white number number-updatable');
         } else {
             // No updates, or the notifications disabled.
             $infoupdatable = '';
@@ -1804,11 +1812,20 @@ class core_admin_renderer extends plugin_renderer_base {
             }
 
             foreach ($plugins as $name => $plugin) {
-                $row = new html_table_row();
-                $row->attributes['class'] = 'type-' . $plugin->type . ' name-' . $plugin->type . '_' . $plugin->name;
+                $component = "{$plugin->type}_{$plugin->name}";
 
-                if ($this->page->theme->resolve_image_location('icon', $plugin->type . '_' . $plugin->name, null)) {
-                    $icon = $this->output->pix_icon('icon', '', $plugin->type . '_' . $plugin->name, array('class' => 'icon pluginicon'));
+                $row = new html_table_row();
+                $row->attributes['class'] = "type-{$plugin->type} name-{$component}";
+
+                $iconidentifier = 'icon';
+                if ($plugin->type === 'mod') {
+                    $iconidentifier = 'monologo';
+                }
+
+                if ($this->page->theme->resolve_image_location($iconidentifier, $component, null)) {
+                    $icon = $this->output->pix_icon($iconidentifier, '', $component, [
+                        'class' => 'icon pluginicon',
+                    ]);
                 } else {
                     $icon = $this->output->spacer();
                 }
@@ -1855,13 +1872,13 @@ class core_admin_renderer extends plugin_renderer_base {
                     $source = '';
                 } else {
                     $row->attributes['class'] .= ' extension';
-                    $source = html_writer::div(get_string('sourceext', 'core_plugin'), 'source badge badge-info');
+                    $source = html_writer::div(get_string('sourceext', 'core_plugin'), 'source badge bg-info text-white');
                 }
 
                 if ($status === core_plugin_manager::PLUGIN_STATUS_MISSING) {
-                    $msg = html_writer::div(get_string('status_missing', 'core_plugin'), 'statusmsg badge badge-danger');
+                    $msg = html_writer::div(get_string('status_missing', 'core_plugin'), 'statusmsg badge bg-danger text-white');
                 } else if ($status === core_plugin_manager::PLUGIN_STATUS_NEW) {
-                    $msg = html_writer::div(get_string('status_new', 'core_plugin'), 'statusmsg badge badge-success');
+                    $msg = html_writer::div(get_string('status_new', 'core_plugin'), 'statusmsg badge bg-success text-white');
                 } else {
                     $msg = '';
                 }
@@ -2038,8 +2055,10 @@ class core_admin_renderer extends plugin_renderer_base {
                         // We are checking installed & enabled things
                         if ($environment_result->getLevel() == 'required') {
                             $stringtouse = 'environmentrequirecustomcheck';
-                        } else {
+                        } else if ($environment_result->getLevel() == 'optional') {
                             $stringtouse = 'environmentrecommendcustomcheck';
+                        } else {
+                            $stringtouse = 'environmentshouldfixcustomcheck';
                         }
 
                     } else if ($environment_result->getPart() == 'php_setting') {
@@ -2068,9 +2087,10 @@ class core_admin_renderer extends plugin_renderer_base {
                         $errorline = true;
                     } else {
                         if ($status) {                                          //Handle ok result (ok)
-                            $status = get_string('ok');
+                            $status = get_string('statusok');
                         } else {
-                            if ($environment_result->getLevel() == 'optional') {//Handle check result (warning)
+                            // Handle check result (warning).
+                            if (in_array($environment_result->getLevel(), ['optional', 'recommended'])) {
                                 $status = get_string('check');
                                 $warningline = true;
                             } else {                                            //Handle error result (error)
@@ -2100,13 +2120,13 @@ class core_admin_renderer extends plugin_renderer_base {
                 // Format error or warning line
                 if ($errorline) {
                     $messagetype = 'error';
-                    $statusclass = 'badge-danger';
+                    $statusclass = 'bg-danger text-white';
                 } else if ($warningline) {
                     $messagetype = 'warn';
-                    $statusclass = 'badge-warning';
+                    $statusclass = 'bg-warning text-dark';
                 } else {
                     $messagetype = 'ok';
-                    $statusclass = 'badge-success';
+                    $statusclass = 'bg-success text-white';
                 }
                 $status = html_writer::span($status, 'badge ' . $statusclass);
                 // Here we'll store all the feedback found
@@ -2181,21 +2201,6 @@ class core_admin_renderer extends plugin_renderer_base {
     }
 
     /**
-     * Check to see if writing to the deprecated legacy log store is enabled.
-     *
-     * @return string An error message if writing to the legacy log store is enabled.
-     */
-    protected function legacy_log_store_writing_error() {
-        $enabled = get_config('logstore_legacy', 'loglegacy');
-        $plugins = explode(',', get_config('tool_log', 'enabled_stores'));
-        $enabled = $enabled && in_array('logstore_legacy', $plugins);
-
-        if ($enabled) {
-            return $this->warning(get_string('legacylogginginuse'));
-        }
-    }
-
-    /**
      * Display message about the benefits of registering on Moodle.org
      *
      * @return string
@@ -2205,7 +2210,7 @@ class core_admin_renderer extends plugin_renderer_base {
         $out = format_text(get_string('registerwithmoodleorginfo', 'core_hub'), FORMAT_MARKDOWN);
 
         $out .= html_writer::link(
-            new moodle_url('/admin/settings.php', ['section' => 'moodleservices']),
+            MOODLE_PRODUCTURL.'/solutions/moodle-app/',
             $this->output->pix_icon('i/info', '').' '.get_string('registerwithmoodleorginfoapp', 'core_hub'),
             ['class' => 'btn btn-link', 'role' => 'opener', 'target' => '_href']
         );
@@ -2254,5 +2259,16 @@ class core_admin_renderer extends plugin_renderer_base {
         }
 
         return $this->warning($xmlrpcwarning);
+    }
+
+    /**
+     * Renders the theme selector list.
+     *
+     * @param core_admin\output\theme_selector $themeselector
+     * @return string HTML
+     */
+    public function theme_selector_list(core_admin\output\theme_selector $themeselector): string {
+        $renderable = $themeselector->export_for_template($this);
+        return $this->render_from_template('core_admin/themeselector/theme_selector', $renderable);
     }
 }

@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace auth_db;
+
 /**
  * External database auth sync tests, this also tests adodb drivers
  * that are matching our four supported Moodle database drivers.
@@ -23,11 +25,7 @@
  * @copyright  2012 Petr Skoda {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-
-class auth_db_testcase extends advanced_testcase {
+class db_test extends \advanced_testcase {
     /** @var string Original error log */
     protected $oldlog;
 
@@ -43,6 +41,7 @@ class auth_db_testcase extends advanced_testcase {
             sqlsrv_configure("LogSubsystems", SQLSRV_LOG_SYSTEM_OFF);
             sqlsrv_configure("LogSeverity", SQLSRV_LOG_SEVERITY_ERROR);
         }
+        parent::tearDownAfterClass();
     }
 
     protected function init_auth_database() {
@@ -123,7 +122,7 @@ class auth_db_testcase extends advanced_testcase {
                 throw new exception('Unknown database family ' . $DB->get_dbfamily());
         }
 
-        $table = new xmldb_table('auth_db_users');
+        $table = new \xmldb_table('auth_db_users');
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, null, null);
         $table->add_field('pass', XMLDB_TYPE_CHAR, '255', null, null, null);
@@ -168,13 +167,13 @@ class auth_db_testcase extends advanced_testcase {
         global $DB;
 
         $dbman = $DB->get_manager();
-        $table = new xmldb_table('auth_db_users');
+        $table = new \xmldb_table('auth_db_users');
         $dbman->drop_table($table);
 
         ini_set('error_log', $this->oldlog);
     }
 
-    public function test_plugin() {
+    public function test_plugin(): void {
         global $DB, $CFG;
         require_once($CFG->dirroot . '/user/profile/lib.php');
 
@@ -222,7 +221,7 @@ class auth_db_testcase extends advanced_testcase {
 
         $this->assertCount(2, $DB->get_records('user'));
 
-        $trace = new null_progress_trace();
+        $trace = new \null_progress_trace();
 
         // Sync users and make sure that two events user_created werer triggered.
         $sink = $this->redirectEvents();
@@ -445,7 +444,7 @@ class auth_db_testcase extends advanced_testcase {
     /**
      * Testing the function _colonscope() from ADOdb.
      */
-    public function test_adodb_colonscope() {
+    public function test_adodb_colonscope(): void {
         global $CFG;
         require_once($CFG->libdir.'/adodb/adodb.inc.php');
         require_once($CFG->libdir.'/adodb/drivers/adodb-odbc.inc.php');
@@ -463,7 +462,7 @@ class auth_db_testcase extends advanced_testcase {
     /**
      * Testing the clean_data() method.
      */
-    public function test_clean_data() {
+    public function test_clean_data(): void {
         global $DB;
 
         $this->resetAfterTest(false);
@@ -483,7 +482,7 @@ class auth_db_testcase extends advanced_testcase {
         $extdbuser3 = (object)array('name'=>'u3', 'pass'=>'heslo', 'email'=>'u3@example.com',
                 'lastname' => 'user<script>alert(1);</script>xss');
         $extdbuser3->id = $DB->insert_record('auth_db_users', $extdbuser3);
-        $trace = new null_progress_trace();
+        $trace = new \null_progress_trace();
 
         // Let's test user sync make sure still works as expected..
         $auth->sync_users($trace, true);
@@ -507,7 +506,7 @@ class auth_db_testcase extends advanced_testcase {
     /**
      * Testing the deletion of a user when there are many users in the external DB.
      */
-    public function test_deleting_with_many_users() {
+    public function test_deleting_with_many_users(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -529,7 +528,7 @@ class auth_db_testcase extends advanced_testcase {
         }
 
         // Sync to moodle.
-        $trace = new null_progress_trace();
+        $trace = new \null_progress_trace();
         $auth->sync_users($trace, true);
 
         // Check user is there.

@@ -64,7 +64,7 @@ $string['disableall'] = 'Disable notifications';
 $string['disabled'] = 'Messaging is disabled on this site';
 $string['disallowed'] = 'Locked off';
 $string['editmessages'] = 'Edit messages';
-$string['emailtagline'] = 'This is a copy of a message sent to you at "{$a->sitename}". Go to {$a->url} to reply.';
+$string['emailtagline'] = 'This is a copy of a message sent to you on the site {$a->sitename}. Go to <a href="{$a->url}">{$a->url}</a> to reply.';
 $string['enabled'] = 'Enabled';
 $string['errorcallingprocessor'] = 'Error calling defined output';
 $string['errorconversationdoesnotexist'] = 'Conversation does not exist';
@@ -269,21 +269,9 @@ $string['viewfullnotification'] = 'View full notification';
 $string['viewmessageswith'] = 'View messages with {$a}';
 $string['viewnotificationresource'] = 'Go to: {$a}';
 $string['viewunreadmessageswith'] = 'View unread messages with {$a}';
+$string['waitingforcontactaccept'] = 'Waiting to be added as contact';
 $string['writeamessage'] = 'Write a message...';
 $string['wouldliketocontactyou'] = 'Would like to contact you';
 $string['you'] = 'You:';
 $string['youhaveblockeduser'] = 'You have blocked this user.';
 $string['yourcontactrequestpending'] = 'Your contact request is pending with {$a}';
-
-// Deprecated since Moodle 3.9.
-$string['messagecontactrequestsnotification'] = '{$a} is requesting to be added as a contact.';
-$string['messagecontactrequestsnotificationsubject'] = 'Contact request from {$a}';
-
-// Deprecated since Moodle 4.0.
-$string['defaults'] = 'Defaults';
-$string['loggedin_help'] = 'Configure how you would like to receive notifications when you are logged into Moodle';
-$string['loggedindescription'] = 'When you are logged into Moodle';
-$string['loggedoff_help'] = 'Configure how you would like to receive notifications when you are not logged into Moodle';
-$string['loggedoffdescription'] = 'When you are not logged into Moodle';
-$string['sendingvia'] = 'Sending "{$a->provider}" via "{$a->processor}"';
-$string['sendingviawhen'] = 'Sending "{$a->provider}" via "{$a->processor}" when {$a->state}';

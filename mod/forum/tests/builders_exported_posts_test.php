@@ -14,13 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * The exported_posts builder tests.
- *
- * @package    mod_forum
- * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace mod_forum;
+
+use mod_forum_tests_generator_trait;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -33,7 +29,7 @@ require_once(__DIR__ . '/generator_trait.php');
  * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
+class builders_exported_posts_test extends \advanced_testcase {
     // Make use of the test generator trait.
     use mod_forum_tests_generator_trait;
 
@@ -44,6 +40,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
      * Set up function for tests.
      */
     public function setUp(): void {
+        parent::setUp();
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();
@@ -59,6 +56,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();
+        parent::tearDown();
     }
 
     /**
@@ -78,16 +76,16 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
             array_map(function($forum) use ($entityfactory, $DB) {
                 $course = $DB->get_record('course', ['id' => $forum->course]);
                 $coursemodule = get_coursemodule_from_instance('forum', $forum->id);
-                $context = context_module::instance($coursemodule->id);
-                return $entityfactory->get_forum_from_stdclass($forum, $context, $coursemodule, $course);
+                $context = \context_module::instance($coursemodule->id);
+                return $entityfactory->get_forum_from_stdClass($forum, $context, $coursemodule, $course);
             }, $forums),
             // Discussions.
             array_map(function($discussion) use ($entityfactory) {
-                return $entityfactory->get_discussion_from_stdclass($discussion);
+                return $entityfactory->get_discussion_from_stdClass($discussion);
             }, $discussions),
             // Posts.
             array_map(function($post) use ($entityfactory) {
-                return $entityfactory->get_post_from_stdclass($post);
+                return $entityfactory->get_post_from_stdClass($post);
             }, $posts)
         ];
     }
@@ -96,7 +94,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
      * Test the build function throws exception if not given all of the forums for
      * the list of posts.
      */
-    public function test_build_throws_exception_on_missing_forums() {
+    public function test_build_throws_exception_on_missing_forums(): void {
         $this->resetAfterTest();
 
         $datagenerator = $this->getDataGenerator();
@@ -121,7 +119,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
      * Test the build function throws exception if not given all of the discussions for
      * the list of posts.
      */
-    public function test_build_throws_exception_on_missing_discussions() {
+    public function test_build_throws_exception_on_missing_discussions(): void {
         $this->resetAfterTest();
 
         $datagenerator = $this->getDataGenerator();
@@ -146,7 +144,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
      * Test the build function returns the exported posts in the order that the posts are
      * given.
      */
-    public function test_build_returns_posts_in_order() {
+    public function test_build_returns_posts_in_order(): void {
         $this->resetAfterTest();
 
         $datagenerator = $this->getDataGenerator();
@@ -189,7 +187,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
     /**
      * Test the build function loads authors.
      */
-    public function test_build_loads_authors() {
+    public function test_build_loads_authors(): void {
         $this->resetAfterTest();
 
         $datagenerator = $this->getDataGenerator();
@@ -234,7 +232,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
     /**
      * Test the build function loads attachments.
      */
-    public function test_build_loads_attachments() {
+    public function test_build_loads_attachments(): void {
         $this->resetAfterTest();
 
         $datagenerator = $this->getDataGenerator();
@@ -310,7 +308,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
     /**
      * Test the build function loads author groups.
      */
-    public function test_build_loads_author_groups() {
+    public function test_build_loads_author_groups(): void {
         $this->resetAfterTest();
 
         $datagenerator = $this->getDataGenerator();
@@ -380,7 +378,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
     /**
      * Test the build function loads tags.
      */
-    public function test_build_loads_tags() {
+    public function test_build_loads_tags(): void {
         $this->resetAfterTest();
 
         $datagenerator = $this->getDataGenerator();
@@ -441,7 +439,7 @@ class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
     /**
      * Test the build function loads read_receipts.
      */
-    public function test_build_loads_read_receipts() {
+    public function test_build_loads_read_receipts(): void {
         $this->resetAfterTest();
 
         $datagenerator = $this->getDataGenerator();

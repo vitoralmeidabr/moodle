@@ -26,6 +26,7 @@ global $CFG;
 
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
+require_once($CFG->dirroot . '/course/format/tests/fixtures/format_theunittest.php');
 
 /**
  * Course restore testcase.
@@ -158,7 +159,6 @@ class restore_test extends \advanced_testcase {
 
         // Create the adhoc task.
         $asynctask = new \core\task\asynchronous_restore_task();
-        $asynctask->set_blocking(false);
         $asynctask->set_custom_data(array('backupid' => $restoreid));
         \core\task\manager::queue_adhoc_task($asynctask);
 
@@ -202,7 +202,7 @@ class restore_test extends \advanced_testcase {
         return $this->async_restore_course($backupid, 0, $userid, 0);
     }
 
-    public function test_async_restore_existing_idnumber_in_new_course() {
+    public function test_async_restore_existing_idnumber_in_new_course(): void {
         $this->resetAfterTest();
 
         $dg = $this->getDataGenerator();
@@ -214,7 +214,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals('', $c2->idnumber);
     }
 
-    public function test_async_restore_course_info_in_existing_course() {
+    public function test_async_restore_course_info_in_existing_course(): void {
         global $DB;
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
@@ -250,7 +250,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals($chat2->chattime, $restoredchat2->chattime);
     }
 
-    public function test_async_restore_course_info_in_existing_course_delete_first() {
+    public function test_async_restore_course_info_in_existing_course_delete_first(): void {
         global $DB;
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
@@ -281,7 +281,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEmpty($restoredchat2);
     }
 
-    public function test_restore_existing_idnumber_in_new_course() {
+    public function test_restore_existing_idnumber_in_new_course(): void {
         $this->resetAfterTest();
 
         $dg = $this->getDataGenerator();
@@ -293,7 +293,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals('', $c2->idnumber);
     }
 
-    public function test_restore_non_existing_idnumber_in_new_course() {
+    public function test_restore_non_existing_idnumber_in_new_course(): void {
         global $DB;
         $this->resetAfterTest();
 
@@ -309,7 +309,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals('ABC', $c2->idnumber);
     }
 
-    public function test_restore_existing_idnumber_in_existing_course() {
+    public function test_restore_existing_idnumber_in_existing_course(): void {
         global $DB;
         $this->resetAfterTest();
 
@@ -326,7 +326,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals('ABC', $c1->idnumber);
     }
 
-    public function test_restore_non_existing_idnumber_in_existing_course() {
+    public function test_restore_non_existing_idnumber_in_existing_course(): void {
         global $DB;
         $this->resetAfterTest();
 
@@ -343,7 +343,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals('ABC', $c2->idnumber);
     }
 
-    public function test_restore_idnumber_in_existing_course_without_permissions() {
+    public function test_restore_idnumber_in_existing_course_without_permissions(): void {
         global $DB;
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
@@ -367,7 +367,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals('DEF', $c2->idnumber);
     }
 
-    public function test_restore_course_info_in_new_course() {
+    public function test_restore_course_info_in_new_course(): void {
         global $DB;
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
@@ -387,7 +387,43 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals($startdate, $c2->startdate);
     }
 
-    public function test_restore_course_info_in_existing_course() {
+    public function test_restore_course_with_users(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $dg = $this->getDataGenerator();
+
+        // Create a user and a course, enrol user in the course. Backup this course.
+        $startdate = mktime(12, 0, 0, 7, 1, 2016); // 01-Jul-2016.
+        $u1 = $dg->create_user(['firstname' => 'Olivia']);
+        $c1 = $dg->create_course(['shortname' => 'SN', 'fullname' => 'FN', 'startdate' => $startdate,
+            'summary' => 'DESC', 'summaryformat' => FORMAT_MOODLE]);
+        $dg->enrol_user($u1->id, $c1->id, 'student');
+        $backupid = $this->backup_course($c1->id);
+
+        // Delete the course and the user completely.
+        delete_course($c1, false);
+        delete_user($u1);
+        $DB->delete_records('user', ['id' => $u1->id]);
+
+        // Now restore this course, the user will be created and event user_created event will be triggered.
+        $sink = $this->redirectEvents();
+        $c2 = $this->restore_to_new_course($backupid);
+        $events = $sink->get_events();
+        $sink->close();
+
+        $user = $DB->get_record('user', ['firstname' => 'Olivia'], '*', MUST_EXIST);
+        $events = array_values(array_filter($events, function(\core\event\base $event) {
+            return is_a($event, \core\event\user_created::class);
+        }));
+        $this->assertEquals(1, count($events));
+        $this->assertEquals($user->id, $events[0]->relateduserid);
+        $this->assertEquals($c2->id, $events[0]->other['courseid']);
+        $this->assertStringContainsString("during restore of the course with id '{$c2->id}'",
+            $events[0]->get_description());
+    }
+
+    public function test_restore_course_info_in_existing_course(): void {
         global $DB;
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
@@ -423,7 +459,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals($chat2->chattime, $restoredchat2->chattime);
     }
 
-    public function test_restore_course_shortname_in_existing_course_without_permissions() {
+    public function test_restore_course_shortname_in_existing_course_without_permissions(): void {
         global $DB;
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
@@ -447,7 +483,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals(FORMAT_MOODLE, $restored->summaryformat);
     }
 
-    public function test_restore_course_fullname_in_existing_course_without_permissions() {
+    public function test_restore_course_fullname_in_existing_course_without_permissions(): void {
         global $DB;
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
@@ -471,7 +507,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals(FORMAT_MOODLE, $restored->summaryformat);
     }
 
-    public function test_restore_course_summary_in_existing_course_without_permissions() {
+    public function test_restore_course_summary_in_existing_course_without_permissions(): void {
         global $DB;
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
@@ -495,7 +531,7 @@ class restore_test extends \advanced_testcase {
         $this->assertEquals($c2->summaryformat, $restored->summaryformat);
     }
 
-    public function test_restore_course_startdate_in_existing_course_without_permissions() {
+    public function test_restore_course_startdate_in_existing_course_without_permissions(): void {
         global $DB;
         $this->resetAfterTest();
         $dg = $this->getDataGenerator();
@@ -533,5 +569,52 @@ class restore_test extends \advanced_testcase {
         $this->assertNotEquals($chat1->chattime, $restoredchat1->chattime);
         $this->assertEquals($chat2->chattime, $restoredchat2->chattime);
         $this->assertEquals($c2->startdate + 1 * WEEKSECS, $restoredchat2->chattime);
+    }
+
+    /**
+     * Tests course restore with editor in course format.
+     *
+     * @author Matthew Hilton
+     * @covers \core_courseformat\base
+     * @covers \backup_course_structure_step
+     * @covers \restore_course_structure_step
+     */
+    public function test_restore_editor_courseformat(): void {
+        $this->resetAfterTest();
+
+        // Setup user with restore permissions.
+        $dg = $this->getDataGenerator();
+        $u1 = $dg->create_user();
+
+        $managers = get_archetype_roles('manager');
+        $manager = array_shift($managers);
+        $dg->role_assign($manager->id, $u1->id);
+
+        // Create a course with an editor item in the course format.
+        $courseformatoptiondata = (object) [
+            "hideoddsections" => 1,
+            'summary_editor' => [
+                'text' => '<p>Somewhere over the rainbow</p><p>The <b>quick</b> brown fox jumpos over the lazy dog.</p>',
+                'format' => 1
+            ]
+        ];
+        $course1 = $dg->create_course(['format' => 'theunittest']);
+        $course2 = $dg->create_course(['format' => 'theunittest']);
+        $this->assertEquals('theunittest', $course1->format);
+        course_create_sections_if_missing($course1, array(0, 1));
+
+        // Set the course format.
+        $courseformat = course_get_format($course1);
+        $courseformat->update_course_format_options($courseformatoptiondata);
+
+        // Backup and restore the course.
+        $backupid = $this->backup_course($course1->id);
+        $this->restore_to_existing_course($backupid, $course2->id, $u1->id);
+
+        // Get the restored course format.
+        $restoredformat = course_get_format($course2);
+        $restoredformatoptions = $restoredformat->get_format_options();
+
+        $this->assertEqualsCanonicalizing($courseformatoptiondata, (object) $restoredformatoptions);
     }
 }

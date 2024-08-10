@@ -14,15 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Tests for the parts of ../filterlib.php that involve loading the configuration
- * from, and saving the configuration to, the database.
- *
- * @package   core_filter
- * @category  phpunit
- * @copyright 2009 Tim Hunt
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core;
+
+use filter_manager;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,8 +25,16 @@ require_once($CFG->libdir . '/filterlib.php');
 
 /**
  * Test filters.
+ *
+ * Tests for the parts of ../filterlib.php that involve loading the configuration
+ * from, and saving the configuration to, the database.
+ *
+ * @package   core
+ * @category  test
+ * @copyright 2009 Tim Hunt
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_filterlib_testcase extends advanced_testcase {
+class filterlib_test extends \advanced_testcase {
 
     private function assert_only_one_filter_globally($filter, $state) {
         global $DB;
@@ -40,9 +42,9 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertCount(1, $recs);
         $rec = reset($recs);
         unset($rec->id);
-        $expectedrec = new stdClass();
+        $expectedrec = new \stdClass();
         $expectedrec->filter = $filter;
-        $expectedrec->contextid = context_system::instance()->id;
+        $expectedrec->contextid = \context_system::instance()->id;
         $expectedrec->active = $state;
         $expectedrec->sortorder = 1;
         $this->assertEquals($expectedrec, $rec);
@@ -52,7 +54,7 @@ class core_filterlib_testcase extends advanced_testcase {
         global $DB;
 
         $sortedfilters = $DB->get_records_menu('filter_active',
-            array('contextid' => context_system::instance()->id), 'sortorder', 'sortorder,filter');
+            array('contextid' => \context_system::instance()->id), 'sortorder', 'sortorder,filter');
         $testarray = array();
         $index = 1;
         foreach ($filters as $filter) {
@@ -61,7 +63,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals($testarray, $sortedfilters);
     }
 
-    public function test_set_filter_globally_on() {
+    public function test_set_filter_globally_on(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -71,7 +73,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_only_one_filter_globally('name', TEXTFILTER_ON);
     }
 
-    public function test_set_filter_globally_off() {
+    public function test_set_filter_globally_off(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -81,7 +83,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_only_one_filter_globally('name', TEXTFILTER_OFF);
     }
 
-    public function test_set_filter_globally_disabled() {
+    public function test_set_filter_globally_disabled(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -91,13 +93,13 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_only_one_filter_globally('name', TEXTFILTER_DISABLED);
     }
 
-    public function test_global_config_exception_on_invalid_state() {
+    public function test_global_config_exception_on_invalid_state(): void {
         $this->resetAfterTest();
-        $this->expectException(coding_exception::class);
+        $this->expectException(\coding_exception::class);
         filter_set_global_state('name', 0);
     }
 
-    public function test_auto_sort_order() {
+    public function test_auto_sort_order(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -108,7 +110,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_global_sort_order(array('one', 'two'));
     }
 
-    public function test_auto_sort_order_enabled() {
+    public function test_auto_sort_order_enabled(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -119,7 +121,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_global_sort_order(array('one', 'two'));
     }
 
-    public function test_update_existing_dont_duplicate() {
+    public function test_update_existing_dont_duplicate(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -130,7 +132,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_only_one_filter_globally('name', TEXTFILTER_OFF);
     }
 
-    public function test_update_reorder_down() {
+    public function test_update_reorder_down(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -153,7 +155,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals('one, two, three', $log->oldvalue);
     }
 
-    public function test_update_reorder_up() {
+    public function test_update_reorder_up(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -177,7 +179,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals('one, two, three, four', $log->oldvalue);
     }
 
-    public function test_auto_sort_order_change_to_enabled() {
+    public function test_auto_sort_order_change_to_enabled(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -190,7 +192,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_global_sort_order(array('one', 'three', 'two'));
     }
 
-    public function test_auto_sort_order_change_to_disabled() {
+    public function test_auto_sort_order_change_to_disabled(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -203,7 +205,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_global_sort_order(array('two', 'one', 'three'));
     }
 
-    public function test_filter_get_global_states() {
+    public function test_filter_get_global_states(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -227,7 +229,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $rec = reset($recs);
         unset($rec->id);
         unset($rec->sortorder);
-        $expectedrec = new stdClass();
+        $expectedrec = new \stdClass();
         $expectedrec->filter = $filter;
         $expectedrec->contextid = $contextid;
         $expectedrec->active = $state;
@@ -239,7 +241,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(0, $DB->count_records('filter_active'));
     }
 
-    public function test_local_on() {
+    public function test_local_on(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Exercise SUT.
@@ -248,7 +250,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_only_one_local_setting('name', 123, TEXTFILTER_ON);
     }
 
-    public function test_local_off() {
+    public function test_local_off(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Exercise SUT.
@@ -257,7 +259,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_only_one_local_setting('name', 123, TEXTFILTER_OFF);
     }
 
-    public function test_local_inherit() {
+    public function test_local_inherit(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Exercise SUT.
@@ -266,21 +268,21 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_no_local_setting();
     }
 
-    public function test_local_invalid_state_throws_exception() {
+    public function test_local_invalid_state_throws_exception(): void {
         $this->resetAfterTest();
         // Exercise SUT.
-        $this->expectException(coding_exception::class);
+        $this->expectException(\coding_exception::class);
         filter_set_local_state('name', 123, -9999);
     }
 
-    public function test_throws_exception_when_setting_global() {
+    public function test_throws_exception_when_setting_global(): void {
         $this->resetAfterTest();
         // Exercise SUT.
-        $this->expectException(coding_exception::class);
-        filter_set_local_state('name', context_system::instance()->id, TEXTFILTER_INHERIT);
+        $this->expectException(\coding_exception::class);
+        filter_set_local_state('name', \context_system::instance()->id, TEXTFILTER_INHERIT);
     }
 
-    public function test_local_inherit_deletes_existing() {
+    public function test_local_inherit_deletes_existing(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -297,7 +299,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(1, count($recs), 'More than one record returned %s.');
         $rec = reset($recs);
         unset($rec->id);
-        $expectedrec = new stdClass();
+        $expectedrec = new \stdClass();
         $expectedrec->filter = $filter;
         $expectedrec->contextid = $context;
         $expectedrec->name = $name;
@@ -305,7 +307,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals($expectedrec, $rec);
     }
 
-    public function test_set_new_config() {
+    public function test_set_new_config(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Exercise SUT.
@@ -314,7 +316,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_only_one_config('name', 123, 'settingname', 'An arbitrary value');
     }
 
-    public function test_update_existing_config() {
+    public function test_update_existing_config(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         // Setup fixture.
@@ -325,7 +327,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_only_one_config('name', 123, 'settingname', 'A changed value');
     }
 
-    public function test_filter_get_local_config() {
+    public function test_filter_get_local_config(): void {
         $this->resetAfterTest();
         // Setup fixture.
         filter_set_local_config('name', 123, 'setting1', 'An arbitrary value');
@@ -341,9 +343,9 @@ class core_filterlib_testcase extends advanced_testcase {
     protected function setup_available_in_context_tests() {
         $course = $this->getDataGenerator()->create_course(array('category' => 1));
 
-        $childcontext = context_coursecat::instance(1);
-        $childcontext2 = context_course::instance($course->id);
-        $syscontext = context_system::instance();
+        $childcontext = \context_coursecat::instance(1);
+        $childcontext2 = \context_course::instance($course->id);
+        $syscontext = \context_system::instance();
 
         return [
             'syscontext' => $syscontext,
@@ -362,7 +364,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEqualsCanonicalizing($expectedfilters, array_keys($filters));
     }
 
-    public function test_globally_on_is_returned() {
+    public function test_globally_on_is_returned(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         [
@@ -378,7 +380,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(array(), $filters['name']);
     }
 
-    public function test_globally_off_not_returned() {
+    public function test_globally_off_not_returned(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         [
@@ -392,7 +394,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_filter_list(array(), $filters);
     }
 
-    public function test_globally_off_overridden() {
+    public function test_globally_off_overridden(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         [
@@ -408,7 +410,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_filter_list(array('name'), $filters);
     }
 
-    public function test_globally_on_overridden() {
+    public function test_globally_on_overridden(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         [
@@ -424,7 +426,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_filter_list(array(), $filters);
     }
 
-    public function test_globally_disabled_not_overridden() {
+    public function test_globally_disabled_not_overridden(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         [
@@ -440,7 +442,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_filter_list(array(), $filters);
     }
 
-    public function test_single_config_returned() {
+    public function test_single_config_returned(): void {
         $this->resetAfterTest();
         [
             'childcontext' => $childcontext
@@ -454,7 +456,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(array('settingname' => 'A value'), $filters['name']);
     }
 
-    public function test_multi_config_returned() {
+    public function test_multi_config_returned(): void {
         $this->resetAfterTest();
         [
             'childcontext' => $childcontext
@@ -469,7 +471,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(array('settingname' => 'A value', 'anothersettingname' => 'Another value'), $filters['name']);
     }
 
-    public function test_config_from_other_context_not_returned() {
+    public function test_config_from_other_context_not_returned(): void {
         $this->resetAfterTest();
         [
             'childcontext' => $childcontext,
@@ -485,7 +487,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(array('anothersettingname' => 'Another value'), $filters['name']);
     }
 
-    public function test_config_from_other_filter_not_returned() {
+    public function test_config_from_other_filter_not_returned(): void {
         $this->resetAfterTest();
         [
             'childcontext' => $childcontext
@@ -504,14 +506,14 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(1, count($filters), 'More than one record returned %s.');
         $rec = $filters[$filter];
         unset($rec->id);
-        $expectedrec = new stdClass();
+        $expectedrec = new \stdClass();
         $expectedrec->filter = $filter;
         $expectedrec->localstate = $localstate;
         $expectedrec->inheritedstate = $inheritedstate;
         $this->assertEquals($expectedrec, $rec);
     }
 
-    public function test_available_in_context_localoverride() {
+    public function test_available_in_context_localoverride(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         [
@@ -526,7 +528,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_one_available_filter('name', TEXTFILTER_OFF, TEXTFILTER_ON, $filters);
     }
 
-    public function test_available_in_context_nolocaloverride() {
+    public function test_available_in_context_nolocaloverride(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         [
@@ -542,7 +544,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_one_available_filter('name', TEXTFILTER_INHERIT, TEXTFILTER_OFF, $filters);
     }
 
-    public function test_available_in_context_disabled_not_returned() {
+    public function test_available_in_context_disabled_not_returned(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         [
@@ -557,25 +559,25 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(array(), $filters);
     }
 
-    public function test_available_in_context_exception_with_syscontext() {
+    public function test_available_in_context_exception_with_syscontext(): void {
         $this->resetAfterTest();
         [
             'syscontext' => $syscontext
         ] = $this->setup_available_in_context_tests();
         // Exercise SUT.
-        $this->expectException(coding_exception::class);
+        $this->expectException(\coding_exception::class);
         filter_get_available_in_context($syscontext);
     }
 
     protected function setup_preload_activities_test() {
-        $syscontext = context_system::instance();
-        $catcontext = context_coursecat::instance(1);
+        $syscontext = \context_system::instance();
+        $catcontext = \context_coursecat::instance(1);
         $course = $this->getDataGenerator()->create_course(array('category' => 1));
-        $coursecontext = context_course::instance($course->id);
+        $coursecontext = \context_course::instance($course->id);
         $page1 = $this->getDataGenerator()->create_module('page', array('course' => $course->id));
-        $activity1context = context_module::instance($page1->cmid);
+        $activity1context = \context_module::instance($page1->cmid);
         $page2 = $this->getDataGenerator()->create_module('page', array('course' => $course->id));
-        $activity2context = context_module::instance($page2->cmid);
+        $activity2context = \context_module::instance($page2->cmid);
         return [
             'syscontext' => $syscontext,
             'catcontext' => $catcontext,
@@ -590,7 +592,7 @@ class core_filterlib_testcase extends advanced_testcase {
         global $FILTERLIB_PRIVATE, $DB;
 
         // Use preload cache...
-        $FILTERLIB_PRIVATE = new stdClass();
+        $FILTERLIB_PRIVATE = new \stdClass();
         filter_preload_activities($modinfo);
 
         // Get data and check no queries are made.
@@ -601,7 +603,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals($before, $after);
 
         // Repeat without cache and check it makes queries now.
-        $FILTERLIB_PRIVATE = new stdClass;
+        $FILTERLIB_PRIVATE = new \stdClass;
         $before = $DB->perf_get_reads();
         $filters1 = filter_get_active_in_context($activity1context);
         $filters2 = filter_get_active_in_context($activity2context);
@@ -613,7 +615,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals($plfilters2, $filters2);
     }
 
-    public function test_preload() {
+    public function test_preload(): void {
         $this->resetAfterTest();
         [
             'catcontext' => $catcontext,
@@ -623,7 +625,7 @@ class core_filterlib_testcase extends advanced_testcase {
             'activity2context' => $activity2context
          ] = $this->setup_preload_activities_test();
         // Get course and modinfo.
-        $modinfo = new course_modinfo($course, 2);
+        $modinfo = new \course_modinfo($course, 2);
 
         // Note: All the tests in this function check that the result from the
         // preloaded cache is the same as the result from calling the standard
@@ -673,7 +675,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_matches($modinfo, $activity1context, $activity2context);
     }
 
-    public function test_filter_delete_all_for_filter() {
+    public function test_filter_delete_all_for_filter(): void {
         global $DB;
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
@@ -681,8 +683,8 @@ class core_filterlib_testcase extends advanced_testcase {
         // Setup fixture.
         filter_set_global_state('name', TEXTFILTER_ON);
         filter_set_global_state('other', TEXTFILTER_ON);
-        filter_set_local_config('name', context_system::instance()->id, 'settingname', 'A value');
-        filter_set_local_config('other', context_system::instance()->id, 'settingname', 'Other value');
+        filter_set_local_config('name', \context_system::instance()->id, 'settingname', 'A value');
+        filter_set_local_config('other', \context_system::instance()->id, 'settingname', 'Other value');
         set_config('configname', 'A config value', 'filter_name');
         set_config('configname', 'Other config value', 'filter_other');
         // Exercise SUT.
@@ -692,13 +694,13 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertTrue($DB->record_exists('filter_active', array('filter' => 'other')));
         $this->assertEquals(1, $DB->count_records('filter_config'));
         $this->assertTrue($DB->record_exists('filter_config', array('filter' => 'other')));
-        $expectedconfig = new stdClass;
+        $expectedconfig = new \stdClass;
         $expectedconfig->configname = 'Other config value';
         $this->assertEquals($expectedconfig, get_config('filter_other'));
-        $this->assertEquals(get_config('filter_name'), new stdClass());
+        $this->assertEquals(get_config('filter_name'), new \stdClass());
     }
 
-    public function test_filter_delete_all_for_context() {
+    public function test_filter_delete_all_for_context(): void {
         global $DB;
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
@@ -713,12 +715,12 @@ class core_filterlib_testcase extends advanced_testcase {
         filter_delete_all_for_context(123);
         // Validate.
         $this->assertEquals(1, $DB->count_records('filter_active'));
-        $this->assertTrue($DB->record_exists('filter_active', array('contextid' => context_system::instance()->id)));
+        $this->assertTrue($DB->record_exists('filter_active', array('contextid' => \context_system::instance()->id)));
         $this->assertEquals(1, $DB->count_records('filter_config'));
         $this->assertTrue($DB->record_exists('filter_config', array('filter' => 'other')));
     }
 
-    public function test_set() {
+    public function test_set(): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -744,7 +746,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(1, $CFG->filterall);
     }
 
-    public function test_unset_to_empty() {
+    public function test_unset_to_empty(): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -760,7 +762,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals('', $CFG->filterall);
     }
 
-    public function test_unset_multi() {
+    public function test_unset_multi(): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -778,7 +780,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(1, $CFG->filterall);
     }
 
-    public function test_filter_manager_instance() {
+    public function test_filter_manager_instance(): void {
         $this->resetAfterTest();
 
         set_config('perfdebug', 7);
@@ -794,7 +796,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertInstanceOf('performance_measuring_filter_manager', $filterman);
     }
 
-    public function test_filter_get_active_state_contextid_parameter() {
+    public function test_filter_get_active_state_contextid_parameter(): void {
         $this->resetAfterTest();
 
         filter_set_global_state('glossary', TEXTFILTER_ON);
@@ -802,7 +804,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $active = filter_get_active_state('glossary');
         $this->assertEquals($active, TEXTFILTER_ON);
 
-        $systemcontext = context_system::instance();
+        $systemcontext = \context_system::instance();
         // Passing $systemcontext object.
         $active = filter_get_active_state('glossary', $systemcontext);
         $this->assertEquals($active, TEXTFILTER_ON);
@@ -817,7 +819,7 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals($active, TEXTFILTER_ON);
     }
 
-    public function test_filter_get_active_state_filtername_parameter() {
+    public function test_filter_get_active_state_filtername_parameter(): void {
         $this->resetAfterTest();
 
         filter_set_global_state('glossary', TEXTFILTER_ON);
@@ -830,39 +832,39 @@ class core_filterlib_testcase extends advanced_testcase {
         $active = filter_get_active_state('mod/glossary');
     }
 
-    public function test_filter_get_active_state_after_change() {
+    public function test_filter_get_active_state_after_change(): void {
         $this->resetAfterTest();
 
         filter_set_global_state('glossary', TEXTFILTER_ON);
-        $systemcontextid = context_system::instance()->id;
+        $systemcontextid = \context_system::instance()->id;
         $active = filter_get_active_state('glossary', $systemcontextid);
         $this->assertEquals($active, TEXTFILTER_ON);
 
         filter_set_global_state('glossary', TEXTFILTER_OFF);
-        $systemcontextid = context_system::instance()->id;
+        $systemcontextid = \context_system::instance()->id;
         $active = filter_get_active_state('glossary', $systemcontextid);
         $this->assertEquals($active, TEXTFILTER_OFF);
 
         filter_set_global_state('glossary', TEXTFILTER_DISABLED);
-        $systemcontextid = context_system::instance()->id;
+        $systemcontextid = \context_system::instance()->id;
         $active = filter_get_active_state('glossary', $systemcontextid);
         $this->assertEquals($active, TEXTFILTER_DISABLED);
     }
 
-    public function test_filter_get_globally_enabled_default() {
+    public function test_filter_get_globally_enabled_default(): void {
         $this->resetAfterTest();
         $enabledfilters = filter_get_globally_enabled();
         $this->assertArrayNotHasKey('glossary', $enabledfilters);
     }
 
-    public function test_filter_get_globally_enabled_after_change() {
+    public function test_filter_get_globally_enabled_after_change(): void {
         $this->resetAfterTest();
         filter_set_global_state('glossary', TEXTFILTER_ON);
         $enabledfilters = filter_get_globally_enabled();
         $this->assertArrayHasKey('glossary', $enabledfilters);
     }
 
-    public function test_filter_get_globally_enabled_filters_with_config() {
+    public function test_filter_get_globally_enabled_filters_with_config(): void {
         $this->resetAfterTest();
         $this->remove_all_filters_from_config(); // Remove all filters.
         [

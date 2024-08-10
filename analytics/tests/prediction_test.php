@@ -14,21 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for evaluation, training and prediction.
- *
- * NOTE: in order to execute this test using a separate server for the
- *       python ML backend you need to define these variables in your config.php file:
- *
- * define('TEST_MLBACKEND_PYTHON_HOST', '127.0.0.1');
- * define('TEST_MLBACKEND_PYTHON_PORT', 5000);
- * define('TEST_MLBACKEND_PYTHON_USERNAME', 'default');
- * define('TEST_MLBACKEND_PYTHON_PASSWORD', 'sshhhh');
- *
- * @package   core_analytics
- * @copyright 2017 David Monllaó {@link http://www.davidmonllao.com}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core_analytics;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -48,11 +34,19 @@ require_once(__DIR__ . '/../../course/lib.php');
 /**
  * Unit tests for evaluation, training and prediction.
  *
+ * NOTE: in order to execute this test using a separate server for the
+ *       python ML backend you need to define these variables in your config.php file:
+ *
+ * define('TEST_MLBACKEND_PYTHON_HOST', '127.0.0.1');
+ * define('TEST_MLBACKEND_PYTHON_PORT', 5000);
+ * define('TEST_MLBACKEND_PYTHON_USERNAME', 'default');
+ * define('TEST_MLBACKEND_PYTHON_PASSWORD', 'sshhhh');
+ *
  * @package   core_analytics
  * @copyright 2017 David Monllaó {@link http://www.davidmonllao.com}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_analytics_prediction_testcase extends advanced_testcase {
+class prediction_test extends \advanced_testcase {
 
     /**
      * Purge all the mlbackend outputs.
@@ -69,6 +63,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
         foreach ($models as $model) {
             $model->delete();
         }
+        parent::tearDown();
     }
 
     /**
@@ -76,7 +71,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
      *
      * @return void
      */
-    public function test_static_prediction() {
+    public function test_static_prediction(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -129,7 +124,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
     /**
      * test_model_contexts
      */
-    public function test_model_contexts() {
+    public function test_model_contexts(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -189,7 +184,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
      * @return void
      */
     public function test_ml_training_and_prediction($timesplittingid, $predictedrangeindex, $nranges, $predictionsprocessorclass,
-            $forcedconfig) {
+            $forcedconfig): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -364,7 +359,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
      * @param array $forcedconfig
      * @dataProvider provider_ml_processors
      */
-    public function test_ml_export_import($predictionsprocessorclass, $forcedconfig) {
+    public function test_ml_export_import($predictionsprocessorclass, $forcedconfig): void {
         $this->resetAfterTest(true);
 
         $this->set_forced_config($forcedconfig);
@@ -445,7 +440,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
      * @param array $forcedconfig
      * @return void
      */
-    public function test_ml_classifiers_return($success, $nsamples, $classes, $predictionsprocessorclass, $forcedconfig) {
+    public function test_ml_classifiers_return($success, $nsamples, $classes, $predictionsprocessorclass, $forcedconfig): void {
         $this->resetAfterTest();
 
         $this->set_forced_config($forcedconfig);
@@ -536,7 +531,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
      * @throws coding_exception
      * @throws moodle_exception
      */
-    public function test_ml_multi_classifier($timesplittingid, $predictionsprocessorclass, $forcedconfig) {
+    public function test_ml_multi_classifier($timesplittingid, $predictionsprocessorclass, $forcedconfig): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -609,7 +604,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
      * @return void
      */
     public function test_ml_evaluation_configuration($modelquality, $ncourses, $expected, $predictionsprocessorclass,
-            $forcedconfig) {
+            $forcedconfig): void {
         $this->resetAfterTest(true);
 
         $this->set_forced_config($forcedconfig);
@@ -663,7 +658,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
      * @param array $forcedconfig
      * @return null
      */
-    public function test_ml_evaluation_trained_model($predictionsprocessorclass, $forcedconfig) {
+    public function test_ml_evaluation_trained_model($predictionsprocessorclass, $forcedconfig): void {
         $this->resetAfterTest(true);
 
         $this->set_forced_config($forcedconfig);
@@ -697,7 +692,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
      *
      * @return void
      */
-    public function test_read_indicator_calculations() {
+    public function test_read_indicator_calculations(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -717,7 +712,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
     /**
      * test_not_null_samples
      */
-    public function test_not_null_samples() {
+    public function test_not_null_samples(): void {
         $this->resetAfterTest(true);
 
         $timesplitting = \core_analytics\manager::get_time_splitting('\core\analytics\time_splitting\quarters');
@@ -746,7 +741,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
             $samples,
             $ranges
         );
-        $dataset = phpunit_util::call_internal_method($analysis, 'calculate_indicators', $params,
+        $dataset = \phpunit_util::call_internal_method($analysis, 'calculate_indicators', $params,
             '\core_analytics\analysis');
         $this->assertArrayHasKey('123-0', $dataset);
         $this->assertArrayHasKey('123-1', $dataset);
@@ -770,7 +765,7 @@ class core_analytics_prediction_testcase extends advanced_testcase {
             $samples,
             $ranges
         );
-        $dataset = phpunit_util::call_internal_method($analysis, 'calculate_indicators', $params,
+        $dataset = \phpunit_util::call_internal_method($analysis, 'calculate_indicators', $params,
             '\core_analytics\analysis');
         $this->assertArrayNotHasKey('123-0', $dataset);
         $this->assertArrayNotHasKey('123-1', $dataset);

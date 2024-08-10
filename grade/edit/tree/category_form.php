@@ -48,16 +48,8 @@ class edit_category_form extends moodleform {
         $mform->addElement('select', 'aggregation', get_string('aggregation', 'grades'), $this->aggregation_options);
         $mform->addHelpButton('aggregation', 'aggregation', 'grades');
 
-        if ((int)$CFG->grade_aggregation_flag & 2) {
-            $mform->setAdvanced('aggregation');
-        }
-
         $mform->addElement('checkbox', 'aggregateonlygraded', get_string('aggregateonlygraded', 'grades'));
         $mform->addHelpButton('aggregateonlygraded', 'aggregateonlygraded', 'grades');
-
-        if ((int)$CFG->grade_aggregateonlygraded_flag & 2) {
-            $mform->setAdvanced('aggregateonlygraded');
-        }
 
         if (empty($CFG->enableoutcomes)) {
             $mform->addElement('hidden', 'aggregateoutcomes');
@@ -65,25 +57,16 @@ class edit_category_form extends moodleform {
         } else {
             $mform->addElement('checkbox', 'aggregateoutcomes', get_string('aggregateoutcomes', 'grades'));
             $mform->addHelpButton('aggregateoutcomes', 'aggregateoutcomes', 'grades');
-            if ((int)$CFG->grade_aggregateoutcomes_flag & 2) {
-                $mform->setAdvanced('aggregateoutcomes');
-            }
         }
 
         $mform->addElement('text', 'keephigh', get_string('keephigh', 'grades'), 'size="3"');
         $mform->setType('keephigh', PARAM_INT);
         $mform->addHelpButton('keephigh', 'keephigh', 'grades');
-        if ((int)$CFG->grade_keephigh_flag & 2) {
-            $mform->setAdvanced('keephigh');
-        }
 
         $mform->addElement('text', 'droplow', get_string('droplow', 'grades'), 'size="3"');
         $mform->setType('droplow', PARAM_INT);
         $mform->addHelpButton('droplow', 'droplow', 'grades');
         $mform->disabledIf('droplow', 'keephigh', 'noteq', 0);
-        if ((int)$CFG->grade_droplow_flag & 2) {
-            $mform->setAdvanced('droplow');
-        }
 
         $mform->disabledIf('keephigh', 'droplow', 'noteq', 0);
         $mform->disabledIf('droplow', 'keephigh', 'noteq', 0);
@@ -91,10 +74,10 @@ class edit_category_form extends moodleform {
         // Grade item settings
         // Displayed as Category total to avoid confusion between grade items requiring marking and category totals
         $mform->addElement('header', 'general', get_string('categorytotal', 'grades'));
+        $mform->setExpanded('general');
 
         $mform->addElement('text', 'grade_item_itemname', get_string('categorytotalname', 'grades'));
         $mform->setType('grade_item_itemname', PARAM_TEXT);
-        $mform->setAdvanced('grade_item_itemname');
 
         $mform->addElement('text', 'grade_item_iteminfo', get_string('iteminfo', 'grades'));
         $mform->addHelpButton('grade_item_iteminfo', 'iteminfo', 'grades');
@@ -229,7 +212,7 @@ class edit_category_form extends moodleform {
         $mform->addElement('checkbox', 'grade_item_hidden', get_string('hidden', 'grades'));
         $mform->addHelpButton('grade_item_hidden', 'hidden', 'grades');
         $mform->addElement('date_time_selector', 'grade_item_hiddenuntil', get_string('hiddenuntil', 'grades'), array('optional'=>true));
-        $mform->disabledIf('grade_item_hidden', 'grade_item_hiddenuntil[off]', 'notchecked');
+        $mform->disabledIf('grade_item_hidden', 'grade_item_hiddenuntil[enabled]', 'checked');
 
         /// locking
         $mform->addElement('checkbox', 'grade_item_locked', get_string('locked', 'grades'));
@@ -240,6 +223,7 @@ class edit_category_form extends moodleform {
 
 /// parent category related settings
         $mform->addElement('header', 'headerparent', get_string('parentcategory', 'grades'));
+        $mform->setExpanded('headerparent');
 
         $mform->addElement('advcheckbox', 'grade_item_weightoverride', get_string('adjustedweight', 'grades'));
         $mform->addHelpButton('grade_item_weightoverride', 'weightoverride', 'grades');
@@ -277,17 +261,6 @@ class edit_category_form extends moodleform {
         $gpr = $this->_customdata['gpr'];
         $gpr->add_mform_elements($mform);
 
-/// mark advanced according to site settings
-        if (isset($CFG->grade_item_advanced)) {
-            $advanced = explode(',', $CFG->grade_item_advanced);
-            foreach ($advanced as $el) {
-                $el = 'grade_item_'.$el;
-                if ($mform->elementExists($el)) {
-                    $mform->setAdvanced($el);
-                }
-            }
-        }
-
 //-------------------------------------------------------------------------------
         // buttons
         $this->add_action_buttons();
@@ -296,7 +269,6 @@ class edit_category_form extends moodleform {
     }
 
 
-/// tweak the form - depending on existing data
     function definition_after_data() {
         global $CFG, $COURSE;
 
@@ -440,7 +412,12 @@ class edit_category_form extends moodleform {
             $grade_category = grade_category::fetch(array('id'=>$id));
             $grade_item = $grade_category->load_grade_item();
 
-            $mform->setDefault('grade_item_hidden', (int) $grade_item->hidden);
+            // Load appropriate "hidden"/"hidden until" defaults.
+            if ($grade_item->is_hiddenuntil()) {
+                $mform->setDefault('grade_item_hiddenuntil', $grade_item->get_hidden());
+            } else {
+                $mform->setDefault('grade_item_hidden', $grade_item->get_hidden());
+            }
 
             if ($grade_item->is_outcome_item()) {
                 // we have to prevent incompatible modifications of outcomes if outcomes disabled
@@ -529,7 +506,6 @@ class edit_category_form extends moodleform {
         }
     }
 
-/// perform extra validation before submission
     function validation($data, $files) {
         global $COURSE;
         $gradeitem = false;

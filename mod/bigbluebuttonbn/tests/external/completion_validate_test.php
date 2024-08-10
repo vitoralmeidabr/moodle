@@ -16,7 +16,7 @@
 
 namespace mod_bigbluebuttonbn\external;
 
-use external_api;
+use core_external\external_api;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\test\testcase_helper_trait;
 use require_login_exception;
@@ -34,7 +34,7 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @copyright  2021 - present, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Laurent David (laurent@call-learning.fr)
- * @coversDefaultClass \mod_bigbluebuttonbn\external\completion_validate
+ * @covers \mod_bigbluebuttonbn\external\completion_validate
  */
 class completion_validate_test extends \externallib_advanced_testcase {
     use testcase_helper_trait;
@@ -50,7 +50,7 @@ class completion_validate_test extends \externallib_advanced_testcase {
     /**
      * Helper
      *
-     * @param ... $params
+     * @param mixed ...$params
      * @return mixed
      */
     protected function completion_validate(...$params) {
@@ -62,7 +62,8 @@ class completion_validate_test extends \externallib_advanced_testcase {
     /**
      * Test execute API CALL with no instance
      */
-    public function test_execute_no_instance() {
+    public function test_execute_no_instance(): void {
+        $this->resetAfterTest();
         $result = $this->completion_validate(1234);
 
         $this->assertIsArray($result);
@@ -78,7 +79,7 @@ class completion_validate_test extends \externallib_advanced_testcase {
     /**
      * Test execute API CALL without login
      */
-    public function test_execute_without_login() {
+    public function test_execute_without_login(): void {
         $this->resetAfterTest();
 
         $course = $this->getDataGenerator()->create_course();
@@ -91,7 +92,7 @@ class completion_validate_test extends \externallib_advanced_testcase {
     /**
      * Test execute API CALL with invalid login
      */
-    public function test_execute_with_invalid_login() {
+    public function test_execute_with_invalid_login(): void {
         $this->resetAfterTest();
 
         $generator = $this->getDataGenerator();
@@ -108,7 +109,7 @@ class completion_validate_test extends \externallib_advanced_testcase {
     /**
      * When login as a student
      */
-    public function test_execute_with_valid_login_but_student() {
+    public function test_execute_with_valid_login_but_student(): void {
         $this->resetAfterTest();
 
         $generator = $this->getDataGenerator();
@@ -134,7 +135,7 @@ class completion_validate_test extends \externallib_advanced_testcase {
     /**
      * When login as a student
      */
-    public function test_execute_with_valid_login_with_teacher() {
+    public function test_execute_with_valid_login_with_teacher(): void {
         $this->resetAfterTest();
 
         $generator = $this->getDataGenerator();

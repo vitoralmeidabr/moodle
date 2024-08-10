@@ -14,22 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace antivirus_clamav;
+
 /**
  * Tests for ClamAV antivirus scanner class.
  *
  * @package    antivirus_clamav
- * @category   phpunit
+ * @category   test
  * @copyright  2016 Ruslan Kabalin, Lancaster University.
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-class antivirus_clamav_scanner_testcase extends advanced_testcase {
+class scanner_test extends \advanced_testcase {
     /** @var string temporary file used in testing */
     protected $tempfile;
 
     protected function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
 
         // Create tempfile.
@@ -40,9 +40,10 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
 
     protected function tearDown(): void {
         @unlink($this->tempfile);
+        parent::tearDown();
     }
 
-    public function test_scan_file_not_exists() {
+    public function test_scan_file_not_exists(): void {
         $antivirus = $this->getMockBuilder('\antivirus_clamav\scanner')
             ->onlyMethods(array('scan_file_execute_commandline', 'message_admins'))
             ->getMock();
@@ -55,7 +56,7 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
         $this->assertDebuggingCalled();
     }
 
-    public function test_scan_file_no_virus() {
+    public function test_scan_file_no_virus(): void {
         $methods = array(
             'scan_file_execute_commandline',
             'scan_file_execute_socket',
@@ -96,7 +97,7 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
         $this->assertEquals(0, $antivirus->scan_file($this->tempfile, ''));
     }
 
-    public function test_scan_file_virus() {
+    public function test_scan_file_virus(): void {
         $methods = array(
             'scan_file_execute_commandline',
             'scan_file_execute_socket',
@@ -137,7 +138,7 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
         $this->assertEquals(1, $antivirus->scan_file($this->tempfile, ''));
     }
 
-    public function test_scan_file_error_donothing() {
+    public function test_scan_file_error_donothing(): void {
         $methods = array(
             'scan_file_execute_commandline',
             'scan_file_execute_socket',
@@ -184,7 +185,7 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
         $this->assertEquals(2, $antivirus->scan_file($this->tempfile, ''));
     }
 
-    public function test_scan_file_error_actlikevirus() {
+    public function test_scan_file_error_actlikevirus(): void {
         $methods = array(
             'scan_file_execute_commandline',
             'scan_file_execute_socket',
@@ -234,7 +235,7 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
         $this->assertEquals(1, $antivirus->scan_file($this->tempfile, ''));
     }
 
-    public function test_scan_file_error_tryagain() {
+    public function test_scan_file_error_tryagain(): void {
         $methods = array(
                 'scan_file_execute_commandline',
                 'scan_file_execute_unixsocket',
@@ -266,7 +267,7 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
         $this->assertFileDoesNotExist($this->tempfile);
     }
 
-    public function test_scan_data_no_virus() {
+    public function test_scan_data_no_virus(): void {
         $methods = array(
             'scan_data_execute_socket',
             'message_admins',
@@ -300,7 +301,7 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
         $this->assertEquals(0, $antivirus->scan_data(''));
     }
 
-    public function test_scan_data_virus() {
+    public function test_scan_data_virus(): void {
         $methods = array(
             'scan_data_execute_socket',
             'message_admins',
@@ -334,7 +335,7 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
         $this->assertEquals(1, $antivirus->scan_data(''));
     }
 
-    public function test_scan_data_error_donothing() {
+    public function test_scan_data_error_donothing(): void {
         $methods = array(
             'scan_data_execute_socket',
             'message_admins',
@@ -372,7 +373,7 @@ class antivirus_clamav_scanner_testcase extends advanced_testcase {
         $this->assertEquals(2, $antivirus->scan_data(''));
     }
 
-    public function test_scan_data_error_actlikevirus() {
+    public function test_scan_data_error_actlikevirus(): void {
         $methods = array(
             'scan_data_execute_socket',
             'message_admins',

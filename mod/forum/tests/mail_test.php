@@ -14,14 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * The forum module mail generation tests.
- *
- * @package    mod_forum
- * @category   external
- * @copyright  2013 Andrew Nicols
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace mod_forum;
+
+use mod_forum_tests_generator_trait;
+use mod_forum_tests_cron_trait;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -30,7 +26,16 @@ require_once($CFG->dirroot . '/mod/forum/lib.php');
 require_once(__DIR__ . '/cron_trait.php');
 require_once(__DIR__ . '/generator_trait.php');
 
-class mod_forum_mail_testcase extends advanced_testcase {
+/**
+ * The forum module mail generation tests.
+ *
+ * @package    mod_forum
+ * @category   test
+ * @copyright  2013 Andrew Nicols
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ */
+class mail_test extends \advanced_testcase {
     // Make use of the cron tester trait.
     use mod_forum_tests_cron_trait;
 
@@ -47,8 +52,12 @@ class mod_forum_mail_testcase extends advanced_testcase {
      */
     protected $mailsink;
 
+    /** @var \phpunit_event_sink */
+    protected $eventsink;
+
     public function setUp(): void {
         global $CFG;
+        parent::setUp();
 
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
@@ -79,6 +88,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->mailsink->clear();
         $this->mailsink->close();
         unset($this->mailsink);
+        parent::tearDown();
     }
 
     /**
@@ -98,7 +108,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $record->id = $DB->update_record('messageinbound_handlers', $record);
     }
 
-    public function test_cron_message_includes_courseid() {
+    public function test_cron_message_includes_courseid(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -136,7 +146,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($recipient, [$post]);
     }
 
-    public function test_forced_subscription() {
+    public function test_forced_subscription(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -187,7 +197,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Ensure that for a forum with subscription disabled that standard users will not receive posts.
      */
-    public function test_subscription_disabled_standard_users() {
+    public function test_subscription_disabled_standard_users(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -224,7 +234,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Ensure that for a forum with subscription disabled that a user subscribed to the forum will receive the post.
      */
-    public function test_subscription_disabled_user_subscribed_forum() {
+    public function test_subscription_disabled_user_subscribed_forum(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -240,7 +250,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
 
         // A user with the manageactivities capability within the course can subscribe.
         $roleids = $DB->get_records_menu('role', null, '', 'shortname, id');
-        assign_capability('moodle/course:manageactivities', CAP_ALLOW, $roleids['student'], context_course::instance($course->id));
+        assign_capability('moodle/course:manageactivities', CAP_ALLOW, $roleids['student'], \context_course::instance($course->id));
 
         // Suscribe the recipient only.
         \mod_forum\subscriptions::subscribe_user($recipient->id, $forum);
@@ -273,7 +283,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
      * Ensure that for a forum with subscription disabled that a user subscribed to the discussion will receive the
      * post.
      */
-    public function test_subscription_disabled_user_subscribed_discussion() {
+    public function test_subscription_disabled_user_subscribed_discussion(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -289,7 +299,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
 
         // A user with the manageactivities capability within the course can subscribe.
         $roleids = $DB->get_records_menu('role', null, '', 'shortname, id');
-        assign_capability('moodle/course:manageactivities', CAP_ALLOW, $roleids['student'], context_course::instance($course->id));
+        assign_capability('moodle/course:manageactivities', CAP_ALLOW, $roleids['student'], \context_course::instance($course->id));
 
         // Run cron and check that the expected number of users received the notification.
         list($discussion, $post) = $this->helper_post_to_forum($forum, $author);
@@ -317,7 +327,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Ensure that for a forum with automatic subscription that users receive posts.
      */
-    public function test_automatic() {
+    public function test_automatic(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -352,7 +362,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
      * Ensure that private replies are not sent to users with an automatic subscription unless they are an expected
      * recipient.
      */
-    public function test_automatic_with_private_reply() {
+    public function test_automatic_with_private_reply(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -398,7 +408,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($otherstudent, [$post]);
     }
 
-    public function test_optional() {
+    public function test_optional(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -429,7 +439,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($recipient, []);
     }
 
-    public function test_automatic_with_unsubscribed_user() {
+    public function test_automatic_with_unsubscribed_user(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -463,7 +473,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($recipient, [$post]);
     }
 
-    public function test_optional_with_subscribed_user() {
+    public function test_optional_with_subscribed_user(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -497,7 +507,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($recipient, [$post]);
     }
 
-    public function test_automatic_with_unsubscribed_discussion() {
+    public function test_automatic_with_unsubscribed_discussion(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -534,7 +544,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($recipient, [$post]);
     }
 
-    public function test_optional_with_subscribed_discussion() {
+    public function test_optional_with_subscribed_discussion(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -592,7 +602,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($recipient, [$reply]);
     }
 
-    public function test_optional_with_subscribed_discussion_and_post() {
+    public function test_optional_with_subscribed_discussion_and_post(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -638,7 +648,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($recipient, [$reply]);
     }
 
-    public function test_automatic_with_subscribed_discussion_in_unsubscribed_forum() {
+    public function test_automatic_with_subscribed_discussion_in_unsubscribed_forum(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -696,7 +706,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($recipient, [$reply]);
     }
 
-    public function test_optional_with_unsubscribed_discussion_in_subscribed_forum() {
+    public function test_optional_with_unsubscribed_discussion_in_subscribed_forum(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -738,7 +748,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
      * Test that a user unsubscribed from a forum who has subscribed to a discussion, only receives posts made after
      * they subscribed to the discussion.
      */
-    public function test_forum_discussion_subscription_forum_unsubscribed_discussion_subscribed_after_post() {
+    public function test_forum_discussion_subscription_forum_unsubscribed_discussion_subscribed_after_post(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -781,7 +791,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($author, [$reply]);
     }
 
-    public function test_subscription_by_inactive_users() {
+    public function test_subscription_by_inactive_users(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -828,7 +838,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->send_notifications_and_assert($u3, [$post]);
     }
 
-    public function test_forum_message_inbound_multiple_posts() {
+    public function test_forum_message_inbound_multiple_posts(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -891,7 +901,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         }
     }
 
-    public function test_long_subject() {
+    public function test_long_subject(): void {
         $this->resetAfterTest(true);
 
         // Create a course, with a forum.
@@ -919,7 +929,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
         $this->queue_tasks_and_assert($expect);
 
         $this->send_notifications_and_assert($author, [$post]);
-        $messages = $this->messagesink->get_messages();
+        $messages = $this->messagesink->get_messages_by_component('mod_forum');
         $message = reset($messages);
         $this->assertEquals($author->id, $message->useridfrom);
         $this->assertEquals($expectedsubject, $message->subject);
@@ -928,7 +938,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Test inital email and reply email subjects
      */
-    public function test_subjects() {
+    public function test_subjects(): void {
         $this->resetAfterTest(true);
 
         $course = $this->getDataGenerator()->create_course();
@@ -1139,7 +1149,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
      * @dataProvider forum_post_email_templates_provider
      * @param array $data provider samples.
      */
-    public function test_forum_post_email_templates($data) {
+    public function test_forum_post_email_templates($data): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -1187,7 +1197,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
                     $fs = get_file_storage();
                     foreach ($attachments as $attachment) {
                         $filerecord = array(
-                            'contextid' => context_module::instance($forum->cmid)->id,
+                            'contextid' => \context_module::instance($forum->cmid)->id,
                             'component' => 'mod_forum',
                             'filearea'  => 'attachment',
                             'itemid'    => $post->id,
@@ -1270,7 +1280,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Ensure that posts already mailed are not re-sent.
      */
-    public function test_already_mailed() {
+    public function test_already_mailed(): void {
         global $DB;
 
         $this->resetAfterTest(true);
@@ -1299,7 +1309,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Ensure that posts marked mailnow are not suspect to the maxeditingtime.
      */
-    public function test_mailnow() {
+    public function test_mailnow(): void {
         global $CFG, $DB;
 
         // Update the maxeditingtime to 1 day so that posts won't be sent.
@@ -1343,7 +1353,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Ensure that if a user has no permission to view a post, then it is not sent.
      */
-    public function test_access_coursemodule_hidden() {
+    public function test_access_coursemodule_hidden(): void {
         global $CFG, $DB;
 
         $this->resetAfterTest(true);
@@ -1392,7 +1402,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Ensure that if a user loses permission to view a post after it is queued, that it is not sent.
      */
-    public function test_access_coursemodule_hidden_after_queue() {
+    public function test_access_coursemodule_hidden_after_queue(): void {
         global $CFG, $DB;
 
         $this->resetAfterTest(true);
@@ -1443,7 +1453,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Ensure that messages are not sent until the timestart.
      */
-    public function test_access_before_timestart() {
+    public function test_access_before_timestart(): void {
         global $CFG, $DB;
 
         $this->resetAfterTest(true);
@@ -1503,7 +1513,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Ensure that messages are not sent after the timeend.
      */
-    public function test_access_after_timeend() {
+    public function test_access_after_timeend(): void {
         global $CFG, $DB;
 
         $this->resetAfterTest(true);
@@ -1563,7 +1573,7 @@ class mod_forum_mail_testcase extends advanced_testcase {
     /**
      * Test notification comes with customdata.
      */
-    public function test_notification_customdata() {
+    public function test_notification_customdata(): void {
         $this->resetAfterTest(true);
 
         $course = $this->getDataGenerator()->create_course();
@@ -1592,14 +1602,15 @@ class mod_forum_mail_testcase extends advanced_testcase {
 
         $this->send_notifications_and_assert($author, [$post]);
         $this->send_notifications_and_assert($commenter, [$post]);
-        $messages = $this->messagesink->get_messages();
-        $customdata = json_decode($messages[0]->customdata);
+        $messages = $this->messagesink->get_messages_by_component('mod_forum');
+        $messages = reset($messages);
+        $customdata = json_decode($messages->customdata);
         $this->assertEquals($forum->id, $customdata->instance);
         $this->assertEquals($forum->cmid, $customdata->cmid);
         $this->assertEquals($post->id, $customdata->postid);
         $this->assertEquals($discussion->id, $customdata->discussionid);
-        $this->assertObjectHasAttribute('notificationiconurl', $customdata);
-        $this->assertObjectHasAttribute('actionbuttons', $customdata);
+        $this->assertObjectHasProperty('notificationiconurl', $customdata);
+        $this->assertObjectHasProperty('actionbuttons', $customdata);
         $this->assertCount(1, (array) $customdata->actionbuttons);
     }
 }

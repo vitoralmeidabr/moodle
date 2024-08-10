@@ -121,7 +121,9 @@ class course_bin extends base_bin {
         // This hack will be removed once recycle bin switches to use its own backup mode, with
         // own preferences and 100% separate from MOODLE_AUTOMATED.
         // TODO: Remove this as part of MDL-65228.
-        $CFG->forced_plugin_settings['backup'] = ['backup_auto_storage' => 0, 'backup_auto_files' => 1];
+        $forcedbackupsettings = $CFG->forced_plugin_settings['backup'] ?? null;
+        $CFG->forced_plugin_settings['backup']['backup_auto_storage'] = 0;
+        $CFG->forced_plugin_settings['backup']['backup_auto_files'] = 1;
 
         // Backup the activity.
         $user = get_admin();
@@ -133,11 +135,21 @@ class course_bin extends base_bin {
             \backup::MODE_AUTOMATED,
             $user->id
         );
+
+        // When "backup_auto_activities" setting is disabled, activities can't be restored from recycle bin.
+        $plan = $controller->get_plan();
+        $activitiessettings = $plan->get_setting('activities');
+        $settingsvalue = $activitiessettings->get_value();
+        if (empty($settingsvalue)) {
+            $controller->destroy();
+            return;
+        }
+
         $controller->execute_plan();
 
-        // We don't need the forced setting anymore, hence unsetting it.
+        // We don't need the forced setting anymore, hence restore previous settings.
         // TODO: Remove this as part of MDL-65228.
-        unset($CFG->forced_plugin_settings['backup']);
+        $CFG->forced_plugin_settings['backup'] = $forcedbackupsettings;
 
         // Grab the result.
         $result = $controller->get_results();
@@ -234,6 +246,18 @@ class course_bin extends base_bin {
         $fb = get_file_packer('application/vnd.moodle.backup');
         $fb->extract_to_pathname($file, $fulltempdir);
 
+        // As far as recycle bin is using MODE_AUTOMATED, it observes the General restore settings.
+        // For recycle bin we want to ensure that backup files are always restore the users and groups information.
+        // In order to achieve that, we hack the setting here via $CFG->forced_plugin_settings,
+        // so it won't interfere other operations.
+        // See MDL-65218 and MDL-35773 for more information.
+        // This hack will be removed once recycle bin switches to use its own backup mode, with
+        // own preferences and 100% separate from MOODLE_AUTOMATED.
+        // TODO: Remove this as part of MDL-65228.
+        $forcedrestoresettings = $CFG->forced_plugin_settings['restore'] ?? null;
+        $CFG->forced_plugin_settings['restore']['restore_general_users'] = 1;
+        $CFG->forced_plugin_settings['restore']['restore_general_groups'] = 1;
+
         // Define the import.
         $controller = new \restore_controller(
             $tempdir,
@@ -263,6 +287,10 @@ class course_bin extends base_bin {
 
         // Run the import.
         $controller->execute_plan();
+
+        // We don't need the forced setting anymore, hence restore previous settings.
+        // TODO: Remove this as part of MDL-65228.
+        $CFG->forced_plugin_settings['restore'] = $forcedrestoresettings;
 
         // Have finished with the controller, let's destroy it, freeing mem and resources.
         $controller->destroy();

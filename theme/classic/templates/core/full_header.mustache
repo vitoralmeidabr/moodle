@@ -15,7 +15,7 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template theme_classic/header
+    @template core/full_header
 
     This template renders the header.
 
@@ -57,6 +57,12 @@
                 </div>
             </div>
         </div>
-        {{> core/welcome }}
+        {{#welcomemessage}}
+            <div class="card border-0 mt-3">
+                <div class="card-body py-0">
+                    {{> core/welcome }}
+                </div>
+            </div>
+        {{/welcomemessage}}
     </div>
 </header>

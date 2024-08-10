@@ -14,33 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * lock unit tests
- *
- * @package    core
- * @category   lock
- * @copyright  2013 Damyon Wiese
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
+namespace core;
 
 /**
  * Unit tests for our locking configuration.
  *
  * @package    core
- * @category   lock
+ * @category   test
  * @copyright  2013 Damyon Wiese
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class lock_config_testcase extends advanced_testcase {
+class lock_config_test extends \advanced_testcase {
 
     /**
      * Tests the static parse charset method
      * @return void
      */
-    public function test_lock_config() {
+    public function test_lock_config(): void {
         global $CFG;
         $original = null;
         if (isset($CFG->lock_factory)) {
@@ -62,13 +52,16 @@ class lock_config_testcase extends advanced_testcase {
         try {
             $factory = \core\lock\lock_config::get_lock_factory('cache');
             $this->fail('Exception expected');
-        } catch (moodle_exception $ex) {
+        } catch (\moodle_exception $ex) {
             $this->assertInstanceOf('coding_exception', $ex);
         }
 
         // Test explicit file locks.
         $CFG->lock_factory = '\core\lock\file_lock_factory';
         $factory = \core\lock\lock_config::get_lock_factory('cache');
+        if ($factory instanceof \core\lock\timing_wrapper_lock_factory) {
+            $factory = $factory->get_real_factory();
+        }
         $this->assertTrue($factory instanceof \core\lock\file_lock_factory,
                 'Get an explicit file lock factory');
 
@@ -77,13 +70,16 @@ class lock_config_testcase extends advanced_testcase {
         try {
             $factory = \core\lock\lock_config::get_lock_factory('cache');
             $this->fail('Exception expected');
-        } catch (moodle_exception $ex) {
+        } catch (\moodle_exception $ex) {
             $this->assertInstanceOf('coding_exception', $ex);
         }
 
         // Test explicit db locks.
         $CFG->lock_factory = '\core\lock\db_record_lock_factory';
         $factory = \core\lock\lock_config::get_lock_factory('cache');
+        if ($factory instanceof \core\lock\timing_wrapper_lock_factory) {
+            $factory = $factory->get_real_factory();
+        }
         $this->assertTrue($factory instanceof \core\lock\db_record_lock_factory,
                 'Get an explicit db record lock factory');
 

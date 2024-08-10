@@ -31,9 +31,11 @@ class user_repository_test extends \advanced_testcase {
      * Helper to generate a new user instance.
      *
      * @param int $mockresourceid used to spoof a published resource, to which this user is associated.
+     * @param array $userfields user information like city, timezone which would normally come from the tool configuration.
      * @return user a user instance
      */
-    protected function generate_user(int $mockresourceid = 1): user {
+    protected function generate_user(int $mockresourceid = 1, array $userfields = []): user {
+        global $CFG;
         $registration = application_registration::create(
             'Test',
             'a2c94a2c94',
@@ -62,16 +64,35 @@ class user_repository_test extends \advanced_testcase {
             $savedcontext->get_id());
         $savedresourcelink = $resourcelinkrepo->save($resourcelink);
 
-        $user = $this->getDataGenerator()->create_user();
+        // Create a user using the DB defaults to simulate what would have occurred during an auth_lti user auth.
+        $user = $this->getDataGenerator()->create_user([
+            'city' => '',
+            'country' => '',
+            'institution' => '',
+            'timezone' => '99',
+            'maildisplay' => 2,
+            'lang' => 'en'
+        ]);
+
+        $userdefaultvalues = [
+            'lang' => $CFG->lang,
+            'city' => '',
+            'country' => '',
+            'institution' => '',
+            'timezone' => '99',
+            'maildisplay' => 2
+        ];
+        if (empty($userfields)) {
+            // If userfields is omitted, assume the tool default configuration values (as if 'User default values' are unchanged).
+            $userfields = $userdefaultvalues;
+        } else {
+            // If they have been provided, merge and override the defaults.
+            $userfields = array_merge($userdefaultvalues, $userfields);
+        }
         $ltiuser = $savedresourcelink->add_user(
             $user->id,
             'source-id-123',
-            'en',
-            'Perth',
-            'AU',
-            'An Example Institution',
-            '99',
-            2,
+            ...array_values($userfields)
         );
 
         $ltiuser->set_lastgrade(67.33333333);
@@ -140,19 +161,45 @@ class user_repository_test extends \advanced_testcase {
     }
 
     /**
-     * Tests adding a user to the store.
+     * Tests adding a user to the store, assuming that the user has been created using the default 'user default values'.
      *
      * @covers ::save
      */
-    public function test_save_new() {
+    public function test_save_new_unchanged_user_defaults(): void {
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
+        $sink = $this->redirectEvents();
         $saveduser = $userrepo->save($user);
+        $events = $sink->get_events();
+        $sink->close();
 
         $this->assertIsInt($saveduser->get_id());
         $this->assert_same_user_values($user, $saveduser, true);
         $this->assert_user_db_values($saveduser);
+        // No change to underlying user: city, etc. take on default values matching those of the existing user record.
+        $this->assertEmpty($events);
+    }
+
+    /**
+     * Tests adding a user to the store, assuming that the user has been created using modified 'user default values'.
+     *
+     * @covers ::save
+     */
+    public function test_save_new_changed_user_defaults(): void {
+        $this->resetAfterTest();
+        $user = $this->generate_user(1, ['city' => 'Perth']);
+        $userrepo = new user_repository();
+        $sink = $this->redirectEvents();
+        $saveduser = $userrepo->save($user);
+        $events = $sink->get_events();
+        $sink->close();
+
+        $this->assertIsInt($saveduser->get_id());
+        $this->assert_same_user_values($user, $saveduser, true);
+        $this->assert_user_db_values($saveduser);
+        // The underlying user record will change: city ('Perth') differs from that of the existing user ('').
+        $this->assertInstanceOf(\core\event\user_updated::class, $events[0]);
     }
 
     /**
@@ -160,20 +207,29 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::save
      */
-    public function test_save_existing() {
+    public function test_save_existing(): void {
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
+        $sink = $this->redirectEvents();
         $saveduser = $userrepo->save($user);
+        $events = $sink->get_events();
+        $sink->close();
+        $this->assertEmpty($events); // No event for the first save, since the underlying user record is unchanged.
 
         $saveduser->set_city('New City');
         $saveduser->set_country('NZ');
         $saveduser->set_lastgrade(99.99999999);
+        $sink = $this->redirectEvents();
         $saveduser2 = $userrepo->save($saveduser);
+        $events = $sink->get_events();
+        $sink->close();
 
         $this->assertEquals($saveduser->get_id(), $saveduser2->get_id());
         $this->assert_same_user_values($saveduser, $saveduser2, true);
         $this->assert_user_db_values($saveduser2);
+        // The underlying user record will change now, since city and country have changed.
+        $this->assertInstanceOf(\core\event\user_updated::class, $events[0]);
     }
 
     /**
@@ -181,7 +237,7 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::save
      */
-    public function test_save_existing_localid_mismatch() {
+    public function test_save_existing_localid_mismatch(): void {
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
@@ -214,7 +270,8 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::save
      */
-    public function test_save_stale_id() {
+    public function test_save_stale_id(): void {
+        global $CFG;
         $this->resetAfterTest();
         $instructoruser = $this->getDataGenerator()->create_user();
         $userrepo = new user_repository();
@@ -223,7 +280,7 @@ class user_repository_test extends \advanced_testcase {
             $instructoruser->id,
             5,
             'source-id-123',
-            'en',
+            $CFG->lang,
             '99',
             '',
             '',
@@ -245,7 +302,7 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::save
      */
-    public function test_save_uniqueness_constraint() {
+    public function test_save_uniqueness_constraint(): void {
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
@@ -261,7 +318,7 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::find
      */
-    public function test_find() {
+    public function test_find(): void {
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
@@ -279,7 +336,8 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::find_by_resource
      */
-    public function test_find_by_resource() {
+    public function test_find_by_resource(): void {
+        global $CFG;
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
@@ -291,7 +349,7 @@ class user_repository_test extends \advanced_testcase {
             $instructoruser->id,
             $saveduser->get_deploymentid(),
             'another-user-123',
-            'en',
+            $CFG->lang,
             '99',
             'Perth',
             'AU',
@@ -313,7 +371,8 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::find_by_resource_link
      */
-    public function test_find_by_resource_link() {
+    public function test_find_by_resource_link(): void {
+        global $CFG;
         $this->resetAfterTest();
         $user = $this->generate_user();
         $user->set_resourcelinkid(33);
@@ -326,7 +385,7 @@ class user_repository_test extends \advanced_testcase {
             $instructoruser->id,
             $saveduser->get_deploymentid(),
             'another-user-123',
-            'en',
+            $CFG->lang,
             '99',
             'Perth',
             'AU',
@@ -351,7 +410,7 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::exists
      */
-    public function test_exists() {
+    public function test_exists(): void {
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
@@ -366,7 +425,7 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::delete
      */
-    public function test_delete() {
+    public function test_delete(): void {
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
@@ -389,7 +448,8 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::delete_by_deployment
      */
-    public function test_delete_by_deployment() {
+    public function test_delete_by_deployment(): void {
+        global $CFG;
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
@@ -402,7 +462,7 @@ class user_repository_test extends \advanced_testcase {
             $instructoruser->id,
             $saveduser->get_deploymentid(),
             'another-user-123',
-            'en',
+            $CFG->lang,
             '99',
             'Perth',
             'AU',
@@ -415,7 +475,7 @@ class user_repository_test extends \advanced_testcase {
             $instructor2user->id,
             $saveduser->get_deploymentid() + 1,
             'another-user-678',
-            'en',
+            $CFG->lang,
             '99',
             'Melbourne',
             'AU',
@@ -437,7 +497,7 @@ class user_repository_test extends \advanced_testcase {
      *
      * @covers ::save
      */
-    public function test_save_deleted() {
+    public function test_save_deleted(): void {
         $this->resetAfterTest();
         $user = $this->generate_user();
         $userrepo = new user_repository();
@@ -449,5 +509,44 @@ class user_repository_test extends \advanced_testcase {
         $saveduser2 = $userrepo->save($user);
         $this->assertEquals($saveduser->get_localid(), $saveduser2->get_localid());
         $this->assertNotEquals($saveduser->get_id(), $saveduser2->get_id());
+    }
+
+    /**
+     * Test confirming that any associated legacy lti user records are not returned by the repository.
+     *
+     * This test ensures that any enrolment methods (resources) updated in-place from legacy LTI to 1.3 only return LTI 1.3 users.
+     *
+     * @covers ::find
+     * @covers ::find_single_user_by_resource
+     * @covers ::find_by_resource
+     */
+    public function test_find_filters_legacy_lti_users(): void {
+        $this->resetAfterTest();
+        global $DB;
+        $user = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+        $resource = $this->getDataGenerator()->create_lti_tool((object)['courseid' => $course->id]);
+        $ltiuserdata = [
+            'userid' => $user->id,
+            'toolid' => $resource->id,
+            'sourceid' => '1001',
+        ];
+        $ltiuserid = $DB->insert_record('enrol_lti_users', $ltiuserdata);
+        $userrepo = new user_repository();
+
+        $this->assertNull($userrepo->find($ltiuserid));
+        $this->assertNull($userrepo->find_single_user_by_resource($user->id, $resource->id));
+        $this->assertEmpty($userrepo->find_by_resource($resource->id));
+
+        // Set deploymentid, indicating the user originated from an LTI 1.3 launch and should now be returned.
+        $ltiuserdata['id'] = $ltiuserid;
+        $ltiuserdata['ltideploymentid'] = '234';
+        $DB->update_record('enrol_lti_users', $ltiuserdata);
+
+        $this->assertInstanceOf(user::class, $userrepo->find($ltiuserid));
+        $this->assertInstanceOf(user::class, $userrepo->find_single_user_by_resource($user->id, $resource->id));
+        $ltiusers = $userrepo->find_by_resource($resource->id);
+        $this->assertCount(1, $ltiusers);
+        $this->assertInstanceOf(user::class, reset($ltiusers));
     }
 }

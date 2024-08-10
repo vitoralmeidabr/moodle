@@ -14,16 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Persistent class tests.
- *
- * @package    core
- * @copyright  2015 Frédéric Massart - FMCorz.net
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core;
 
-defined('MOODLE_INTERNAL') || die();
-global $CFG;
+use advanced_testcase;
+use coding_exception;
+use dml_missing_record_exception;
+use lang_string;
+use xmldb_table;
 
 /**
  * Persistent testcase.
@@ -31,10 +28,12 @@ global $CFG;
  * @package    core
  * @copyright  2015 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \core\persistent
  */
-class core_persistent_testcase extends advanced_testcase {
+class persistent_test extends advanced_testcase {
 
     public function setUp(): void {
+        parent::setUp();
         $this->make_persistent_table();
         $this->make_second_persistent_table();
         $this->resetAfterTest();
@@ -99,7 +98,7 @@ class core_persistent_testcase extends advanced_testcase {
         $dbman->create_table($table);
     }
 
-    public function test_properties_definition() {
+    public function test_properties_definition(): void {
         $expected = array(
             'shortname' => array(
                 'type' => PARAM_TEXT,
@@ -165,7 +164,47 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($expected, core_testable_persistent::properties_definition());
     }
 
-    public function test_to_record() {
+    /**
+     * Test filtering record properties returns only those defined by the persistent
+     */
+    public function test_properties_filter(): void {
+        $result = core_testable_persistent::properties_filter((object) [
+            'idnumber' => '123',
+            'sortorder' => 1,
+            'invalidparam' => 'abc',
+        ]);
+
+        // We should get back all data except invalid param.
+        $this->assertEquals([
+            'idnumber' => '123',
+            'sortorder' => 1,
+        ], $result);
+    }
+
+    /**
+     * Test creating persistent instance by specifying record ID in constructor
+     */
+    public function test_constructor(): void {
+        $persistent = (new core_testable_persistent(0, (object) [
+            'idnumber' => '123',
+            'sortorder' => 1,
+        ]))->create();
+
+        // Now create a new instance, passing the original instance ID in the constructor.
+        $another = new core_testable_persistent($persistent->get('id'));
+        $this->assertEquals($another->to_record(), $persistent->to_record());
+    }
+
+    /**
+     * Test creating persistent instance by specifying non-existing record ID in constructor throws appropriate exception
+     */
+    public function test_constructor_invalid(): void {
+        $this->expectException(dml_missing_record_exception::class);
+        $this->expectExceptionMessage('Can\'t find data record in database table phpunit_persistent.');
+        new core_testable_persistent(42);
+    }
+
+    public function test_to_record(): void {
         $p = new core_testable_persistent();
         $expected = (object) array(
             'shortname' => '',
@@ -184,7 +223,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($expected, $p->to_record());
     }
 
-    public function test_from_record() {
+    public function test_from_record(): void {
         $p = new core_testable_persistent();
         $data = (object) array(
             'shortname' => 'ddd',
@@ -204,7 +243,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($data, $p->to_record());
     }
 
-    public function test_from_record_invalid_param() {
+    public function test_from_record_invalid_param(): void {
         $p = new core_testable_persistent();
         $data = (object) array(
             'shortname' => 'ddd',
@@ -229,7 +268,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($data, $p->to_record());
     }
 
-    public function test_validate() {
+    public function test_validate(): void {
         $data = (object) array(
             'idnumber' => 'abc',
             'sortorder' => 0
@@ -250,7 +289,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($expected, $p->get_errors());
     }
 
-    public function test_validation_required() {
+    public function test_validation_required(): void {
         $data = (object) array(
             'idnumber' => 'abc'
         );
@@ -262,7 +301,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($expected, $p->get_errors());
     }
 
-    public function test_validation_custom() {
+    public function test_validation_custom(): void {
         $data = (object) array(
             'idnumber' => 'abc',
             'sortorder' => 10,
@@ -275,7 +314,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($expected, $p->get_errors());
     }
 
-    public function test_validation_custom_message() {
+    public function test_validation_custom_message(): void {
         $data = (object) array(
             'idnumber' => 'abc',
             'sortorder' => 'abc',
@@ -288,7 +327,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($expected, $p->get_errors());
     }
 
-    public function test_validation_choices() {
+    public function test_validation_choices(): void {
         $data = (object) array(
             'idnumber' => 'abc',
             'sortorder' => 0,
@@ -302,7 +341,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($expected, $p->get_errors());
     }
 
-    public function test_validation_type() {
+    public function test_validation_type(): void {
         $data = (object) array(
             'idnumber' => 'abc',
             'sortorder' => 'NaN'
@@ -312,7 +351,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertArrayHasKey('sortorder', $p->get_errors());
     }
 
-    public function test_validation_null() {
+    public function test_validation_null(): void {
         $data = (object) array(
             'idnumber' => null,
             'sortorder' => 0,
@@ -331,7 +370,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertArrayNotHasKey('scaleid', $p->get_errors());
     }
 
-    public function test_create() {
+    public function test_create(): void {
         global $DB;
         $p = new core_testable_persistent(0, (object) array('sortorder' => 123, 'idnumber' => 'abc'));
         $this->assertFalse(isset($p->beforecreate));
@@ -347,7 +386,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertTrue($p->is_valid()); // Should always be valid after a create.
     }
 
-    public function test_update() {
+    public function test_update(): void {
         global $DB;
         $p = new core_testable_persistent(0, (object) array('sortorder' => 123, 'idnumber' => 'abc'));
         $p->create();
@@ -391,7 +430,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals(1, $record->sortorder);
     }
 
-    public function test_save() {
+    public function test_save(): void {
         global $DB;
         $p = new core_testable_persistent(0, (object) array('sortorder' => 123, 'idnumber' => 'abc'));
         $this->assertFalse(isset($p->beforecreate));
@@ -493,7 +532,7 @@ class core_persistent_testcase extends advanced_testcase {
         $persistent->set_many(['invalid' => 'stuff']);
     }
 
-    public function test_read() {
+    public function test_read(): void {
         $p = new core_testable_persistent(0, (object) array('sortorder' => 123, 'idnumber' => 'abc'));
         $p->create();
         unset($p->beforevalidate);
@@ -509,7 +548,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($p, $p3);
     }
 
-    public function test_delete() {
+    public function test_delete(): void {
         global $DB;
 
         $p = new core_testable_persistent(0, (object) array('sortorder' => 123, 'idnumber' => 'abc'));
@@ -526,12 +565,12 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals(true, $p->afterdelete);
     }
 
-    public function test_has_property() {
+    public function test_has_property(): void {
         $this->assertFalse(core_testable_persistent::has_property('unknown'));
         $this->assertTrue(core_testable_persistent::has_property('idnumber'));
     }
 
-    public function test_custom_setter_getter() {
+    public function test_custom_setter_getter(): void {
         global $DB;
 
         $path = array(1, 2, 3);
@@ -547,7 +586,40 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($json, $record->path);
     }
 
-    public function test_record_exists() {
+    /**
+     * Test get_record method for creating persistent instance
+     */
+    public function test_get_record(): void {
+        $persistent = (new core_testable_persistent(0, (object) [
+            'idnumber' => '123',
+            'sortorder' => 1,
+        ]))->create();
+
+        $another = core_testable_persistent::get_record(['id' => $persistent->get('id')]);
+
+        // Assert we got back a persistent instance, and it matches original.
+        $this->assertInstanceOf(core_testable_persistent::class, $another);
+        $this->assertEquals($another->to_record(), $persistent->to_record());
+    }
+
+    /**
+     * Test get_record method for creating persistent instance, ignoring a non-existing record
+     */
+    public function test_get_record_ignore_missing(): void {
+        $persistent = core_testable_persistent::get_record(['id' => 42]);
+        $this->assertFalse($persistent);
+    }
+
+    /**
+     * Test get_record method for creating persistent instance, throws appropriate exception for non-existing record
+     */
+    public function test_get_record_must_exist(): void {
+        $this->expectException(dml_missing_record_exception::class);
+        $this->expectExceptionMessage('Can\'t find data record in database table phpunit_persistent.');
+        core_testable_persistent::get_record(['id' => 42], MUST_EXIST);
+    }
+
+    public function test_record_exists(): void {
         global $DB;
         $this->assertFalse($DB->record_exists(core_testable_persistent::TABLE, array('idnumber' => 'abc')));
         $p = new core_testable_persistent(0, (object) array('sortorder' => 123, 'idnumber' => 'abc'));
@@ -559,7 +631,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertFalse(core_testable_persistent::record_exists($id));
     }
 
-    public function test_get_sql_fields() {
+    public function test_get_sql_fields(): void {
         $expected = '' .
             'c.id AS prefix_id, ' .
             'c.shortname AS prefix_shortname, ' .
@@ -576,7 +648,7 @@ class core_persistent_testcase extends advanced_testcase {
         $this->assertEquals($expected, core_testable_persistent::get_sql_fields('c', 'prefix_'));
     }
 
-    public function test_get_sql_fields_too_long() {
+    public function test_get_sql_fields_too_long(): void {
         $this->expectException(coding_exception::class);
         $this->expectExceptionMessageMatches('/The alias .+ exceeds 30 characters/');
         core_testable_persistent::get_sql_fields('c');
@@ -625,9 +697,30 @@ class core_persistent_testcase extends advanced_testcase {
  * @copyright  2015 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_testable_persistent extends \core\persistent {
+class core_testable_persistent extends persistent {
 
     const TABLE = 'phpunit_persistent';
+
+    /** @var bool before validate status. */
+    public ?bool $beforevalidate;
+
+    /** @var bool before create status. */
+    public ?bool $beforecreate;
+
+    /** @var bool before update status. */
+    public ?bool $beforeupdate;
+
+    /** @var bool before delete status. */
+    public ?bool $beforedelete;
+
+    /** @var bool after create status. */
+    public ?bool $aftercreate;
+
+    /** @var bool after update status. */
+    public ?bool $afterupdate;
+
+    /** @var bool after delete status. */
+    public ?bool $afterdelete;
 
     protected static function define_properties() {
         return array(
@@ -726,7 +819,7 @@ class core_testable_persistent extends \core\persistent {
  * @copyright  2021 David Matamoros <davidmc@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_testable_second_persistent extends \core\persistent {
+class core_testable_second_persistent extends persistent {
 
     /** Table name for the persistent. */
     const TABLE = 'phpunit_second_persistent';

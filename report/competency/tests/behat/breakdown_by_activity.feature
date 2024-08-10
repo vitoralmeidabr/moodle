@@ -42,14 +42,14 @@ Feature: See the competencies for an activity
     And I select "Test-Comp2" of the competency tree
     And I click on "Add" "button" in the "Competency picker" "dialogue"
     And I am on the PageName1 "page activity editing" page
-    And I follow "Expand all"
+    And I click on "Expand all" "link" in the "region-main" "region"
     And I set the field "Course competencies" to "Test-Comp1"
     And I press "Save and return to course"
 
   @javascript
   Scenario: Go to the competency breakdown report
     When I navigate to "Reports" in current page administration
-    And I select "Competency breakdown" from the "Report type" singleselect
+    And I click on "Competency breakdown" "link"
     And I set the field "Filter competencies by resource or activity" to "PageName1"
     Then I should see "Test-Comp1"
     And I should not see "Test-Comp2"
@@ -65,3 +65,10 @@ Feature: See the competencies for an activity
     And I click on "PageName1" "autocomplete_selection"
     And I should see "Test-Comp1"
     And I should see "Test-Comp2"
+
+  @accessibility
+  Scenario: Evaluate the accessibility of the user competency summary dialogue
+    Given I navigate to "Reports" in current page administration
+    When I click on "Competency breakdown" "link"
+    And I click on "Not rated" "link"
+    And the page should meet accessibility standards

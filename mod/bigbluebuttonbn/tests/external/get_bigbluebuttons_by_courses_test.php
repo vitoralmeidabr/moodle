@@ -16,7 +16,7 @@
 
 namespace mod_bigbluebuttonbn\external;
 
-use external_api;
+use core_external\external_api;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\test\testcase_helper_trait;
 use moodle_exception;
@@ -34,7 +34,7 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @copyright  2021 - present, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Laurent David (laurent@call-learning.fr)
- * @coversDefaultClass \mod_bigbluebuttonbn\external\get_bigbluebuttonbns_by_courses
+ * @covers \mod_bigbluebuttonbn\external\get_bigbluebuttonbns_by_courses
  */
 class get_bigbluebuttons_by_courses_test extends \externallib_advanced_testcase {
     use testcase_helper_trait;
@@ -50,7 +50,7 @@ class get_bigbluebuttons_by_courses_test extends \externallib_advanced_testcase 
     /**
      * Helper
      *
-     * @param ... $params
+     * @param mixed ...$params
      * @return mixed
      */
     protected function get_bigbluebuttons_by_courses(...$params) {
@@ -62,7 +62,8 @@ class get_bigbluebuttons_by_courses_test extends \externallib_advanced_testcase 
     /**
      * Test execute API CALL with no instance
      */
-    public function test_execute_no_instance() {
+    public function test_execute_no_instance(): void {
+        $this->resetAfterTest();
         $bbbactivities = $this->get_bigbluebuttons_by_courses([1234, 5678]);
 
         $this->assertIsArray($bbbactivities);
@@ -74,7 +75,7 @@ class get_bigbluebuttons_by_courses_test extends \externallib_advanced_testcase 
     /**
      * Test execute API CALL without login
      */
-    public function test_execute_without_login() {
+    public function test_execute_without_login(): void {
         $this->resetAfterTest();
 
         $course = $this->getDataGenerator()->create_course();
@@ -88,7 +89,7 @@ class get_bigbluebuttons_by_courses_test extends \externallib_advanced_testcase 
     /**
      * Test execute API CALL with invalid login
      */
-    public function test_execute_with_invalid_login() {
+    public function test_execute_with_invalid_login(): void {
         $this->resetAfterTest();
 
         $generator = $this->getDataGenerator();
@@ -106,7 +107,7 @@ class get_bigbluebuttons_by_courses_test extends \externallib_advanced_testcase 
     /**
      * Test get bbbactivities
      */
-    public function test_execute_with_valid_login() {
+    public function test_execute_with_valid_login(): void {
         $this->resetAfterTest(true);
         $generator = $this->getDataGenerator();
 

@@ -14,13 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * format_weeks related unit tests
- *
- * @package    format_weeks
- * @copyright  2015 Marina Glancy
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace format_weeks;
+
+use core_external\external_api;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -33,13 +29,14 @@ require_once($CFG->dirroot . '/course/lib.php');
  * @package    format_weeks
  * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \format_weeks
  */
-class format_weeks_testcase extends advanced_testcase {
+class format_weeks_test extends \advanced_testcase {
 
     /**
      * Tests for format_weeks::get_section_name method with default section names.
      */
-    public function test_get_section_name() {
+    public function test_get_section_name(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -63,7 +60,7 @@ class format_weeks_testcase extends advanced_testcase {
     /**
      * Tests for format_weeks::get_section_name method with modified section names.
      */
-    public function test_get_section_name_customised() {
+    public function test_get_section_name_customised(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -95,7 +92,7 @@ class format_weeks_testcase extends advanced_testcase {
     /**
      * Tests for format_weeks::get_default_section_name.
      */
-    public function test_get_default_section_name() {
+    public function test_get_default_section_name(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -130,7 +127,7 @@ class format_weeks_testcase extends advanced_testcase {
     /**
      * Test web service updating section name
      */
-    public function test_update_inplace_editable() {
+    public function test_update_inplace_editable(): void {
         global $CFG, $DB, $PAGE;
         require_once($CFG->dirroot . '/lib/external/externallib.php');
 
@@ -143,9 +140,9 @@ class format_weeks_testcase extends advanced_testcase {
 
         // Call webservice without necessary permissions.
         try {
-            core_external::update_inplace_editable('format_weeks', 'sectionname', $section->id, 'New section name');
+            \core_external::update_inplace_editable('format_weeks', 'sectionname', $section->id, 'New section name');
             $this->fail('Exception expected');
-        } catch (moodle_exception $e) {
+        } catch (\moodle_exception $e) {
             $this->assertEquals('Course or activity not accessible. (Not enrolled)',
                     $e->getMessage());
         }
@@ -154,8 +151,8 @@ class format_weeks_testcase extends advanced_testcase {
         $teacherrole = $DB->get_record('role', array('shortname' => 'editingteacher'));
         $this->getDataGenerator()->enrol_user($user->id, $course->id, $teacherrole->id);
 
-        $res = core_external::update_inplace_editable('format_weeks', 'sectionname', $section->id, 'New section name');
-        $res = external_api::clean_returnvalue(core_external::update_inplace_editable_returns(), $res);
+        $res = \core_external::update_inplace_editable('format_weeks', 'sectionname', $section->id, 'New section name');
+        $res = external_api::clean_returnvalue(\core_external::update_inplace_editable_returns(), $res);
         $this->assertEquals('New section name', $res['value']);
         $this->assertEquals('New section name', $DB->get_field('course_sections', 'name', array('id' => $section->id)));
     }
@@ -163,7 +160,7 @@ class format_weeks_testcase extends advanced_testcase {
     /**
      * Test callback updating section name
      */
-    public function test_inplace_editable() {
+    public function test_inplace_editable(): void {
         global $CFG, $DB, $PAGE;
 
         $this->resetAfterTest();
@@ -187,7 +184,7 @@ class format_weeks_testcase extends advanced_testcase {
         try {
             $tmpl = component_callback('format_topics', 'inplace_editable', array('sectionname', $section->id, 'New name'));
             $this->fail('Exception expected');
-        } catch (moodle_exception $e) {
+        } catch (\moodle_exception $e) {
             $this->assertEquals(1, preg_match('/^Can\'t find data record in database/', $e->getMessage()));
         }
     }
@@ -197,7 +194,7 @@ class format_weeks_testcase extends advanced_testcase {
      *
      * @return void
      */
-    public function test_default_course_enddate() {
+    public function test_default_course_enddate(): void {
         global $CFG, $DB, $PAGE;
 
         $this->resetAfterTest(true);
@@ -214,32 +211,32 @@ class format_weeks_testcase extends advanced_testcase {
             'course' => $course,
             'category' => $category,
             'editoroptions' => [
-                'context' => context_course::instance($course->id),
+                'context' => \context_course::instance($course->id),
                 'subdirs' => 0
             ],
-            'returnto' => new moodle_url('/'),
-            'returnurl' => new moodle_url('/'),
+            'returnto' => new \moodle_url('/'),
+            'returnurl' => new \moodle_url('/'),
         ];
 
         $PAGE->set_course($course);
-        $courseform = new testable_course_edit_form(null, $args);
+        $courseform = new \testable_course_edit_form(null, $args);
         $courseform->definition_after_data();
 
-        // format_weeks::get_section_dates is adding 2h to avoid DST problems, we need to replicate it here.
-        $enddate = $params['startdate'] + (WEEKSECS * $params['numsections']) + 7200;
+        // Calculate the expected end date.
+        $enddate = $params['startdate'] + (WEEKSECS * $params['numsections']);
 
         $weeksformat = course_get_format($course->id);
         $this->assertEquals($enddate, $weeksformat->get_default_course_enddate($courseform->get_quick_form()));
     }
 
     /**
-     * Test for get_view_url() to ensure that the url is only given for the correct cases
+     * Test for get_view_url().
+     *
+     * @covers ::get_view_url
      */
-    public function test_get_view_url() {
+    public function test_get_view_url(): void {
         global $CFG;
         $this->resetAfterTest();
-
-        $linkcoursesections = $CFG->linkcoursesections;
 
         // Generate a course with two sections (0 and 1) and two modules.
         $generator = $this->getDataGenerator();
@@ -251,22 +248,34 @@ class format_weeks_testcase extends advanced_testcase {
         $format->update_course_format_options($data);
 
         // In page.
-        $CFG->linkcoursesections = 0;
-        $this->assertNotEmpty($format->get_view_url(null));
-        $this->assertNotEmpty($format->get_view_url(0));
-        $this->assertNotEmpty($format->get_view_url(1));
-        $CFG->linkcoursesections = 1;
         $this->assertNotEmpty($format->get_view_url(null));
         $this->assertNotEmpty($format->get_view_url(0));
         $this->assertNotEmpty($format->get_view_url(1));
 
         // Navigation.
-        $CFG->linkcoursesections = 0;
-        $this->assertNull($format->get_view_url(1, ['navigation' => 1]));
-        $this->assertNull($format->get_view_url(0, ['navigation' => 1]));
-        $CFG->linkcoursesections = 1;
-        $this->assertNotEmpty($format->get_view_url(1, ['navigation' => 1]));
-        $this->assertNotEmpty($format->get_view_url(0, ['navigation' => 1]));
+        $this->assertStringContainsString('course/view.php', $format->get_view_url(0));
+        $this->assertStringContainsString('course/view.php', $format->get_view_url(1));
+        $this->assertStringContainsString('course/section.php', $format->get_view_url(0, ['navigation' => 1]));
+        $this->assertStringContainsString('course/section.php', $format->get_view_url(1, ['navigation' => 1]));
+        // When sr parameter is defined, the section.php page should be returned.
+        $this->assertStringContainsString('course/section.php', $format->get_view_url(0, ['sr' => 1]));
+        $this->assertStringContainsString('course/section.php', $format->get_view_url(1, ['sr' => 1]));
+        $this->assertStringContainsString('course/section.php', $format->get_view_url(0, ['sr' => 0]));
+        $this->assertStringContainsString('course/section.php', $format->get_view_url(1, ['sr' => 0]));
     }
 
+    /**
+     * Test get_required_jsfiles().
+     *
+     * @covers ::get_required_jsfiles
+     */
+    public function test_get_required_jsfiles(): void {
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+
+        $course = $generator->create_course(['format' => 'weeks']);
+        $format = course_get_format($course);
+        $this->assertEmpty($format->get_required_jsfiles());
+    }
 }

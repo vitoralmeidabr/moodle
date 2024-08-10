@@ -14,18 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Contains the class containing unit tests for the calendar lib.
- *
- * @package    core_calendar
- * @copyright  2017 Mark Nelson <markn@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace core_calendar;
-
-defined('MOODLE_INTERNAL') || die();
-
-require_once(__DIR__ . '/helpers.php');
 
 /**
  * Class contaning unit tests for the calendar lib.
@@ -37,16 +26,27 @@ require_once(__DIR__ . '/helpers.php');
 class lib_test extends \advanced_testcase {
 
     /**
+     * Load required test libraries
+     */
+    public static function setUpBeforeClass(): void {
+        global $CFG;
+
+        require_once("{$CFG->dirroot}/calendar/tests/helpers.php");
+        parent::setUpBeforeClass();
+    }
+
+    /**
      * Tests set up
      */
     protected function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
     }
 
     /**
      * Test that the get_events() function only returns activity events that are enabled.
      */
-    public function test_get_events_with_disabled_module() {
+    public function test_get_events_with_disabled_module(): void {
         global $DB;
         $this->setAdminUser();
         $generator = $this->getDataGenerator();
@@ -108,7 +108,7 @@ class lib_test extends \advanced_testcase {
         $this->assertEquals('assign', $event->modulename);
     }
 
-    public function test_get_course_cached() {
+    public function test_get_course_cached(): void {
         // Setup some test courses.
         $course1 = $this->getDataGenerator()->create_course();
         $course2 = $this->getDataGenerator()->create_course();
@@ -143,7 +143,7 @@ class lib_test extends \advanced_testcase {
     /**
      * Test the update_subscription() function.
      */
-    public function test_update_subscription() {
+    public function test_update_subscription(): void {
         $this->resetAfterTest(true);
 
         $subscription = new \stdClass();
@@ -171,7 +171,7 @@ class lib_test extends \advanced_testcase {
         calendar_update_subscription($subscription);
     }
 
-    public function test_add_subscription() {
+    public function test_add_subscription(): void {
         global $DB, $CFG;
 
         require_once($CFG->dirroot . '/lib/bennu/bennu.inc.php');
@@ -255,7 +255,7 @@ class lib_test extends \advanced_testcase {
     /**
      * Test for calendar_get_legacy_events() when there are user and group overrides.
      */
-    public function test_get_legacy_events_with_overrides() {
+    public function test_get_legacy_events_with_overrides(): void {
         $generator = $this->getDataGenerator();
 
         $course = $generator->create_course();
@@ -441,7 +441,7 @@ class lib_test extends \advanced_testcase {
         $this->assertCount(3, $events);
     }
 
-    public function test_calendar_get_default_courses() {
+    public function test_calendar_get_default_courses(): void {
         global $USER, $CFG;
 
         $this->resetAfterTest(true);
@@ -521,7 +521,7 @@ class lib_test extends \advanced_testcase {
      * Confirm that the skip events flag causes the calendar_get_view function
      * to avoid querying for the calendar events.
      */
-    public function test_calendar_get_view_skip_events() {
+    public function test_calendar_get_view_skip_events(): void {
         $this->resetAfterTest(true);
         $this->setAdminUser();
 
@@ -546,7 +546,7 @@ class lib_test extends \advanced_testcase {
         $this->assertEquals($event->id, $data->events[0]->id);
     }
 
-    public function test_calendar_get_allowed_event_types_course() {
+    public function test_calendar_get_allowed_event_types_course(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course1 = $generator->create_course(); // Has capability.
@@ -597,7 +597,7 @@ class lib_test extends \advanced_testcase {
         $this->assertFalse($types['course']);
     }
 
-    public function test_calendar_get_allowed_event_types_group_no_acces_to_diff_groups() {
+    public function test_calendar_get_allowed_event_types_group_no_acces_to_diff_groups(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course = $generator->create_course();
@@ -624,7 +624,7 @@ class lib_test extends \advanced_testcase {
         $this->assertFalse($types['group']);
     }
 
-    public function test_calendar_get_allowed_event_types_group_no_groups() {
+    public function test_calendar_get_allowed_event_types_group_no_groups(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course = $generator->create_course();
@@ -646,7 +646,7 @@ class lib_test extends \advanced_testcase {
         $this->assertFalse($types['group']);
     }
 
-    public function test_calendar_get_allowed_event_types_group_access_all_groups() {
+    public function test_calendar_get_allowed_event_types_group_access_all_groups(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course1 = $generator->create_course();
@@ -675,7 +675,7 @@ class lib_test extends \advanced_testcase {
         $this->assertTrue($types['group']);
     }
 
-    public function test_calendar_get_allowed_event_types_group_no_access_all_groups() {
+    public function test_calendar_get_allowed_event_types_group_no_access_all_groups(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course = $generator->create_course();
@@ -708,7 +708,7 @@ class lib_test extends \advanced_testcase {
         $this->assertTrue($types['group']);
     }
 
-    public function test_calendar_get_allowed_event_types_group_cap_no_groups() {
+    public function test_calendar_get_allowed_event_types_group_cap_no_groups(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course = $generator->create_course();
@@ -730,7 +730,7 @@ class lib_test extends \advanced_testcase {
         $this->assertFalse($types['group']);
     }
 
-    public function test_calendar_get_allowed_event_types_group_cap_has_group() {
+    public function test_calendar_get_allowed_event_types_group_cap_has_group(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course = $generator->create_course();
@@ -753,7 +753,7 @@ class lib_test extends \advanced_testcase {
         $this->assertTrue($types['group']);
     }
 
-    public function test_calendar_get_allowed_event_types_group_cap_access_all_groups() {
+    public function test_calendar_get_allowed_event_types_group_cap_access_all_groups(): void {
         $generator = $this->getDataGenerator();
         $user = $generator->create_user();
         $course = $generator->create_course();
@@ -824,7 +824,7 @@ class lib_test extends \advanced_testcase {
     /**
      * This function tests calendar_set_filters for the case when user is not logged in.
      */
-    public function test_calendar_set_filters_not_logged_in() {
+    public function test_calendar_set_filters_not_logged_in(): void {
         $this->resetAfterTest();
 
         list($users, $courses, $coursegroups) = $this->setup_test_calendar_set_filters();
@@ -842,7 +842,7 @@ class lib_test extends \advanced_testcase {
     /**
      * This function tests calendar_set_filters for the case when no one is logged in, but a user id is provided.
      */
-    public function test_calendar_set_filters_not_logged_in_with_user() {
+    public function test_calendar_set_filters_not_logged_in_with_user(): void {
         $this->resetAfterTest();
 
         list($users, $courses, $coursegroups) = $this->setup_test_calendar_set_filters();
@@ -868,7 +868,7 @@ class lib_test extends \advanced_testcase {
     /**
      * This function tests calendar_set_filters for the case when user is logged in, but no user id is provided.
      */
-    public function test_calendar_set_filters_logged_in_no_user() {
+    public function test_calendar_set_filters_logged_in_no_user(): void {
         $this->resetAfterTest();
 
         list($users, $courses, $coursegroups) = $this->setup_test_calendar_set_filters();
@@ -884,7 +884,7 @@ class lib_test extends \advanced_testcase {
     /**
      * This function tests calendar_set_filters for the case when a user is logged in, but another user id is provided.
      */
-    public function test_calendar_set_filters_logged_in_another_user() {
+    public function test_calendar_set_filters_logged_in_another_user(): void {
         $this->resetAfterTest();
 
         list($users, $courses, $coursegroups) = $this->setup_test_calendar_set_filters();
@@ -899,9 +899,185 @@ class lib_test extends \advanced_testcase {
     }
 
     /**
+     * This function tests calendar_set_filters for courses with separate group mode.
+     */
+    public function test_calendar_set_filters_with_separate_group_mode(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+
+        // Create users.
+        $student1 = $generator->create_user();
+        $student2 = $generator->create_user();
+        $teacher1 = $generator->create_user();
+        $teacher2 = $generator->create_user();
+
+        // Create courses.
+        $course1 = $generator->create_course([
+            'shortname' => 'C1',
+            'groupmode' => 1,
+            'groupmodeforce' => 1,
+        ]);
+        $course2 = $generator->create_course([
+            'shortname' => 'C2',
+            'groupmode' => 1,
+            'groupmodeforce' => 1,
+        ]);
+        $course1context = \context_course::instance($course1->id);
+        $course2context = \context_course::instance($course2->id);
+
+        // Create groups.
+        $group1 = $generator->create_group([
+            'name' => 'G1-C1',
+            'courseid' => $course1->id,
+        ]);
+        $group2 = $generator->create_group([
+            'name' => 'G1-C2',
+            'courseid' => $course2->id,
+        ]);
+        $group3 = $generator->create_group([
+            'name' => 'G2-C2',
+            'courseid' => $course2->id,
+        ]);
+
+        // Modify the capabilities.
+        $editingteacherroleid = $DB->get_field('role', 'id', ['shortname' => 'editingteacher']);
+        assign_capability(
+            'moodle/site:accessallgroups',
+            CAP_PREVENT,
+            $editingteacherroleid,
+            $course1context->id,
+            true
+        );
+        assign_capability(
+            'moodle/site:accessallgroups',
+            CAP_PREVENT,
+            $editingteacherroleid,
+            $course2context->id,
+            true
+        );
+
+        // Enrol users.
+        $generator->enrol_user($student1->id, $course1->id, 'student');
+        $generator->enrol_user($teacher1->id, $course1->id, 'editingteacher');
+        $generator->enrol_user($student1->id, $course2->id, 'student');
+        $generator->enrol_user($student2->id, $course2->id, 'student');
+        $generator->enrol_user($teacher1->id, $course2->id, 'editingteacher');
+        $generator->enrol_user($teacher2->id, $course2->id, 'editingteacher');
+
+        // Group memberships.
+        $generator->create_group_member([
+            'groupid' => $group1->id,
+            'userid' => $student1->id,
+        ]);
+        $generator->create_group_member([
+            'groupid' => $group1->id,
+            'userid' => $teacher1->id,
+        ]);
+        $generator->create_group_member([
+            'groupid' => $group2->id,
+            'userid' => $student1->id,
+        ]);
+        $generator->create_group_member([
+            'groupid' => $group2->id,
+            'userid' => $teacher1->id,
+        ]);
+        $generator->create_group_member([
+            'groupid' => $group3->id,
+            'userid' => $student2->id,
+        ]);
+        $generator->create_group_member([
+            'groupid' => $group3->id,
+            'userid' => $teacher2->id,
+        ]);
+
+        // Test teacher1.
+        $this->setUser($teacher1);
+        $defaultcourses = calendar_get_default_courses(
+            null,
+            '*',
+            false,
+            $teacher1->id
+        );
+        [$courseids, $groupids] = calendar_set_filters(
+            $defaultcourses,
+            false,
+            $teacher1
+        );
+        // Teacher1 can see SITE, C1, G1-C1, C2, G1-C2.
+        $this->assertCount(3, $courseids); // SITE, C1, C2.
+        $this->assertCount(2, $groupids); // G1-C1, G1-C2.
+
+        $courseidskey = array_fill_keys($courseids, null);
+        $this->assertArrayHasKey(SITEID, $courseidskey);
+        $this->assertArrayHasKey($course1->id, $courseidskey);
+        $this->assertArrayHasKey($course2->id, $courseidskey);
+
+        $groupidskey = array_fill_keys($groupids, null);
+        $this->assertArrayHasKey($group1->id, $groupidskey);
+        $this->assertArrayHasKey($group2->id, $groupidskey);
+        $this->assertArrayNotHasKey($group3->id, $groupidskey);
+
+        // Test teacher2.
+        $this->setUser($teacher2);
+        $defaultcourses = calendar_get_default_courses(
+            null,
+            '*',
+            false,
+            $teacher2->id
+        );
+        [$courseids, $groupids] = calendar_set_filters(
+            $defaultcourses,
+            false,
+            $teacher2
+        );
+        // Teacher2 can see SITE, C2, G2-C2.
+        $this->assertCount(2, $courseids); // SITE, C2.
+        $this->assertCount(1, $groupids); // G2-C2.
+
+        $courseidskey = array_fill_keys($courseids, null);
+        $this->assertArrayHasKey(SITEID, $courseidskey);
+        $this->assertArrayHasKey($course2->id, $courseidskey);
+
+        $groupidskey = array_fill_keys($groupids, null);
+        $this->assertArrayHasKey($group3->id, $groupidskey);
+        $this->assertArrayNotHasKey($group1->id, $groupidskey);
+        $this->assertArrayNotHasKey($group2->id, $groupidskey);
+
+        // Modify the capabilities.
+        assign_capability(
+            'moodle/site:accessallgroups',
+            CAP_ALLOW,
+            $editingteacherroleid,
+            $course2context->id,
+            true
+        );
+
+        $defaultcourses = calendar_get_default_courses(
+            null,
+            '*',
+            false,
+            $teacher2->id
+        );
+        [$courseids, $groupids] = calendar_set_filters(
+            $defaultcourses,
+            false,
+            $teacher2
+        );
+        // Teacher2 can see SITE, C2, G1-C2, G2-C2.
+        $this->assertCount(2, $courseids); // SITE, C2.
+        $this->assertCount(2, $groupids); // G1-C2, G2-C2.
+
+        $groupidskey = array_fill_keys($groupids, null);
+        $this->assertArrayHasKey($group2->id, $groupidskey);
+        $this->assertArrayHasKey($group3->id, $groupidskey);
+        $this->assertArrayNotHasKey($group1->id, $groupidskey);
+    }
+
+    /**
      *  Test for calendar_view_event_allowed for course event types.
      */
-    public function test_calendar_view_event_allowed_course_event() {
+    public function test_calendar_view_event_allowed_course_event(): void {
         global $USER;
 
         $this->setAdminUser();
@@ -969,7 +1145,7 @@ class lib_test extends \advanced_testcase {
     /**
      *  Test for calendar_get_export_token for current user.
      */
-    public function test_calendar_get_export_token_for_current_user() {
+    public function test_calendar_get_export_token_for_current_user(): void {
         global $USER, $DB, $CFG;
 
         $this->setAdminUser();
@@ -984,7 +1160,7 @@ class lib_test extends \advanced_testcase {
     /**
      *  Test for calendar_get_export_token for another user.
      */
-    public function test_calendar_get_export_token_for_another_user() {
+    public function test_calendar_get_export_token_for_another_user(): void {
         global $CFG;
 
         // Get any user token.
@@ -1003,7 +1179,7 @@ class lib_test extends \advanced_testcase {
      *
      * @covers ::calendar_can_manage_user_event
      */
-    public function test_calendar_can_manage_user_event() {
+    public function test_calendar_can_manage_user_event(): void {
         global $DB, $USER;
         $generator = $this->getDataGenerator();
         $sitecontext = \context_system::instance();
@@ -1045,5 +1221,36 @@ class lib_test extends \advanced_testcase {
         $this->assertEquals(true, $result);
         $result = calendar_can_manage_user_event($adminevent);
         $this->assertEquals(false, $result);
+    }
+
+    /**
+     * Data provider for {@see test_calendar_format_event_location}
+     *
+     * @return array[]
+     */
+    public function calendar_format_event_location_provider(): array {
+        return [
+            'Empty' => ['', ''],
+            'Text' => ['Barcelona', 'Barcelona'],
+            'Link (http)' => ['http://example.com', '<a title=".*" href="http://example.com">http://example.com</a>'],
+            'Link (https)' => ['https://example.com', '<a title=".*" href="https://example.com">https://example.com</a>'],
+        ];
+    }
+
+    /**
+     * Test formatting event location
+     *
+     * @param string $location
+     * @param string $expectedpattern
+     *
+     * @covers ::calendar_format_event_location
+     * @dataProvider calendar_format_event_location_provider
+     */
+    public function test_calendar_format_event_location(string $location, string $expectedpattern): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $event = create_event(['location' => $location]);
+        $this->assertMatchesRegularExpression("|^({$expectedpattern})$|", calendar_format_event_location($event));
     }
 }

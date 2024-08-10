@@ -6,16 +6,18 @@ Feature: Allow students to redo questions in a practice quiz, without starting a
 
   Background:
     Given the following "users" exist:
-      | username | firstname | lastname | email               |
-      | student  | Student   | One      | student@example.com |
-      | teacher  | Teacher   | One      | teacher@example.com |
+      | username | firstname | lastname |
+      | student  | Student   | One      |
+      | teacher  | Teacher   | One      |
+      | editor   | Question  | Editor   |
     And the following "courses" exist:
       | fullname | shortname | category |
       | Course 1 | C1        | 0        |
     And the following "course enrolments" exist:
-      | user    | course | role    |
-      | student | C1     | student |
-      | teacher | C1     | teacher |
+      | user    | course | role           |
+      | student | C1     | student        |
+      | teacher | C1     | teacher        |
+      | editor  | C1     | editingteacher |
     And the following "question categories" exist:
       | contextlevel | reference | name           |
       | Course       | C1        | Test questions |
@@ -42,6 +44,58 @@ Feature: Allow students to redo questions in a practice quiz, without starting a
     And I should see "Marked out of 2.00" in the "First question" "question"
 
   @javascript
+  Scenario: After redoing a question, regrade works
+    Given I am on the "Quiz 1" "mod_quiz > View" page logged in as "student"
+    When I press "Attempt quiz"
+    And I click on "False" "radio" in the "First question" "question"
+    And I click on "Check" "button" in the "First question" "question"
+    And I press "Try another question like this one"
+    And I am on the "Quiz 1" "mod_quiz > Grades report" page logged in as "teacher"
+    And I press "Regrade attempts..."
+    And I click on "Regrade now" "button" in the "Regrade" "dialogue"
+    Then I should see "Finished regrading (1/1)"
+    And I should see "Regrade completed"
+    And I press "Continue"
+    # Regrade a second time, to ensure the first regrade did not corrupt any data.
+    And I press "Regrade attempts..."
+    And I click on "Regrade now" "button" in the "Regrade" "dialogue"
+    And I should see "Finished regrading (1/1)"
+    And I should see "Regrade completed"
+
+  @javascript
+  Scenario: Start attempt, teacher edits question, redo picks up latest non-draft version
+    # Start attempt as student.
+    Given I am on the "Quiz 1" "mod_quiz > View" page logged in as "student"
+    And I press "Attempt quiz"
+    And I click on "False" "radio" in the "First question" "question"
+    And I click on "Check" "button" in the "First question" "question"
+    And I log out
+
+    # Now edit the question as teacher to add a real version and a draft version.
+    # Would be nice to do this with a generator, but I don't have time right now.
+    And I am on the "TF1" "core_question > edit" page logged in as "editor"
+    And I set the following fields to these values:
+      | Question name   | TF1-v2                 |
+      | Question text   | The new first question |
+      | Correct answer  | False                  |
+    And I press "id_submitbutton"
+    And I am on the "TF1-v2" "core_question > edit" page
+    And I set the following fields to these values:
+      | Question name   | TF1-v3                     |
+      | Question text   | This is only draft for now |
+      | Correct answer  | True                       |
+      | Question status | Draft                      |
+    And I press "id_submitbutton"
+    And I log out
+
+    When I am on the "Quiz 1" "mod_quiz > View" page logged in as "student"
+    And I press "Continue your attempt"
+    And I press "Try another question like this one"
+    Then the state of "The new first question" question is shown as "Not complete"
+    And I should see "Marked out of 2.00" in the "The new first question" "question"
+    And I should not see "This is only draft for now"
+
+  @javascript
   Scenario: The redo question button is visible but disabled for teachers
     Given I am on the "Quiz 1" "mod_quiz > View" page logged in as "student"
     When I press "Attempt quiz"
@@ -61,21 +115,21 @@ Feature: Allow students to redo questions in a practice quiz, without starting a
     And I click on "Check" "button" in the "First question" "question"
     And I press "Finish attempt ..."
     And I press "Submit all and finish"
-    And I click on "Submit all and finish" "button" in the "Confirmation" "dialogue"
+    And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
     Then "Try another question like this one" "button" should not exist
 
   @javascript @_switch_window
   Scenario: Teachers reviewing can see all the questions attempted in a slot
     Given I am on the "Quiz 1" "mod_quiz > View" page logged in as "student"
-    When I press "Attempt quiz"
+    And I press "Attempt quiz"
     And I click on "False" "radio" in the "First question" "question"
     And I click on "Check" "button" in the "First question" "question"
     And I press "Try another question like this one"
     And I press "Finish attempt ..."
     And I press "Submit all and finish"
-    And I click on "Submit all and finish" "button" in the "Confirmation" "dialogue"
+    And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
     And I log out
-    And I am on the "Quiz 1" "mod_quiz > View" page logged in as "teacher"
+    When I am on the "Quiz 1" "mod_quiz > View" page logged in as "teacher"
     And I follow "Attempts: 1"
     And I follow "Review attempt"
     And I click on "1" "link" in the "First question" "question"
@@ -91,6 +145,34 @@ Feature: Allow students to redo questions in a practice quiz, without starting a
     And "False" row "Frequency" column of "quizresponseanalysis" table should contain "100.00%"
     And "True" row "Frequency" column of "quizresponseanalysis" table should contain "0.00%"
     And "[No response]" row "Frequency" column of "quizresponseanalysis" table should contain "100.00%"
+
+  @javascript @_switch_window
+  Scenario: Teachers reviewing can switch between attempts in the review question popup
+    Given I am on the "Quiz 1" "mod_quiz > View" page logged in as student
+    # Create two attempts, only one of which has a redo.
+    When I press "Attempt quiz"
+    And I click on "False" "radio" in the "First question" "question"
+    And I click on "Check" "button" in the "First question" "question"
+    And I press "Try another question like this one"
+    And I press "Finish attempt ..."
+    And I press "Submit all and finish"
+    And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I follow "Finish review"
+    And I press "Re-attempt quiz"
+    And I click on "True" "radio" in the "First question" "question"
+    And I click on "Check" "button" in the "First question" "question"
+    And I log out
+    And I am on the "Quiz 1" "mod_quiz > View" page logged in as teacher
+    And I follow "Attempts: 2"
+    # Review the first attempt - and switch to the first question seen.
+    And I follow "Review attempt"
+    And I click on "1" "link" in the "First question" "question"
+    And I switch to "reviewquestion" window
+    And the state of "First question" question is shown as "Incorrect"
+    # Now switch to the other quiz attempt using the link at the top, which does not have a redo.
+    And I click on "2" "link" in the "Attempts" "table_row"
+    Then the state of "First question" question is shown as "Correct"
+    And I should not see "Other questions attempted here"
 
   @javascript
   Scenario: Redoing question 1 should save any changes to question 2 on the same page
@@ -142,7 +224,7 @@ Feature: Allow students to redo questions in a practice quiz, without starting a
     When I click on "update grades" "link" in the "SA1" "table_row"
     Then I set the field "Comment" to "I have adjusted your mark to 1.0"
     And I set the field "Mark" to "1.0"
-    And I press "Save and go to next page"
+    And I press "Save and show next"
     And I follow "Results"
     And I follow "Review attempt"
     And I should see "Teacher One" in the "I have adjusted your mark to 1.0" "table_row"

@@ -238,7 +238,7 @@ class lesson_page_type_multichoice extends lesson_page {
             }
             $result->answerid = $data->answerid;
             if (!$answer = $DB->get_record("lesson_answers", array("id" => $result->answerid))) {
-                print_error("Continue: answer record not found");
+                throw new \moodle_exception("Continue: answer record not found");
             }
             $answer = parent::rewrite_answers_urls($answer);
             if ($this->lesson->jumpto_is_correct($this->properties->id, $answer->jumpto)) {
@@ -344,7 +344,7 @@ class lesson_page_type_multichoice extends lesson_page {
 
         foreach ($answers as $answer) {
             $answertext = format_text($answer->answer,$answer->answerformat,$formattextdefoptions);
-            $correctresponsetext = html_writer::div(get_string('correctresponse', 'lesson'), 'badge badge-success');
+            $correctresponsetext = html_writer::div(get_string('correctresponse', 'lesson'), 'badge bg-success text-white');
             if ($this->properties->qoption) {
                 if ($useranswer == null) {
                     $userresponse = array();

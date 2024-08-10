@@ -29,6 +29,12 @@
 
 require('../config.php'); // phpcs:ignore
 
+// Until we have a more robust routing api in place this is a very simple
+// and clean way to handle arbitrary urls without a php extension.
+if ($ME === '/.well-known/change-password') {
+    redirect(new moodle_url('/login/change_password.php'));
+}
+
 $context = context_system::instance();
 $title = get_string('pagenotexisttitle', 'error');
 $PAGE->set_url('/error/index.php');
@@ -36,7 +42,6 @@ $PAGE->set_context($context);
 $PAGE->set_title($title);
 $PAGE->set_heading($title);
 $PAGE->navbar->add($title);
-$PAGE->set_secondary_navigation(false);
 
 // This allows the webserver to dictate wether the http status should remain
 // what it would have been, or force it to be a 404. Under other conditions

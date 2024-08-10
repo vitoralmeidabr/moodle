@@ -27,7 +27,19 @@ Feature: Test editing a drag and drop into text questions
     And I should see "Choice [[1]]"
     And I should see "Choice [[2]]"
     And I should see "Choice [[3]]"
+    And I should see "Write the answers to be dragged into the gaps. You can include extra answers to increase difficulty." in the "Choices" "fieldset"
     And I set the following fields to these values:
       | Question name | Edited question name |
     And I press "id_submitbutton"
     Then I should see "Edited question name"
+
+  Scenario: Cannot update a drag and drop into text question to the unsolvable questions
+    When I am on the "Drag to text" "core_question > edit" page logged in as teacher
+    And I should see "Choice [[1]]"
+    And I should see "Choice [[2]]"
+    And I should see "Choice [[3]]"
+    And I set the following fields to these values:
+      | Question name | Edited question name                   |
+      | Question text | Choice [[1]] Choice [[2]] Choice [[1]] |
+    And I press "id_submitbutton"
+    Then I should see "Choice [[1]] has been used more than once without being set to \"Unlimited\". Please recheck this question."

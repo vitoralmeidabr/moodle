@@ -26,13 +26,13 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'qtype_multianswer';
-$plugin->version   = 2022031000;
+$plugin->version   = 2024042200;
 
-$plugin->requires  = 2021052500;
-$plugin->dependencies = array(
-    'qtype_multichoice' => 2021052500,
-    'qtype_numerical'   => 2021052500,
-    'qtype_shortanswer' => 2021052500,
-);
+$plugin->requires  = 2024041600;
+$plugin->dependencies = [
+    'qtype_multichoice' => 2024041600,
+    'qtype_numerical'   => 2024041600,
+    'qtype_shortanswer' => 2024041600,
+];
 
 $plugin->maturity  = MATURITY_STABLE;

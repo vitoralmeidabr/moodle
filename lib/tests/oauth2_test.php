@@ -14,56 +14,55 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace core;
+
+use core\oauth2\access_token;
+use core\oauth2\api;
+use core\oauth2\endpoint;
+use core\oauth2\issuer;
+use core\oauth2\system_account;
+use \core\oauth2\user_field_mapping;
+
 /**
  * Tests for oauth2 apis (\core\oauth2\*).
  *
  * @package    core
  * @copyright  2017 Damyon Wiese
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
+ * @covers \core\oauth2\api
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-/**
- * Tests for oauth2 apis (\core\oauth2\*).
- *
- * @package    core
- * @copyright  2017 Damyon Wiese
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
- * @coversDefaultClass \core\oauth2\api
- */
-class core_oauth2_testcase extends advanced_testcase {
+class oauth2_test extends \advanced_testcase {
 
     /**
      * Tests the crud operations on oauth2 issuers.
      */
-    public function test_create_and_delete_standard_issuers() {
+    public function test_create_and_delete_standard_issuers(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
-        \core\oauth2\api::create_standard_issuer('google');
-        \core\oauth2\api::create_standard_issuer('facebook');
-        \core\oauth2\api::create_standard_issuer('microsoft');
-        \core\oauth2\api::create_standard_issuer('nextcloud', 'https://dummy.local/nextcloud/');
+        api::create_standard_issuer('google');
+        api::create_standard_issuer('facebook');
+        api::create_standard_issuer('microsoft');
+        api::create_standard_issuer('nextcloud', 'https://dummy.local/nextcloud/');
 
-        $issuers = \core\oauth2\api::get_all_issuers();
+        $issuers = api::get_all_issuers();
 
         $this->assertEquals($issuers[0]->get('name'), 'Google');
         $this->assertEquals($issuers[1]->get('name'), 'Facebook');
         $this->assertEquals($issuers[2]->get('name'), 'Microsoft');
         $this->assertEquals($issuers[3]->get('name'), 'Nextcloud');
 
-        \core\oauth2\api::move_down_issuer($issuers[0]->get('id'));
+        api::move_down_issuer($issuers[0]->get('id'));
 
-        $issuers = \core\oauth2\api::get_all_issuers();
+        $issuers = api::get_all_issuers();
 
         $this->assertEquals($issuers[0]->get('name'), 'Facebook');
         $this->assertEquals($issuers[1]->get('name'), 'Google');
         $this->assertEquals($issuers[2]->get('name'), 'Microsoft');
         $this->assertEquals($issuers[3]->get('name'), 'Nextcloud');
 
-        \core\oauth2\api::delete_issuer($issuers[1]->get('id'));
+        api::delete_issuer($issuers[1]->get('id'));
 
-        $issuers = \core\oauth2\api::get_all_issuers();
+        $issuers = api::get_all_issuers();
 
         $this->assertEquals($issuers[0]->get('name'), 'Facebook');
         $this->assertEquals($issuers[1]->get('name'), 'Microsoft');
@@ -73,45 +72,45 @@ class core_oauth2_testcase extends advanced_testcase {
     /**
      * Tests the crud operations on oauth2 issuers.
      */
-    public function test_create_nextcloud_without_url() {
+    public function test_create_nextcloud_without_url(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
         $this->expectException(\moodle_exception::class);
-        \core\oauth2\api::create_standard_issuer('nextcloud');
+        api::create_standard_issuer('nextcloud');
     }
 
     /**
      * Tests we can list and delete each of the persistents related to an issuer.
      */
-    public function test_getters() {
+    public function test_getters(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
-        $issuer = \core\oauth2\api::create_standard_issuer('microsoft');
+        $issuer = api::create_standard_issuer('microsoft');
 
-        $same = \core\oauth2\api::get_issuer($issuer->get('id'));
+        $same = api::get_issuer($issuer->get('id'));
 
         foreach ($same->properties_definition() as $name => $def) {
             $this->assertTrue($issuer->get($name) == $same->get($name));
         }
 
-        $endpoints = \core\oauth2\api::get_endpoints($issuer);
-        $same = \core\oauth2\api::get_endpoint($endpoints[0]->get('id'));
+        $endpoints = api::get_endpoints($issuer);
+        $same = api::get_endpoint($endpoints[0]->get('id'));
         $this->assertEquals($endpoints[0]->get('id'), $same->get('id'));
         $this->assertEquals($endpoints[0]->get('name'), $same->get('name'));
 
         $todelete = $endpoints[0];
-        \core\oauth2\api::delete_endpoint($todelete->get('id'));
-        $endpoints = \core\oauth2\api::get_endpoints($issuer);
+        api::delete_endpoint($todelete->get('id'));
+        $endpoints = api::get_endpoints($issuer);
         $this->assertNotEquals($endpoints[0]->get('id'), $todelete->get('id'));
 
-        $userfields = \core\oauth2\api::get_user_field_mappings($issuer);
-        $same = \core\oauth2\api::get_user_field_mapping($userfields[0]->get('id'));
+        $userfields = api::get_user_field_mappings($issuer);
+        $same = api::get_user_field_mapping($userfields[0]->get('id'));
         $this->assertEquals($userfields[0]->get('id'), $same->get('id'));
 
         $todelete = $userfields[0];
-        \core\oauth2\api::delete_user_field_mapping($todelete->get('id'));
-        $userfields = \core\oauth2\api::get_user_field_mappings($issuer);
+        api::delete_user_field_mapping($todelete->get('id'));
+        $userfields = api::get_user_field_mappings($issuer);
         $this->assertNotEquals($userfields[0]->get('id'), $todelete->get('id'));
     }
 
@@ -144,16 +143,16 @@ class core_oauth2_testcase extends advanced_testcase {
      * Tests we can get a logged in oauth client for a system account.
      *
      * @dataProvider system_oauth_client_provider
-     * @param stdClass $responsedata The response data to be mocked.
+     * @param \stdClass $responsedata The response data to be mocked.
      * @param int $expiresin The expected expiration time.
      */
-    public function test_get_system_oauth_client($responsedata, $expiresin) {
+    public function test_get_system_oauth_client($responsedata, $expiresin): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        $issuer = \core\oauth2\api::create_standard_issuer('microsoft');
+        $issuer = api::create_standard_issuer('microsoft');
 
-        $requiredscopes = \core\oauth2\api::get_system_scopes_for_issuer($issuer);
+        $requiredscopes = api::get_system_scopes_for_issuer($issuer);
         // Fake a system account.
         $data = (object) [
             'issuerid' => $issuer->get('id'),
@@ -162,17 +161,17 @@ class core_oauth2_testcase extends advanced_testcase {
             'email' => 'sys@example.com',
             'username' => 'sys'
         ];
-        $sys = new \core\oauth2\system_account(0, $data);
+        $sys = new system_account(0, $data);
         $sys->create();
 
         // Fake a response with an access token.
         $response = json_encode($responsedata);
-        curl::mock_response($response);
-        $client = \core\oauth2\api::get_system_oauth_client($issuer);
+        \curl::mock_response($response);
+        $client = api::get_system_oauth_client($issuer);
         $this->assertTrue($client->is_logged_in());
 
         // Check token expiry.
-        $accesstoken = \core\oauth2\access_token::get_record(['issuerid' => $issuer->get('id')]);
+        $accesstoken = access_token::get_record(['issuerid' => $issuer->get('id')]);
 
         // Get the difference between the actual and expected expiry times.
         // They might differ by a couple of seconds depending on the timing when the token gets actually processed.
@@ -186,39 +185,39 @@ class core_oauth2_testcase extends advanced_testcase {
     /**
      * Tests we can enable and disable an issuer.
      */
-    public function test_enable_disable_issuer() {
+    public function test_enable_disable_issuer(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        $issuer = \core\oauth2\api::create_standard_issuer('microsoft');
+        $issuer = api::create_standard_issuer('microsoft');
 
         $issuerid = $issuer->get('id');
 
-        \core\oauth2\api::enable_issuer($issuerid);
-        $check = \core\oauth2\api::get_issuer($issuer->get('id'));
+        api::enable_issuer($issuerid);
+        $check = api::get_issuer($issuer->get('id'));
         $this->assertTrue((boolean)$check->get('enabled'));
 
-        \core\oauth2\api::enable_issuer($issuerid);
-        $check = \core\oauth2\api::get_issuer($issuer->get('id'));
+        api::enable_issuer($issuerid);
+        $check = api::get_issuer($issuer->get('id'));
         $this->assertTrue((boolean)$check->get('enabled'));
 
-        \core\oauth2\api::disable_issuer($issuerid);
-        $check = \core\oauth2\api::get_issuer($issuer->get('id'));
+        api::disable_issuer($issuerid);
+        $check = api::get_issuer($issuer->get('id'));
         $this->assertFalse((boolean)$check->get('enabled'));
 
-        \core\oauth2\api::enable_issuer($issuerid);
-        $check = \core\oauth2\api::get_issuer($issuer->get('id'));
+        api::enable_issuer($issuerid);
+        $check = api::get_issuer($issuer->get('id'));
         $this->assertTrue((boolean)$check->get('enabled'));
     }
 
     /**
      * Test the alloweddomains for an issuer.
      */
-    public function test_issuer_alloweddomains() {
+    public function test_issuer_alloweddomains(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        $issuer = \core\oauth2\api::create_standard_issuer('microsoft');
+        $issuer = api::create_standard_issuer('microsoft');
 
         $issuer->set('alloweddomains', '');
 
@@ -257,8 +256,6 @@ class core_oauth2_testcase extends advanced_testcase {
      * Test endpoints creation for issuers.
      * @dataProvider create_endpoints_for_standard_issuer_provider
      *
-     * @covers ::create_endpoints_for_standard_issuer
-     *
      * @param string $type Issuer type to create.
      * @param string|null $discoveryurl Expected discovery URL or null if this endpoint doesn't exist.
      * @param bool $hasmappingfields True if it's expected the issuer to create has mapping fields.
@@ -281,10 +278,10 @@ class core_oauth2_testcase extends advanced_testcase {
         if ($expectedexception) {
             $this->expectException($expectedexception);
         }
-        $issuer = \core\oauth2\api::create_standard_issuer($type, $baseurl);
+        $issuer = api::create_standard_issuer($type, $baseurl);
 
         // Check endpoints have been created.
-        $endpoints = \core\oauth2\api::get_endpoints($issuer);
+        $endpoints = api::get_endpoints($issuer);
         $this->assertNotEmpty($endpoints);
         $this->assertNotEmpty($issuer->get('image'));
         // Check discovery URL.
@@ -294,7 +291,7 @@ class core_oauth2_testcase extends advanced_testcase {
             $this->assertFalse($issuer->get_endpoint_url('discovery'));
         }
         // Check userfield mappings.
-        $userfieldmappings = core\oauth2\api::get_user_field_mappings($issuer);
+        $userfieldmappings =api::get_user_field_mappings($issuer);
         if ($hasmappingfields) {
             $this->assertNotEmpty($userfieldmappings);
         } else {
@@ -370,24 +367,24 @@ class core_oauth2_testcase extends advanced_testcase {
     /**
      * Test for get all issuers.
      */
-    public function test_get_all_issuers() {
+    public function test_get_all_issuers(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
-        $googleissuer = core\oauth2\api::create_standard_issuer('google');
-        core\oauth2\api::create_standard_issuer('facebook');
-        core\oauth2\api::create_standard_issuer('microsoft');
+        $googleissuer = api::create_standard_issuer('google');
+        api::create_standard_issuer('facebook');
+        api::create_standard_issuer('microsoft');
 
         // Set Google issuer to be shown only on login page.
         $record = $googleissuer->to_record();
         $record->showonloginpage = $googleissuer::LOGINONLY;
-        core\oauth2\api::update_issuer($record);
+        api::update_issuer($record);
 
-        $issuers = \core\oauth2\api::get_all_issuers();
+        $issuers = api::get_all_issuers();
         $this->assertCount(2, $issuers);
         $expected = ['Microsoft', 'Facebook'];
         $this->assertEqualsCanonicalizing($expected, [$issuers[0]->get_display_name(), $issuers[1]->get_display_name()]);
 
-        $issuers = \core\oauth2\api::get_all_issuers(true);
+        $issuers = api::get_all_issuers(true);
         $this->assertCount(3, $issuers);
         $expected = ['Google', 'Microsoft', 'Facebook'];
         $this->assertEqualsCanonicalizing($expected,
@@ -397,15 +394,15 @@ class core_oauth2_testcase extends advanced_testcase {
     /**
      * Test for is available for login.
      */
-    public function test_is_available_for_login() {
+    public function test_is_available_for_login(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
-        $googleissuer = core\oauth2\api::create_standard_issuer('google');
+        $googleissuer = api::create_standard_issuer('google');
 
         // Set Google issuer to be shown only on login page.
         $record = $googleissuer->to_record();
         $record->showonloginpage = $googleissuer::LOGINONLY;
-        core\oauth2\api::update_issuer($record);
+        api::update_issuer($record);
 
         $this->assertFalse($googleissuer->is_available_for_login());
 
@@ -417,13 +414,13 @@ class core_oauth2_testcase extends advanced_testcase {
         $this->assertTrue($googleissuer->is_available_for_login());
 
         // Set showonloginpage to service only.
-        $googleissuer->set('showonloginpage', \core\oauth2\issuer::SERVICEONLY);
+        $googleissuer->set('showonloginpage', issuer::SERVICEONLY);
         $googleissuer->update();
 
         $this->assertFalse($googleissuer->is_available_for_login());
 
         // Set showonloginpage to everywhere (service and login) and disable issuer.
-        $googleissuer->set('showonloginpage', \core\oauth2\issuer::EVERYWHERE);
+        $googleissuer->set('showonloginpage', issuer::EVERYWHERE);
         $googleissuer->set('enabled', 0);
         $googleissuer->update();
 
@@ -436,12 +433,186 @@ class core_oauth2_testcase extends advanced_testcase {
         $this->assertTrue($googleissuer->is_available_for_login());
 
         // Remove userinfo endpoint from issuer.
-        $endpoint = core\oauth2\endpoint::get_record([
+        $endpoint = endpoint::get_record([
             'issuerid' => $googleissuer->get('id'),
             'name' => 'userinfo_endpoint'
         ]);
-        \core\oauth2\api::delete_endpoint($endpoint->get('id'));
+        api::delete_endpoint($endpoint->get('id'));
 
         $this->assertFalse($googleissuer->is_available_for_login());
     }
+
+    /**
+     * Data provider for test_get_internalfield_list and test_get_internalfields.
+     *
+     * @return array
+     */
+    public function create_custom_profile_fields(): array {
+        return [
+            'data' =>
+            [
+                'given' => [
+                    'Hobbies' => [
+                        'shortname' => 'hobbies',
+                        'name' => 'Hobbies',
+                    ]
+                ],
+                'expected' => [
+                    'Hobbies' => [
+                        'shortname' => 'hobbies',
+                        'name' => 'Hobbies',
+                    ]
+                ]
+            ],
+            [
+                'given' => [
+                    'Billing' => [
+                        'shortname' => 'billingaddress',
+                        'name' => 'Billing Address',
+                    ],
+                    'Payment' => [
+                        'shortname' => 'creditcardnumber',
+                        'name' => 'Credit Card Number',
+                    ]
+                ],
+                'expected' => [
+                    'Billing' => [
+                        'shortname' => 'billingaddress',
+                        'name' => 'Billing Address',
+                    ],
+                    'Payment' => [
+                        'shortname' => 'creditcardnumber',
+                        'name' => 'Credit Card Number',
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Test getting the list of internal fields.
+     *
+     * @dataProvider create_custom_profile_fields
+     * @covers \core\oauth2\user_field_mapping::get_internalfield_list
+     * @param array $given Categories and profile fields.
+     * @param array $expected Expected value.
+     */
+    public function test_get_internalfield_list(array $given, array $expected): void {
+        $this->resetAfterTest();
+        self::generate_custom_profile_fields($given);
+
+        $userfieldmapping = new user_field_mapping();
+        $internalfieldlist = $userfieldmapping->get_internalfield_list();
+
+        foreach ($expected as $category => $value) {
+            // Custom profile fields must exist.
+            $this->assertNotEmpty($internalfieldlist[$category]);
+
+            // Category must have the custom profile fields with expected value.
+            $this->assertEquals(
+                $internalfieldlist[$category][\core_user\fields::PROFILE_FIELD_PREFIX . $value['shortname']],
+                $value['name']
+            );
+        }
+    }
+
+    /**
+     * Test getting the list of internal fields with flat array.
+     *
+     * @dataProvider create_custom_profile_fields
+     * @covers \core\oauth2\user_field_mapping::get_internalfields
+     * @param array $given Categories and profile fields.
+     * @param array $expected Expected value.
+     */
+    public function test_get_internalfields(array $given, array $expected): void {
+        $this->resetAfterTest();
+        self::generate_custom_profile_fields($given);
+
+        $userfieldmapping = new user_field_mapping();
+        $internalfields = $userfieldmapping->get_internalfields();
+
+        // Custom profile fields must exist.
+        foreach ($expected as $category => $value) {
+            $this->assertContains( \core_user\fields::PROFILE_FIELD_PREFIX . $value['shortname'], $internalfields);
+        }
+    }
+
+    /**
+     * Test getting the list of empty external/custom profile fields.
+     *
+     * @covers \core\oauth2\user_field_mapping::get_internalfields
+     */
+    public function test_get_empty_internalfield_list(): void {
+
+        // Get internal (profile) fields.
+        $userfieldmapping = new user_field_mapping();
+        $internalfieldlist = $userfieldmapping->get_internalfields();
+
+        // Get user fields.
+        $userfields = array_merge(\core_user::AUTHSYNCFIELDS, ['picture', 'username']);
+
+        // Internal fields and user fields must exact same.
+        $this->assertEquals($userfields, $internalfieldlist);
+    }
+
+    /**
+     * Test getting Return the list of profile fields.
+     *
+     * @dataProvider create_custom_profile_fields
+     * @covers ::get_profile_field_list
+     * @param array $given Categories and profile fields.
+     * @param array $expected Expected value.
+     */
+    public function test_get_profile_field_list(array $given, array $expected): void {
+        $this->resetAfterTest();
+        self::generate_custom_profile_fields($given);
+
+        $profilefieldlist = get_profile_field_list();
+
+        foreach ($expected as $category => $value) {
+            $this->assertEquals(
+                $profilefieldlist[$category][\core_user\fields::PROFILE_FIELD_PREFIX . $value['shortname']],
+                $value['name']
+            );
+        }
+    }
+
+    /**
+     * Test getting the list of valid custom profile user fields.
+     *
+     * @dataProvider create_custom_profile_fields
+     * @covers ::get_profile_field_names
+     * @param array $given Categories and profile fields.
+     * @param array $expected Expected value.
+     */
+    public function test_get_profile_field_names(array $given, array $expected): void {
+        $this->resetAfterTest();
+        self::generate_custom_profile_fields($given);
+
+        $profilefieldnames = get_profile_field_names();
+
+        // Custom profile fields must exist.
+        foreach ($expected as $category => $value) {
+            $this->assertContains( \core_user\fields::PROFILE_FIELD_PREFIX . $value['shortname'], $profilefieldnames);
+        }
+    }
+
+    /**
+     * Generate data into DB for Testing getting user fields mapping.
+     *
+     * @param array $given Categories and profile fields.
+     */
+    private function generate_custom_profile_fields(array $given): void {
+        // Create a profile category and the profile fields.
+        foreach ($given as $category => $value) {
+            $customprofilefieldcategory = ['name' => $category, 'sortorder' => 1];
+            $category = $this->getDataGenerator()->create_custom_profile_field_category($customprofilefieldcategory);
+            $this->getDataGenerator()->create_custom_profile_field(
+                ['shortname' => $value['shortname'],
+                'name' => $value['name'],
+                'categoryid' => $category->id,
+                'required' => 1, 'visible' => 1, 'locked' => 0, 'datatype' => 'text', 'defaultdata' => null]);
+        }
+    }
+
 }

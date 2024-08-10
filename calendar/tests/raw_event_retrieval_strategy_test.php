@@ -14,6 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace core_calendar;
+
+use core_calendar\local\event\strategies\raw_event_retrieval_strategy;
+
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/calendar/tests/helpers.php');
+
 /**
  * Raw event retrieval strategy tests.
  *
@@ -21,25 +30,11 @@
  * @copyright 2017 Cameron Ball <cameron@cameron1729.xyz>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/calendar/tests/helpers.php');
-
-use core_calendar\local\event\strategies\raw_event_retrieval_strategy;
-
-/**
- * Raw event retrieval strategy testcase.
- *
- * @copyright 2017 Cameron Ball <cameron@cameron1729.xyz>
- * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testcase {
+class raw_event_retrieval_strategy_test extends \advanced_testcase {
     /**
      * Test retrieval strategy when module is disabled.
      */
-    public function test_get_raw_events_with_disabled_module() {
+    public function test_get_raw_events_with_disabled_module(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -82,7 +77,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
         ];
 
         foreach ($events as $event) {
-            calendar_event::create($event, false);
+            \calendar_event::create($event, false);
         }
 
         // Get all events.
@@ -118,7 +113,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
     /**
      * Test retrieval strategy when there are overrides.
      */
-    public function test_get_raw_event_strategy_with_overrides() {
+    public function test_get_raw_event_strategy_with_overrides(): void {
         $this->resetAfterTest();
 
         $retrievalstrategy = new raw_event_retrieval_strategy();
@@ -220,7 +215,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
         ];
 
         foreach ($events as $event) {
-            calendar_event::create($event, false);
+            \calendar_event::create($event, false);
         }
 
         $groups = [$group1->id, $group2->id];
@@ -292,7 +287,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
         ];
 
         foreach ($repeatingevents as $event) {
-            calendar_event::create($event, false);
+            \calendar_event::create($event, false);
         }
 
         // Make sure repeating events are not filtered out.
@@ -303,7 +298,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
     /**
      * Test retrieval strategy with category specifications.
      */
-    public function test_get_raw_events_category() {
+    public function test_get_raw_events_category(): void {
         $this->resetAfterTest();
         $retrievalstrategy = new raw_event_retrieval_strategy();
         $generator = $this->getDataGenerator();
@@ -333,7 +328,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
         ];
 
         foreach ($events as $event) {
-            calendar_event::create($event, false);
+            \calendar_event::create($event, false);
         }
 
         // Get all events.
@@ -364,7 +359,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
         $this->assertCount(2, $events);
     }
 
-    public function test_get_raw_events_for_multiple_users() {
+    public function test_get_raw_events_for_multiple_users(): void {
         $this->resetAfterTest();
 
         $generator = $this->getDataGenerator();
@@ -394,7 +389,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
             ]
         ];
         foreach ($events as $event) {
-            calendar_event::create($event, false);
+            \calendar_event::create($event, false);
         }
 
         $retrievalstrategy = new raw_event_retrieval_strategy();
@@ -407,7 +402,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
                 array_column($events, 'name'));
     }
 
-    public function test_get_raw_events_for_groups_with_no_members() {
+    public function test_get_raw_events_for_groups_with_no_members(): void {
         $this->resetAfterTest();
 
         $generator = $this->getDataGenerator();
@@ -433,7 +428,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
             ]
         ];
         foreach ($events as $event) {
-            calendar_event::create($event, false);
+            \calendar_event::create($event, false);
         }
 
         $retrievalstrategy = new raw_event_retrieval_strategy;
@@ -452,7 +447,7 @@ class core_calendar_raw_event_retrieval_strategy_testcase extends advanced_testc
      * db compatible. The test is ensuring we don't get a DML Exception with
      * the filters setup this way.
      */
-    public function test_get_raw_events_with_empty_user_and_category_lists() {
+    public function test_get_raw_events_with_empty_user_and_category_lists(): void {
         $retrievalstrategy = new raw_event_retrieval_strategy;
         $retrievalstrategy->get_raw_events([], null, null, []);
     }

@@ -14,15 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for the dataset manager.
- *
- * @package   core_analytics
- * @copyright 2017 David Monllaó {@link http://www.davidmonllao.com}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
+namespace core_analytics;
 
 /**
  * Unit tests for the dataset manager.
@@ -31,7 +23,10 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright 2017 David Monllaó {@link http://www.davidmonllao.com}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class dataset_manager_testcase extends advanced_testcase {
+class dataset_manager_test extends \advanced_testcase {
+
+    /** @var array Store dataset top rows. */
+    protected array $sharedtoprows = [];
 
     /**
      * setUp
@@ -39,6 +34,7 @@ class dataset_manager_testcase extends advanced_testcase {
      * @return null
      */
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest(true);
 
         $this->sharedtoprows = array(
@@ -53,7 +49,7 @@ class dataset_manager_testcase extends advanced_testcase {
      *
      * @return null
      */
-    public function test_create_dataset() {
+    public function test_create_dataset(): void {
 
         $dataset1 = new \core_analytics\dataset_manager(1, 1, 'whatever', \core_analytics\dataset_manager::LABELLED_FILEAREA, false);
         $dataset1data = array_merge($this->sharedtoprows, array(array('yeah', 'yeah', 'yeah')));
@@ -71,7 +67,7 @@ class dataset_manager_testcase extends advanced_testcase {
      *
      * @return null
      */
-    public function test_merge_datasets() {
+    public function test_merge_datasets(): void {
 
         $dataset1 = new \core_analytics\dataset_manager(1, 1, 'whatever', \core_analytics\dataset_manager::LABELLED_FILEAREA, false);
         $dataset1data = array_merge($this->sharedtoprows, array(array('yeah', 'yeah', 'yeah')));
@@ -98,7 +94,7 @@ class dataset_manager_testcase extends advanced_testcase {
      *
      * @return null
      */
-    public function test_get_pending_files() {
+    public function test_get_pending_files(): void {
         global $DB;
 
         $this->resetAfterTest();

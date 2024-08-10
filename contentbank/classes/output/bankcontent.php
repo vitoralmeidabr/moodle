@@ -14,26 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * core_contentbank specific renderers
- *
- * @package   core_contentbank
- * @copyright  2020 Ferran Recio <ferran@moodle.com>
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace core_contentbank\output;
 
+use core\context\{course, coursecat};
+use core\context_helper;
+use core_contentbank\content;
 use core_contentbank\contentbank;
 use renderable;
 use templatable;
 use renderer_base;
 use stdClass;
-use core_contentbank\content;
 
 /**
  * Class containing data for bank content
  *
+ * @package    core_contentbank
  * @copyright  2020 Ferran Recio <ferran@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -69,10 +64,10 @@ class bankcontent implements renderable, templatable {
      *
      * @param \core_contentbank\content[] $contents   Array of content bank contents.
      * @param array $toolbar List of content bank toolbar options.
-     * @param \context $context Optional context to check (default null)
+     * @param \context|null $context Optional context to check (default null)
      * @param contentbank $cb Contenbank object.
      */
-    public function __construct(array $contents, array $toolbar, \context $context = null, contentbank $cb) {
+    public function __construct(array $contents, array $toolbar, ?\context $context, contentbank $cb) {
         $this->contents = $contents;
         $this->toolbar = $toolbar;
         $this->context = $context;
@@ -127,6 +122,8 @@ class bankcontent implements renderable, templatable {
             $method = 'export_tool_'.$tool['action'];
             if (method_exists($this, $method)) {
                 $this->$method($tool);
+            } else {
+                $this->export_tool_default($tool);
             }
             $data->tools[] = $tool;
         }
@@ -138,7 +135,10 @@ class bankcontent implements renderable, templatable {
         }
         $options = [];
         foreach ($this->allowedcategories as $allowedcategory) {
-            $options[$allowedcategory->ctxid] = $allowedcategory->name;
+            context_helper::preload_from_record(clone $allowedcategory);
+            $options[$allowedcategory->ctxid] = format_string($allowedcategory->name, true, [
+                'context' => coursecat::instance($allowedcategory->ctxinstance),
+            ]);
         }
         if (!empty($options)) {
             $allowedcontexts['categories'] = [get_string('coursecategories') => $options];
@@ -147,21 +147,25 @@ class bankcontent implements renderable, templatable {
         foreach ($this->allowedcourses as $allowedcourse) {
             // Don't add the frontpage course to the list.
             if ($allowedcourse->id != $SITE->id) {
-                $options[$allowedcourse->ctxid] = $allowedcourse->shortname;
+                context_helper::preload_from_record(clone $allowedcourse);
+                $options[$allowedcourse->ctxid] = format_string($allowedcourse->fullname, true, [
+                    'context' => course::instance($allowedcourse->ctxinstance),
+                ]);
             }
         }
         if (!empty($options)) {
             $allowedcontexts['courses'] = [get_string('courses') => $options];
         }
         if (!empty($allowedcontexts)) {
-            $url = new \moodle_url('/contentbank/index.php');
+            $strchoosecontext = get_string('choosecontext', 'core_contentbank');
             $singleselect = new \single_select(
-                $url,
+                new \moodle_url('/contentbank/index.php'),
                 'contextid',
                 $allowedcontexts,
                 $this->context->id,
-                get_string('choosecontext', 'core_contentbank')
+                $strchoosecontext
             );
+            $singleselect->set_label($strchoosecontext, ['class' => 'sr-only']);
             $data->allowedcontexts = $singleselect->export_for_template($output);
         }
 
@@ -206,5 +210,18 @@ class bankcontent implements renderable, templatable {
         }
 
         $tool['contenttypes'] = $addoptions;
+    }
+
+    /**
+     * This is the default output of a tool.
+     * It will be displayed as a button by default.
+     *
+     * @param array $tool Data for rendering the Add dropdown, including the editable content types.
+     * @return void
+     */
+    private function export_tool_default(array &$tool): void {
+        if (empty($tool['checkbox']) && empty($tool['dropdown'])) {
+            $tool['button'] = true;
+        }
     }
 }

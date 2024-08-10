@@ -13,6 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+use mod_quiz\quiz_attempt;
+use mod_quiz\quiz_settings;
 
 /**
  * Helper trait for quiz question unit tests.
@@ -45,16 +47,15 @@ trait quiz_question_helper_test_trait {
      */
     protected function create_test_quiz(\stdClass $course): \stdClass {
 
+        /** @var mod_quiz_generator $quizgenerator */
         $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
 
-        $quiz = $quizgenerator->create_instance([
+        return $quizgenerator->create_instance([
             'course' => $course->id,
             'questionsperpage' => 0,
             'grade' => 100.0,
             'sumgrades' => 2,
         ]);
-        $quiz->coursemodule = $quiz->cmid;
-        return $quiz;
     }
 
     /**
@@ -64,15 +65,15 @@ trait quiz_question_helper_test_trait {
      * @param \stdClass $quiz
      * @param array $override
      */
-    protected function add_regular_questions($questiongenerator, \stdClass $quiz, $override = null): void {
+    protected function add_two_regular_questions($questiongenerator, \stdClass $quiz, $override = null): void {
         // Create a couple of questions.
         $cat = $questiongenerator->create_question_category($override);
 
-        $saq = $questiongenerator->create_question('shortanswer', null, array('category' => $cat->id));
+        $saq = $questiongenerator->create_question('shortanswer', null, ['category' => $cat->id]);
         // Create another version.
         $questiongenerator->update_question($saq);
         quiz_add_quiz_question($saq->id, $quiz);
-        $numq = $questiongenerator->create_question('numerical', null, array('category' => $cat->id));
+        $numq = $questiongenerator->create_question('numerical', null, ['category' => $cat->id]);
         // Create two version.
         $questiongenerator->update_question($numq);
         $questiongenerator->update_question($numq);
@@ -86,12 +87,12 @@ trait quiz_question_helper_test_trait {
      * @param \stdClass $quiz
      * @param array $override
      */
-    protected function add_random_questions($questiongenerator, \stdClass $quiz, $override = []): void {
+    protected function add_one_random_question($questiongenerator, \stdClass $quiz, $override = []): void {
         // Create a random question.
         $cat = $questiongenerator->create_question_category($override);
-        $questiongenerator->create_question('truefalse', null, array('category' => $cat->id));
-        $questiongenerator->create_question('essay', null, array('category' => $cat->id));
-        quiz_add_random_questions($quiz, 0, $cat->id, 1, false);
+        $questiongenerator->create_question('truefalse', null, ['category' => $cat->id]);
+        $questiongenerator->create_question('essay', null, ['category' => $cat->id]);
+        $this->add_random_questions($quiz->id, 0, $cat->id, 1);
     }
 
     /**
@@ -106,18 +107,18 @@ trait quiz_question_helper_test_trait {
         $this->setUser($user);
 
         $starttime = time();
-        $quizobj = \quiz::create($quiz->id, $user->id);
+        $quizobj = quiz_settings::create($quiz->id, $user->id);
 
-        $quba = \question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
+        $quba = question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
         $quba->set_preferred_behaviour($quizobj->get_quiz()->preferredbehaviour);
 
         // Start the attempt.
-        $attempt = quiz_create_attempt($quizobj, $attemptnumber, false, $starttime, false, $user->id);
+        $attempt = quiz_create_attempt($quizobj, $attemptnumber, null, $starttime, false, $user->id);
         quiz_start_new_attempt($quizobj, $quba, $attempt, $attemptnumber, $starttime);
         quiz_attempt_save_started($quizobj, $quba, $attempt);
 
         // Finish the attempt.
-        $attemptobj = \quiz_attempt::create($attempt->id);
+        $attemptobj = quiz_attempt::create($attempt->id);
         $attemptobj->process_finish($starttime, false);
 
         $this->setUser();
@@ -140,7 +141,7 @@ trait quiz_question_helper_test_trait {
 
         $backupid = 'test-question-backup-restore';
 
-        $bc = new backup_controller(backup::TYPE_1ACTIVITY, $quiz->coursemodule, backup::FORMAT_MOODLE,
+        $bc = new backup_controller(backup::TYPE_1ACTIVITY, $quiz->cmid, backup::FORMAT_MOODLE,
             backup::INTERACTIVE_NO, backup::MODE_GENERAL, $user->id);
         $bc->execute_plan();
 
@@ -178,5 +179,29 @@ trait quiz_question_helper_test_trait {
      */
     protected function duplicate_quiz($course, $quiz): ?\cm_info {
         return duplicate_module($course, get_fast_modinfo($course)->get_cm($quiz->cmid));
+    }
+
+    /**
+     * Add random questions to a quiz, with a filter condition based on a category ID.
+     *
+     * @param int $quizid The quiz to add the questions to.
+     * @param int $page The page number to add the questions to.
+     * @param int $categoryid The category ID to use for the filter condition.
+     * @param int $number The number of questions to add.
+     * @return void
+     */
+    protected function add_random_questions(int $quizid, int $page, int $categoryid, int $number): void {
+        $quizobj = quiz_settings::create($quizid);
+        $structure = $quizobj->get_structure();
+        $filtercondition = [
+            'filter' => [
+                'category' => [
+                    'jointype' => \qbank_managecategories\category_condition::JOINTYPE_DEFAULT,
+                    'values' => [$categoryid],
+                    'filteroptions' => ['includesubcategories' => false],
+                ],
+            ],
+        ];
+        $structure->add_random_questions($page, $number, $filtercondition);
     }
 }

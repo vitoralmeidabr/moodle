@@ -14,15 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for core_auth\digital_consent.
- *
- * @package    core_auth
- * @copyright  2018 Mihail Geshoski
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
+namespace core_auth;
 
 /**
  * Digital consent helper testcase.
@@ -31,9 +23,9 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2018 Mihail Geshoski
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_auth_digital_consent_testcase extends advanced_testcase {
+class digital_consent_test extends \advanced_testcase {
 
-    public function test_is_age_digital_consent_verification_enabled() {
+    public function test_is_age_digital_consent_verification_enabled(): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -44,7 +36,7 @@ class core_auth_digital_consent_testcase extends advanced_testcase {
         $this->assertFalse($isenabled);
     }
 
-    public function test_is_minor() {
+    public function test_is_minor(): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -77,7 +69,7 @@ class core_auth_digital_consent_testcase extends advanced_testcase {
         $this->assertFalse($isminor);
     }
 
-    public function test_parse_age_digital_consent_map_valid_format() {
+    public function test_parse_age_digital_consent_map_valid_format(): void {
 
         // Value of agedigitalconsentmap has a valid format.
         $agedigitalconsentmap = implode(PHP_EOL, [
@@ -96,7 +88,7 @@ class core_auth_digital_consent_testcase extends advanced_testcase {
         );
     }
 
-    public function test_parse_age_digital_consent_map_invalid_format_missing_spaces() {
+    public function test_parse_age_digital_consent_map_invalid_format_missing_spaces(): void {
 
         // Value of agedigitalconsentmap has an invalid format (missing space separator between values).
         $agedigitalconsentmap = implode(PHP_EOL, [
@@ -110,7 +102,7 @@ class core_auth_digital_consent_testcase extends advanced_testcase {
         \core_auth\digital_consent::parse_age_digital_consent_map($agedigitalconsentmap);
     }
 
-    public function test_parse_age_digital_consent_map_invalid_format_missing_default_value() {
+    public function test_parse_age_digital_consent_map_invalid_format_missing_default_value(): void {
 
         // Value of agedigitalconsentmap has an invalid format (missing default value).
         $agedigitalconsentmap = implode(PHP_EOL, [
@@ -124,7 +116,7 @@ class core_auth_digital_consent_testcase extends advanced_testcase {
         \core_auth\digital_consent::parse_age_digital_consent_map($agedigitalconsentmap);
     }
 
-    public function test_parse_age_digital_consent_map_invalid_format_invalid_country() {
+    public function test_parse_age_digital_consent_map_invalid_format_invalid_country(): void {
 
         // Value of agedigitalconsentmap has an invalid format (invalid value for country).
         $agedigitalconsentmap = implode(PHP_EOL, [
@@ -138,7 +130,7 @@ class core_auth_digital_consent_testcase extends advanced_testcase {
         \core_auth\digital_consent::parse_age_digital_consent_map($agedigitalconsentmap);
     }
 
-    public function test_parse_age_digital_consent_map_invalid_format_invalid_age_string() {
+    public function test_parse_age_digital_consent_map_invalid_format_invalid_age_string(): void {
 
         // Value of agedigitalconsentmap has an invalid format (string value for age).
         $agedigitalconsentmap = implode(PHP_EOL, [
@@ -152,7 +144,7 @@ class core_auth_digital_consent_testcase extends advanced_testcase {
         \core_auth\digital_consent::parse_age_digital_consent_map($agedigitalconsentmap);
     }
 
-    public function test_parse_age_digital_consent_map_invalid_format_missing_age() {
+    public function test_parse_age_digital_consent_map_invalid_format_missing_age(): void {
 
         // Value of agedigitalconsentmap has an invalid format (missing value for age).
         $agedigitalconsentmap = implode(PHP_EOL, [
@@ -166,7 +158,7 @@ class core_auth_digital_consent_testcase extends advanced_testcase {
         \core_auth\digital_consent::parse_age_digital_consent_map($agedigitalconsentmap);
     }
 
-    public function test_parse_age_digital_consent_map_invalid_format_missing_country() {
+    public function test_parse_age_digital_consent_map_invalid_format_missing_country(): void {
 
         // Value of agedigitalconsentmap has an invalid format (missing value for country).
         $agedigitalconsentmap = implode(PHP_EOL, [

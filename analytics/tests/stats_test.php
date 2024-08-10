@@ -14,14 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Provides the {@link analytics_stats_testcase} class.
- *
- * @package     core_analytics
- * @category    test
- * @copyright   2019 David Mudrák <david@moodle.com>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace core_analytics;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,15 +24,18 @@ require_once(__DIR__ . '/fixtures/test_target_shortname.php');
 /**
  * Unit tests for the analytics stats.
  *
+ * @package     core_analytics
+ * @category    test
  * @copyright 2019 David Mudrák <david@moodle.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class analytics_stats_testcase extends advanced_testcase {
+class stats_test extends \advanced_testcase {
 
     /**
      * Set up the test environment.
      */
     public function setUp(): void {
+        parent::setUp();
 
         $this->setAdminUser();
     }
@@ -47,7 +43,7 @@ class analytics_stats_testcase extends advanced_testcase {
     /**
      * Test the {@link \core_analytics\stats::enabled_models()} implementation.
      */
-    public function test_enabled_models() {
+    public function test_enabled_models(): void {
 
         $this->resetAfterTest(true);
 
@@ -73,7 +69,7 @@ class analytics_stats_testcase extends advanced_testcase {
     /**
      * Test the {@link \core_analytics\stats::predictions()} implementation.
      */
-    public function test_predictions() {
+    public function test_predictions(): void {
 
         $this->resetAfterTest(true);
 
@@ -118,7 +114,7 @@ class analytics_stats_testcase extends advanced_testcase {
     /**
      * Test the {@link \core_analytics\stats::actions()} and {@link \core_analytics\stats::actions_not_useful()} implementation.
      */
-    public function test_actions() {
+    public function test_actions(): void {
         global $DB;
         $this->resetAfterTest(true);
 
